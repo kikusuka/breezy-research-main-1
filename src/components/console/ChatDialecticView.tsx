@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DebateSession, DebateStep, ProviderKeyConfig } from '../../types';
+import { EvidenceGraphView } from './EvidenceGraphView';
 
 interface ChatDialecticViewProps {
   session: DebateSession;
@@ -30,6 +31,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
   const [inputText, setInputText] = useState('');
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [subView, setSubView] = useState<'perspectives' | 'evidence'>('perspectives');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize input textarea
@@ -271,19 +273,50 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
           </div>
         </div>
 
-        {/* 3. Independent Dialectic Feeds (3-Up Columns) */}
+        {/* 3. Independent Dialectic Feeds or Evidence Trail Graph */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-outline text-[16px]">device_hub</span>
+              <span className="material-symbols-outlined text-outline text-[16px]">
+                {subView === 'perspectives' ? 'device_hub' : 'schema'}
+              </span>
               <span className="font-mono text-[11px] uppercase text-outline tracking-wider font-semibold">
-                Independent Dialectic Feeds
+                {subView === 'perspectives' ? 'Independent Dialectic Feeds' : 'Evidence Trail & Contradiction Graph'}
               </span>
             </div>
-            <span className="font-mono text-[11px] text-outline">Columnar Layout 3-Up</span>
+
+            {/* View Mode Toggle Pill */}
+            <div className="flex items-center gap-1 bg-surface-container p-0.5 rounded-lg border border-outline-variant/30">
+              <button
+                type="button"
+                onClick={() => setSubView('perspectives')}
+                className={`px-3 py-1 rounded-md text-xs font-mono transition-all ${
+                  subView === 'perspectives'
+                    ? 'bg-surface-container-high text-primary font-semibold shadow-xs'
+                    : 'text-tertiary hover:text-on-surface'
+                }`}
+              >
+                3-Up Columns
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubView('evidence')}
+                className={`px-3 py-1 rounded-md text-xs font-mono transition-all flex items-center gap-1.5 ${
+                  subView === 'evidence'
+                    ? 'bg-surface-container-high text-secondary font-semibold shadow-xs'
+                    : 'text-tertiary hover:text-on-surface'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[13px]">schema</span>
+                <span>Evidence Graph</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {subView === 'evidence' ? (
+            <EvidenceGraphView sessionTitle={session.prompt} />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Card 1: Claude 3.5 Sonnet / Analyst */}
             <div className="rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 flex flex-col justify-between shadow-xs hover:border-outline-variant/60 transition-all">
               <div className="flex flex-col gap-3">
@@ -460,7 +493,8 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
         {/* 4. Action Strip */}
         <div className="flex flex-wrap items-center gap-2 pt-1">

@@ -952,6 +952,7 @@ app.post('/api/debate/stream', async (req: Request, res: Response) => {
 
     // Perform real-time web search grounding if enabled
     let groundingContext = '';
+    let discoveredSources: any[] = [];
     if (enableSearchGrounding) {
       sendEvent('status', {
         message: `Grounding analysis with real-time web search (${searchEngine.toUpperCase()})...`,
@@ -960,18 +961,32 @@ app.post('/api/debate/stream', async (req: Request, res: Response) => {
       try {
         const groundingResult = await performSearchGrounding(prompt, searchEngine as SearchEngineProvider, keys);
         if (groundingResult) {
+          discoveredSources = groundingResult.results.map((r, idx) => {
+            let domain = 'web-source';
+            try {
+              domain = new URL(r.url).hostname.replace('www.', '');
+            } catch {
+              // fallback
+            }
+            const isPrimary = domain.endsWith('.org') || domain.endsWith('.gov') || domain.endsWith('.edu') || domain.includes('github') || domain.includes('apache') || domain.includes('arxiv');
+            return {
+              id: `src-${idx + 1}`,
+              title: r.title,
+              url: r.url,
+              domain,
+              snippet: r.snippet,
+              isPrimary,
+              citationIndex: idx + 1,
+            };
+          });
+
           sendEvent('search_grounding', {
             engine: groundingResult.engine,
             engineName: groundingResult.engineName,
             query: groundingResult.query,
             summary: groundingResult.summary || undefined,
             resultsCount: groundingResult.results.length,
-            sources: groundingResult.results.map((r) => ({
-              title: r.title,
-              url: r.url,
-              snippet: r.snippet,
-              source: r.source,
-            })),
+            sources: discoveredSources,
           });
 
           if (groundingResult.results.length > 0 || groundingResult.summary) {

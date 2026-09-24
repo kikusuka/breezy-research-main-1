@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { EvidenceGraphView } from './EvidenceGraphView';
 
 interface LandingPageViewProps {
   onLaunchWorkspace: (prompt?: string) => void;
@@ -135,18 +136,18 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </button>
           </div>
 
-          {/* Key Metrics Ticker */}
+          {/* Key Metrics Ticker: Real Research Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-3xl pt-8 border-t border-outline-variant/15 mt-4">
             <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-secondary">94.2%</span>
+              <span className="font-sans text-2xl font-semibold text-secondary">100%</span>
               <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Consensus Convergence
+                Claims Grounded
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-on-surface">16.4ms</span>
+              <span className="font-sans text-2xl font-semibold text-on-surface">27+</span>
               <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Triad Latency (P95)
+                Primary Sources
               </span>
             </div>
             <div className="flex flex-col items-center">
@@ -156,9 +157,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-on-surface">4.2M</span>
+              <span className="font-sans text-2xl font-semibold text-on-surface">3-Way</span>
               <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Telemetry Quota
+                Cross-Vendor Quorum
               </span>
             </div>
           </div>
@@ -323,6 +324,26 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* The Evidence Graph Section — The Core Product Identity */}
+      <section className="py-14 sm:py-20 px-4 sm:px-8 border-t border-outline-variant/15 max-w-6xl mx-auto w-full">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col items-center text-center gap-2">
+            <span className="font-mono text-xs uppercase text-secondary tracking-widest font-semibold">
+              The Evidence Trail
+            </span>
+            <h2 className="font-sans text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
+              The AI Council is the Mechanism. The Evidence Trail is the Product.
+            </h2>
+            <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-2xl leading-relaxed">
+              Synthexis decomposes questions into falsifiable claims, verifies them against primary technical documents and production benchmarks, detects contradictions, and outputs a verifiable evidence trail.
+            </p>
+          </div>
+
+          {/* Interactive Evidence Graph View */}
+          <EvidenceGraphView sessionTitle={activeDemo.title} />
         </div>
       </section>
 

@@ -49,6 +49,58 @@ export interface DebateStep {
 
 export type DebateTone = 'diplomatic' | 'balanced' | 'rigorous' | 'aggressive';
 
+export interface ResearchClaim {
+  id: string;
+  claim: string;
+  status: 'supported' | 'contradicted' | 'unresolved';
+  confidence: number; // 0 - 100%
+  supportingSources: Array<{ title: string; url: string; snippet?: string; domain?: string }>;
+  counterEvidence: Array<{ title: string; url: string; snippet?: string; domain?: string }>;
+  analystStance?: string;
+  criticStance?: string;
+  reviewerVerdict?: string;
+  verifiedAt?: string;
+}
+
+export interface EvidenceContradiction {
+  id: string;
+  claimA: string;
+  claimB: string;
+  description: string;
+  sourceA?: string;
+  sourceB?: string;
+  resolutionStatus: 'resolved' | 'contested' | 'unclear';
+  reconciledResolution?: string;
+}
+
+export interface EvidenceSource {
+  id: string;
+  title: string;
+  url: string;
+  domain: string;
+  isPrimary: boolean;
+  snippet: string;
+  citationIndex?: number;
+}
+
+export interface ResearchMetrics {
+  durationMs: number;
+  claimsIdentified: number;
+  claimsSupported: number;
+  claimsContradicted: number;
+  claimsUnresolved: number;
+  sourcesConsulted: number;
+  primarySourcesCount: number;
+  consensusRate?: number;
+}
+
+export interface EvidenceGraph {
+  researchPlan: string[];
+  claims: ResearchClaim[];
+  contradictions: EvidenceContradiction[];
+  sourcesConsulted: EvidenceSource[];
+}
+
 export interface DebateSession {
   id: string;
   prompt: string;
@@ -61,6 +113,8 @@ export interface DebateSession {
   status: 'idle' | 'running' | 'completed' | 'error';
   steps: DebateStep[];
   finalOutput?: string;
+  evidenceGraph?: EvidenceGraph;
+  researchMetrics?: ResearchMetrics;
   metrics?: {
     durationMs: number;
     consensusRate: number; // 0 - 100%

@@ -87,6 +87,108 @@ In short: **Kafka** is best if you need instant millisecond processing for every
       contentionLevel: 'Moderate',
       resolvedPointsCount: 7,
     },
+    researchMetrics: {
+      durationMs: 12440,
+      claimsIdentified: 18,
+      claimsSupported: 12,
+      claimsContradicted: 3,
+      claimsUnresolved: 3,
+      sourcesConsulted: 27,
+      primarySourcesCount: 9,
+      consensusRate: 94.2,
+    },
+    evidenceGraph: {
+      researchPlan: [
+        '1. Audit write-ahead logging durability and throughput benchmarks for high-frequency ledger events.',
+        '2. Measure file-level lock contention and memory footprint during concurrent DuckDB analytical queries.',
+        '3. Evaluate dual-track hybrid ingestion: Kafka real-time ingestion into Parquet cold-storage partitions.',
+        '4. Formulate operational failure modes under node partitions and out-of-order delivery.'
+      ],
+      claims: [
+        {
+          id: 'claim-1',
+          claim: 'Kafka partitioned topics sustain 120k+ events/sec per broker with deterministic partition-level sequencing.',
+          status: 'supported',
+          confidence: 96,
+          supportingSources: [
+            { title: 'Apache Kafka 3.7 Core Performance Benchmarks', url: 'https://kafka.apache.org/benchmarks', domain: 'kafka.apache.org', snippet: 'Sustained throughput of 120k eps under fsync ack=all across 3-broker cluster with zero event loss.' },
+            { title: 'Confluent Financial Ledger Architecture Whitepaper', url: 'https://confluent.io/resources/fintech-architecture', domain: 'confluent.io', snippet: 'Monotonic offset progression guarantees ordered transaction event state.' }
+          ],
+          counterEvidence: [],
+          analystStance: 'Foundational write path. Append-only throughput prevents lock starvation under multi-tenant volume.',
+          criticStance: 'Requires KRaft quorum management overhead, but claim is empirically validated.',
+          reviewerVerdict: 'Adopted as primary write ingestion mechanism.',
+          verifiedAt: '14:32:15 UTC'
+        },
+        {
+          id: 'claim-2',
+          claim: 'Direct concurrent writes to local DuckDB files under heavy web traffic trigger file-level write lockouts.',
+          status: 'supported',
+          confidence: 98,
+          supportingSources: [
+            { title: 'DuckDB Concurrency & Process Attachment Limits', url: 'https://duckdb.org/docs/connect/concurrency', domain: 'duckdb.org', snippet: 'DuckDB uses a single-writer multiple-reader concurrency lock. Concurrent writer processes will fail with LockException.' },
+            { title: 'VLDB 2023: In-Process Analytical Engines in Production', url: 'https://vldb.org/pvldb/vol16/p1920-duckdb.pdf', domain: 'vldb.org', snippet: 'Attempting transactional OLTP writes across multiple container processes yields catastrophic lock contention.' }
+          ],
+          counterEvidence: [
+            { title: 'DuckDB In-Memory Thread Safety', url: 'https://duckdb.org/docs/connect/threading', domain: 'duckdb.org', snippet: 'In-memory databases support multi-threaded reader-writer transactions with internal MVCC.' }
+          ],
+          analystStance: 'Can be mitigated with in-process connection pooling for single-instance applications.',
+          criticStance: 'Fatal flaw under horizontal multi-container deployments: embedded files across multiple pods fail.',
+          reviewerVerdict: 'Verified. Restrict DuckDB strictly to analytical audit queries against static Parquet snapshots.',
+          verifiedAt: '14:32:18 UTC'
+        },
+        {
+          id: 'claim-3',
+          claim: 'DuckDB vectorizes columnar reconciliation queries across 100M+ rows in under 400ms without GPU acceleration.',
+          status: 'supported',
+          confidence: 94,
+          supportingSources: [
+            { title: 'TPC-H Columnar Benchmark Results on DuckDB v0.10', url: 'https://db-benchmark.com/duckdb-tpch', domain: 'db-benchmark.com', snippet: 'SIMD vectorized engine processes 100M rows in 320ms on standard 8-core CPU.' }
+          ],
+          counterEvidence: [
+            { title: 'RAM Exhaustion with Large In-Memory Aggregations', url: 'https://duckdb.org/docs/guides/performance/memory', domain: 'duckdb.org', snippet: 'Aggregations exceeding memory limit spill to disk, multiplying latency by 6x.' }
+          ],
+          analystStance: 'Superior to traditional Postgres table scans for end-of-day reconciliation audits.',
+          criticStance: 'Memory ceiling must be strictly bounded to prevent Linux OOM killer termination.',
+          reviewerVerdict: 'Adopted for batch verification and regulatory compliance reconciliation.',
+          verifiedAt: '14:32:20 UTC'
+        },
+        {
+          id: 'claim-4',
+          claim: 'A single monolithic ledger without streaming queue handles unexpected traffic spikes via database connection pooling.',
+          status: 'contradicted',
+          confidence: 28,
+          supportingSources: [],
+          counterEvidence: [
+            { title: 'AWS Well-Architected: Queue-Based Load Leveling Pattern', url: 'https://aws.amazon.com/architecture', domain: 'aws.amazon.com', snippet: 'Synchronous relational connection pools saturate during traffic bursts, causing cascading 504 timeouts.' }
+          ],
+          analystStance: 'Theoretical fallback for lightweight prototypes with low concurrency.',
+          criticStance: 'Catastrophic failure mode in financial production: leads to unbounded connection pile-ups.',
+          reviewerVerdict: 'Rejected. Dedicated ingestion queue is mandatory for financial ledger integrity.',
+          verifiedAt: '14:32:22 UTC'
+        }
+      ],
+      contradictions: [
+        {
+          id: 'contra-1',
+          claimA: 'Analyst: Direct embedded DuckDB file logging provides adequate persistence.',
+          claimB: 'Critic: Direct DuckDB file writes across multi-container web pods cause fatal file lock contention.',
+          description: 'Conflict between embedded simplicity and distributed multi-tenant process safety.',
+          sourceA: 'duckdb.org (Threading Guide)',
+          sourceB: 'duckdb.org (Concurrency Lock Spec)',
+          resolutionStatus: 'resolved',
+          reconciledResolution: 'Adopted bifurcated architecture: Kafka for append-only streaming, DuckDB for read-only Parquet analysis.'
+        }
+      ],
+      sourcesConsulted: [
+        { id: 'src-1', title: 'Apache Kafka 3.7 Core Performance Benchmarks', url: 'https://kafka.apache.org/benchmarks', domain: 'kafka.apache.org', isPrimary: true, snippet: 'Throughput and partition durability validation.' },
+        { id: 'src-2', title: 'DuckDB Concurrency & Process Attachment Limits', url: 'https://duckdb.org/docs/connect/concurrency', domain: 'duckdb.org', isPrimary: true, snippet: 'Single-writer concurrency lock mechanics.' },
+        { id: 'src-3', title: 'Martin Kleppmann: Designing Data-Intensive Applications', url: 'https://dataintensive.net', domain: 'dataintensive.net', isPrimary: true, snippet: 'Event sourcing, stream processing, and partition idempotency.' },
+        { id: 'src-4', title: 'VLDB 2023: In-Process Analytical Engines in Production', url: 'https://vldb.org/pvldb/vol16/p1920-duckdb.pdf', domain: 'vldb.org', isPrimary: true, snippet: 'Analytical vectorization across columnar formats.' },
+        { id: 'src-5', title: 'Confluent Financial Ledger Architecture Whitepaper', url: 'https://confluent.io/resources/fintech-architecture', domain: 'confluent.io', isPrimary: false, snippet: 'Distributed ledger ingestion patterns.' },
+        { id: 'src-6', title: 'Apache Parquet Columnar Format Specification', url: 'https://parquet.apache.org/docs', domain: 'parquet.apache.org', isPrimary: true, snippet: 'Columnar compression and predicate pushdown.' }
+      ]
+    },
   },
   {
     id: 'session-rlhf-alignment',
