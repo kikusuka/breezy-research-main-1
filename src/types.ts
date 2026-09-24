@@ -1,0 +1,132 @@
+export type ProviderId = 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'ollama';
+
+export type SearchEngineProvider = 'google' | 'tavily' | 'serper' | 'brave' | 'duckduckgo';
+
+export interface ProviderKeyConfig {
+  gemini?: string;
+  groq?: string;
+  sambanova?: string;
+  openrouter?: string;
+  tavily?: string;
+  serper?: string;
+  brave?: string;
+}
+
+export interface OllamaConfig {
+  enabled: boolean;
+  baseUrl: string;
+  model: string;
+}
+
+export type AgentRole = 'architect' | 'skeptic' | 'verifier' | 'arbiter' | 'synthesizer' | 'solo';
+
+export interface AgentConfig {
+  id: AgentRole;
+  name: string;
+  roleTitle: string;
+  description: string;
+  provider: ProviderId | 'ollama';
+  model: string;
+  avatarColor: string;
+  systemPrompt: string;
+}
+
+export interface DebateStep {
+  stepId: string;
+  role: AgentRole;
+  agentName: string;
+  provider: ProviderId | 'ollama';
+  model: string;
+  status: 'pending' | 'running' | 'completed' | 'error';
+  content: string;
+  timestamp: number;
+  durationMs?: number;
+  critiqueSummary?: string;
+  summary?: string;
+  agreedPoints?: string[];
+  disputedPoints?: string[];
+}
+
+export type DebateTone = 'diplomatic' | 'balanced' | 'rigorous' | 'aggressive';
+
+export interface DebateSession {
+  id: string;
+  prompt: string;
+  protocol: 'trio' | 'quad' | 'duel' | 'solo';
+  tone?: DebateTone;
+  searchEngine?: SearchEngineProvider;
+  enableSearchGrounding?: boolean;
+  createdAt: number;
+  updatedAt?: number;
+  status: 'idle' | 'running' | 'completed' | 'error';
+  steps: DebateStep[];
+  finalOutput?: string;
+  metrics?: {
+    durationMs: number;
+    consensusRate: number; // 0 - 100%
+    contentionLevel: 'Low' | 'Moderate' | 'High' | 'Severe';
+    resolvedPointsCount: number;
+  };
+  error?: string;
+}
+
+export interface PresetQuestion {
+  id: string;
+  title: string;
+  category: string;
+  prompt: string;
+  difficulty: 'Quick' | 'Complex' | 'Deep';
+}
+
+export type WindowViewMode = 'chat' | 'council' | 'split';
+
+export interface HeartbeatState {
+  bpm: number;
+  role?: AgentRole;
+  agentName?: string;
+  statusText: string;
+  taskReminder?: string;
+  timestamp: number;
+}
+
+export interface SessionSnapshot {
+  id: string;
+  sessionId: string;
+  name: string;
+  prompt: string;
+  protocol: 'trio' | 'quad' | 'duel' | 'solo';
+  steps: DebateStep[];
+  finalOutput?: string;
+  timestamp: number;
+}
+
+export interface SessionMetadata {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  promptCount: number;
+}
+
+export interface Attachment {
+  id: string;
+  fileName: string;
+  fileType: 'pdf' | 'image' | 'text' | 'code';
+  content?: string;
+  size: number;
+  uploadedAt: number;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  attachments?: Attachment[];
+}
+
+export interface ModelConfig {
+  provider: ProviderId | 'ollama';
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+}

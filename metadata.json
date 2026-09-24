@@ -1,0 +1,6 @@
+{
+  "name": "Synthexis",
+  "description": "Multi-Model Research & Strategic Analysis Platform. Compare AI models side-by-side, stress-test hypotheses, and synthesize actionable answers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
