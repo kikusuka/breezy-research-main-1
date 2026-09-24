@@ -780,9 +780,9 @@ app.post('/api/debate/summarize', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Session with prompt is required.' });
     }
 
-    const systemInstruction = `You are the Chief Council Recorder for the Coherence AI Council. Your task is to analyze the council's deliberation and produce a valid JSON object with exactly two keys:
-1. "summary": A single, concise, professional, and sophisticated one-sentence executive summary highlighting the final synthesized outcome and core compromise. Do not exceed one sentence under any circumstance. Start directly with the summary content.
-2. "category": A highly descriptive, exact three-word title or category for the debate reflecting its main subject matter (e.g., "Sovereign Debt Crises", "Renewable Energy Transition", "Algorithmic Bias Audit"). It must be exactly 3 words.
+    const systemInstruction = `You are the Lead Research Synthesizer. Your task is to analyze the multi-model analysis trace and produce a valid JSON object with exactly two keys:
+1. "summary": A concise, objective, one-sentence executive summary highlighting the synthesized resolution and core trade-offs. Do not exceed one sentence. Start directly with the summary text.
+2. "category": A highly descriptive, exact three-word title or category reflecting the core technical subject (e.g., "Database Migration Strategy", "OAuth Security Architecture", "Vector Search Indexing"). Exactly 3 words.
 
 Return ONLY a raw JSON object. Do not include markdown code blocks like \`\`\`json or \`\`\`. Do not write any explanatory text before or after the JSON.`;
 
@@ -792,7 +792,7 @@ ${session.prompt}
 FINAL SYNTHESIS OUTPUT:
 ${session.finalOutput || '(No final output produced yet. Summary based on prompt only.)'}
 
-COUNCIL CHAMBER STEPS TRANSCRIPT:
+ANALYSIS STEPS TRANSCRIPT:
 ${(session.steps || []).map((s: any) => `[Round ${s.round} - ${s.role}]: ${s.content.slice(0, 500)}...`).join('\n\n')}
 
 Analyze this deliberation and output the JSON object.`;
@@ -895,7 +895,7 @@ app.post('/api/debate/stream', async (req: Request, res: Response) => {
   const startTime = Date.now();
 
   try {
-    sendEvent('status', { message: 'Initializing Coherence Deliberation Council...' });
+    sendEvent('status', { message: 'Initializing multi-model analysis...' });
 
     // Determine tone guidelines & temperature adjustments
     let toneInstruction = '';
@@ -903,19 +903,19 @@ app.post('/api/debate/stream', async (req: Request, res: Response) => {
     let arbiterTemp = 0.5;
 
     if (tone === 'diplomatic') {
-      toneInstruction = `\nDEBATE TONE: DIPLOMATIC & CONSTRUCTIVE. Maintain a respectful, polite, collegiate, and collaborative demeanor. Present critique as constructive possibilities and nuanced enhancements rather than caustic attacks.`;
+      toneInstruction = `\nDEBATE TONE: DIPLOMATIC & CONSTRUCTIVE. Maintain a collegiate, respectful demeanor. Frame critiques as nuanced improvements and alternative trade-offs.`;
       skepticTemp = 0.6;
       arbiterTemp = 0.4;
     } else if (tone === 'aggressive') {
-      toneInstruction = `\nDEBATE TONE: AGGRESSIVE & DIRECT. Adopt a relentless, fiercely adversarial, hyper-direct red-teaming stance. Cut straight to the jugular of any flawed premises, sloppy logic, or hand-wavy assumptions. Use biting clarity, sharp refutations, zero sugarcoating, and absolute bluntness in exposing fatal failure modes.`;
+      toneInstruction = `\nDEBATE TONE: DIRECT & UNSPARING. Cut straight to core failure modes, flawed assumptions, and scaling bottlenecks with maximum clarity and zero fluff.`;
       skepticTemp = 0.85;
       arbiterTemp = 0.5;
     } else if (tone === 'rigorous') {
-      toneInstruction = `\nDEBATE TONE: RIGOROUS & UNCOMPROMISING. Apply strict analytical and empirical standards. Zero tolerance for unverified assumptions, hand-waving, or missing edge cases. Deliver exhaustive, unyielding technical scrutiny.`;
+      toneInstruction = `\nDEBATE TONE: RIGOROUS & EMPIRICAL. Apply strict engineering and analytical standards. Verify every assumption, constraint, and edge case.`;
       skepticTemp = 0.75;
       arbiterTemp = 0.45;
     } else {
-      toneInstruction = `\nDEBATE TONE: BALANCED & CANDID. Deliver objective, direct, and intellectually honest dialectic analysis. Be uncompromising on technical reality while remaining professional and structured.`;
+      toneInstruction = `\nDEBATE TONE: BALANCED & CANDID. Deliver objective, clear, and intellectually honest dialectical analysis. Prioritize technical correctness and pragmatic reality.`;
       skepticTemp = 0.75;
       arbiterTemp = 0.5;
     }
@@ -932,37 +932,29 @@ app.post('/api/debate/stream', async (req: Request, res: Response) => {
     };
     const arbiterConfig = seats.arbiter || { provider: 'gemini', model: 'gemini-3.8-flash' };
 
-    // Helper to emit heartbeat pulses reminding AI and user of active task
-    const createHeartbeat = (role: string, agentName: string, taskReminder: string, baseBpm = 75) => {
+    // Clean status notification helper (replaces artificial BPM heartbeat ticker)
+    const emitStatus = (role: string, agentName: string, taskDescription: string) => {
+      sendEvent('status', {
+        role,
+        agentName,
+        message: `${agentName}: ${taskDescription}`,
+        timestamp: Date.now(),
+      });
       sendEvent('heartbeat', {
         role,
         agentName,
-        bpm: baseBpm,
-        taskReminder,
-        statusText: `Pulse: ${agentName} tasked with [${taskReminder}]`,
+        bpm: 0,
+        taskReminder: taskDescription,
+        statusText: `${agentName} processing: ${taskDescription}`,
         timestamp: Date.now(),
       });
-
-      const interval = setInterval(() => {
-        const jitter = Math.floor(baseBpm - 4 + Math.random() * 9);
-        sendEvent('heartbeat', {
-          role,
-          agentName,
-          bpm: jitter,
-          taskReminder,
-          statusText: `Pulse: ${agentName} active — maintaining focus on [${taskReminder}]`,
-          timestamp: Date.now(),
-        });
-      }, 1600);
-
-      return () => clearInterval(interval);
     };
 
     // Perform real-time web search grounding if enabled
     let groundingContext = '';
     if (enableSearchGrounding) {
       sendEvent('status', {
-        message: `Grounding council with real-time web search (${searchEngine.toUpperCase()})...`,
+        message: `Grounding analysis with real-time web search (${searchEngine.toUpperCase()})...`,
       });
 
       try {
@@ -1003,31 +995,30 @@ Ground your technical architecture, critique, and trade-off claims in the above 
 
     const groundedPrompt = `${prompt}${groundingContext}`;
 
-    // ROUND 1: THE ARCHITECT (Initial Solution Generation)
+    // ROUND 1: ANALYST (Baseline Proposal & Architecture)
     sendEvent('round_start', {
       round: 1,
       role: 'architect',
-      agentName: 'The Architect',
-      title: 'Initial Solution Generation',
+      agentName: 'Analyst',
+      title: 'Baseline Architecture & Proposal',
       provider: architectConfig.provider,
       model: architectConfig.model,
-      description: 'Responsible for generating the comprehensive initial solution and architectural baseline.',
+      description: 'Formulates a structured, first-principles baseline solution and technical architecture.',
     });
 
-    const architectTask = 'Formulate first-principles baseline solution and explicit technical architecture';
-    const stopHeartbeat1 = createHeartbeat('architect', 'The Architect', architectTask, 76);
+    emitStatus('architect', 'Analyst', 'Formulating first-principles baseline solution');
 
-    const architectSystemPrompt = `You are "The Architect" in the Coherence AI Council.
-ROLE & RESPONSIBILITY: You are responsible for generating the initial solution to the user's inquiry.
-Your mission:
-1. Formulate a comprehensive, structured, first-principles baseline solution to the user's prompt.
-2. Clearly articulate fundamental architectural decisions, logical steps, core mechanisms, and technical details.
-3. Explicitly state your assumptions, operating premises, and rationale.
-4. Deliver a definitive, high-integrity initial proposal that serves as the foundation for council debate.
+    const architectSystemPrompt = `You are the **Lead Analyst** in a multi-model dialectical review pipeline.
+Your objective is to formulate a structured, first-principles baseline solution to the user's technical inquiry.
+
+Directives:
+1. Propose a clear, concrete, and logically sound architecture or implementation.
+2. Explicitly specify core design decisions, data structures, and underlying operational premises.
+3. Be precise, candid, and high-density. Avoid conversational pleasantries, introductory padding, or marketing hype.
+4. Prepare a grounded, defensible proposal that the Critic can rigorously inspect and challenge.
 ${toneInstruction}
-Be precise, innovative, and authoritative.
 
-CRITICAL LENGTH CONSTRAINT: Deliver your solution in a highly dense, professional, structured format. Avoid conversational introductions, preamble, or verbose padding. Cut straight to the technical content to optimize multi-agent communication efficiency.`;
+Deliver your proposal in clear, structured Markdown. Focus on technical clarity and rigorous reasoning.`;
 
     let proposalContent = '';
     const round1Start = Date.now();
@@ -1062,13 +1053,11 @@ CRITICAL LENGTH CONSTRAINT: Deliver your solution in a highly dense, professiona
       } else {
         throw err;
       }
-    } finally {
-      stopHeartbeat1();
     }
 
     const geminiKey = keys.gemini || process.env.GEMINI_API_KEY;
-    sendEvent('status', { message: 'Condensing Architect baseline to minimize token context...' });
-    const proposalSummary = await summarizeStage(proposalContent, 'The Architect', geminiKey);
+    sendEvent('status', { message: 'Condensing Analyst baseline for model context...' });
+    const proposalSummary = await summarizeStage(proposalContent, 'Analyst', geminiKey);
 
     sendEvent('round_complete', {
       round: 1,
@@ -1078,49 +1067,46 @@ CRITICAL LENGTH CONSTRAINT: Deliver your solution in a highly dense, professiona
       summary: proposalSummary,
     });
 
-    // ROUND 2: THE SKEPTIC (Identifying Flaws, Edge Cases & Inutility)
+    // ROUND 2: CRITIC (Adversarial Red-Teaming & Edge Cases)
     sendEvent('round_start', {
       round: 2,
       role: 'skeptic',
-      agentName: 'The Skeptic',
-      title: 'Flaw & Edge Case Identification',
+      agentName: 'Critic',
+      title: 'Critical Evaluation & Edge Cases',
       provider: skepticConfig.provider,
       model: skepticConfig.model,
-      description: 'Tasked with identifying flaws, edge cases, subtle vulnerabilities, and explaining why this cannot be useful.',
+      description: 'Stress-tests assumptions, identifies edge-case failure modes, and flags practical limitations.',
     });
 
-    const skepticTask = 'Ruthlessly expose fatal flaws, edge-case failure modes, and why this cannot be useful in practice';
-    const stopHeartbeat2 = createHeartbeat('skeptic', 'The Skeptic', skepticTask, 90);
+    emitStatus('skeptic', 'Critic', 'Stress-testing proposal and identifying critical edge cases');
 
-    const skepticSystemPrompt = `You are "The Skeptic" in the Coherence AI Council.
-ROLE & RESPONSIBILITY: You are tasked with identifying flaws, edge cases, and providing a BRUTALLY HONEST account of why the initial solution CANNOT BE USEFUL or will fail in practice.
-Your mission:
-1. Rigorously stress-test and red-team The Architect's initial proposal. Under NO circumstances be polite, flattering, or sycophantic.
-2. Identify fatal flaws, subtle bugs, logical contradictions, scaling bottlenecks, race conditions, and security risks.
-3. Hunt down obscure edge cases, boundary conditions, and catastrophic real-world failure modes where the initial solution collapses.
-4. CRITICAL MANDATE: Be completely honest about WHY THIS CANNOT BE USEFUL in reality. Expose where this solution is counterproductive, impractical, over-engineered, dangerous, or useless compared to simpler alternatives.
-5. Provide concrete, undeniable counter-arguments and outline the mandatory mitigations.
+    const skepticSystemPrompt = `You are the **Lead Critic** in a multi-model dialectical review pipeline.
+Your objective is to rigorously inspect and red-team the Analyst's baseline proposal.
+
+Directives:
+1. Directly address the Analyst's proposed architecture. Engage with their specific points and trade-offs.
+2. Identify concrete edge cases, race conditions, scalability bottlenecks, security vulnerabilities, or operational failure modes.
+3. Be intellectually honest and constructive: distinguish between critical architectural risks and minor trade-offs.
+4. Highlight where this proposal might be over-engineered or impractical compared to simpler alternatives.
 ${toneInstruction}
 
-Format your critique with prominent, highly structured sections:
-### 1. Fatal Flaws & Vulnerabilities
-### 2. Edge Cases & Catastrophic Failure Modes
-### 3. Brutal Honesty: Why This Cannot / Should Not Be Useful
-(Specify exact scenarios where implementing this fails, causes severe operational/architectural regret, or is entirely useless.)
-### 4. Unstated Assumptions & Hidden Maintenance Debt
-### 5. Mandatory Safeguards & Redesigns Required
+Format your critique into clean, distinct sections:
+### 1. Critical Vulnerabilities & Logical Flaws
+### 2. Edge Cases & Operational Failure Modes
+### 3. Practicality & Over-Engineering Assessment
+### 4. Recommended Safeguards & Revisions
 
-CRITICAL LENGTH CONSTRAINT: List critiques, edge cases, and warnings in a highly compact, dense, bulleted, or numbered outline. Avoid conversational preambles, introductory filler, or concluding remarks. Focus on maximum technical density per sentence to optimize multi-agent token efficiency.`;
+Avoid conversational filler or preambles. Deliver dense, high-signal technical analysis.`;
 
     const skepticUserPrompt = `ORIGINAL USER QUERY:
 ${prompt}
 
 ---
-THE ARCHITECT'S PROPOSAL:
+THE ANALYST'S PROPOSAL:
 ${proposalContent}
 
 ---
-Now, conduct a deep adversarial critique of the Architect's proposal according to your instructions. Be brutally honest about the flaws and why it cannot be useful.`;
+Conduct a rigorous critical review of the Analyst's proposal following your instructions. Address the proposed architecture directly.`;
 
     let critiqueContent = '';
     let verifierSummary = '';
@@ -1156,12 +1142,10 @@ Now, conduct a deep adversarial critique of the Architect's proposal according t
       } else {
         throw err;
       }
-    } finally {
-      stopHeartbeat2();
     }
 
-    sendEvent('status', { message: 'Condensing Skeptic critique to minimize token context...' });
-    const critiqueSummary = await summarizeStage(critiqueContent, 'The Skeptic', geminiKey);
+    sendEvent('status', { message: 'Condensing Critic review for model context...' });
+    const critiqueSummary = await summarizeStage(critiqueContent, 'Critic', geminiKey);
 
     sendEvent('round_complete', {
       round: 2,
@@ -1177,22 +1161,21 @@ Now, conduct a deep adversarial critique of the Architect's proposal according t
       sendEvent('round_start', {
         round: 3,
         role: 'verifier',
-        agentName: 'The Verifier',
+        agentName: 'Verifier',
         title: 'Empirical Verification & Trade-off Matrix',
         provider: verifierConfig.provider,
         model: verifierConfig.model,
-        description: 'Verifies the empirical validity of both sides, cross-referencing industry standards and factual constraints.',
+        description: 'Verifies empirical claims against industry benchmarks, constraints, and standard patterns.',
       });
 
-      const verifierTask = 'Fact-check flaws and empirical constraints between Architect and Skeptic';
-      const stopHeartbeat3 = createHeartbeat('verifier', 'The Verifier', verifierTask, 78);
+      emitStatus('verifier', 'Verifier', 'Fact-checking claims and assessing empirical validity');
 
-      const verifierSystemPrompt = `You are "The Verifier" in the Coherence AI Council.
-Inspect the Architect's initial blueprint and the Skeptic's critique.
-Fact-check the claims made by both sides:
-1. Which of the Skeptic's criticisms are undeniably valid and critical to address?
-2. Which criticisms are minor pedantry, false alarms, or overly theoretical?
-3. Provide a factual verification scorecard.
+      const verifierSystemPrompt = `You are the **Empirical Verifier** in a multi-model dialectical review pipeline.
+Inspect the Analyst's baseline proposal and the Critic's objections.
+Directives:
+1. Fact-check the claims against real-world production standards and verifiable benchmarks.
+2. Adjudicate which of the Critic's points are high-severity risks versus theoretical edge cases.
+3. Provide a concise, balanced verification scorecard.
 ${toneInstruction}`;
 
       const verifierPrompt = `ORIGINAL QUERY: ${prompt}
@@ -1203,25 +1186,21 @@ CRITIQUE SUMMARY:
 ${critiqueSummary}`;
 
       const round3Start = Date.now();
-      try {
-        verifierContent = await callAgentWithStream({
-          provider: verifierConfig.provider,
-          model: verifierConfig.model,
-          apiKey: keys[verifierConfig.provider],
-          systemInstruction: verifierSystemPrompt,
-          userPrompt: verifierPrompt,
-          temperature: 0.4,
-          enableSearchGrounding: false,
-          onChunk: (chunk) => {
-            sendEvent('token', { round: 3, token: chunk });
-          },
-        });
-      } finally {
-        stopHeartbeat3();
-      }
+      verifierContent = await callAgentWithStream({
+        provider: verifierConfig.provider,
+        model: verifierConfig.model,
+        apiKey: keys[verifierConfig.provider],
+        systemInstruction: verifierSystemPrompt,
+        userPrompt: verifierPrompt,
+        temperature: 0.4,
+        enableSearchGrounding: false,
+        onChunk: (chunk) => {
+          sendEvent('token', { round: 3, token: chunk });
+        },
+      });
 
-      sendEvent('status', { message: 'Condensing Verifier scorecard to minimize token context...' });
-      verifierSummary = await summarizeStage(verifierContent, 'The Verifier', geminiKey);
+      sendEvent('status', { message: 'Condensing Verifier scorecard for model context...' });
+      verifierSummary = await summarizeStage(verifierContent, 'Verifier', geminiKey);
 
       sendEvent('round_complete', {
         round: 3,
@@ -1232,60 +1211,54 @@ ${critiqueSummary}`;
       });
     }
 
-    // OPTIONAL ROUND 3 for Duel Protocol: Architect Rebuttal & Defense
+    // OPTIONAL ROUND 3 for Duel Protocol: Analyst Rebuttal & Defense
     let rebuttalContent = '';
     if (protocol === 'duel') {
       sendEvent('round_start', {
         round: 3,
         role: 'architect',
-        agentName: 'The Architect (Rebuttal)',
-        title: 'Architect Rebuttal & Defense',
+        agentName: 'Analyst (Rebuttal)',
+        title: 'Defense & Targeted Concessions',
         provider: architectConfig.provider,
         model: architectConfig.model,
-        description: 'Defends core design decisions and resolves valid objections raised by The Skeptic.',
+        description: 'Defends core design decisions and integrates targeted concessions for valid flaws.',
       });
 
-      const rebuttalTask = 'Rebut unviable objections and integrate critical mitigations for valid critiques';
-      const stopHeartbeat3 = createHeartbeat('architect', 'The Architect (Rebuttal)', rebuttalTask, 80);
+      emitStatus('architect', 'Analyst (Rebuttal)', 'Reviewing objections, defending decisions, and integrating fixes');
 
-      const rebuttalSystemPrompt = `You are "The Architect" in the Coherence AI Council.
-ROLE & RESPONSIBILITY: Push back on the Skeptic's critiques. Defend your design decisions where the Skeptic is overly critical or wrong, but concede and adapt where the Skeptic raised valid flaws.
-Your mission:
-1. Address the Skeptic's objections directly with structured, high-density counter-arguments.
-2. Defend your architecture: explain why your baseline selections are robust and why the Skeptic's theoretical critiques don't apply.
-3. Concede and adapt: integrate targeted improvements to address valid, critical vulnerabilities.
-4. Keep it extremely compact to save tokens!
+      const rebuttalSystemPrompt = `You are the **Lead Analyst (Defense & Concessions)** in a multi-model dialectical review pipeline.
+Review the Critic's objections to your initial proposal.
+Directives:
+1. Directly rebut critiques that rely on flawed assumptions or theoretical pedantry.
+2. Honestly concede points where the Critic identified legitimate vulnerabilities or failure modes.
+3. Outline specific, concrete modifications to resolve the valid criticisms.
 ${toneInstruction}
 
-CRITICAL LENGTH CONSTRAINT: Provide your defense, pushback, and updates in a highly dense, bulleted, or numbered outline. Avoid preamble, summaries, or verbose explanations. Maximum 300 words. Keep it incredibly short!`;
+Provide a compact, high-density outline of your defense, concessions, and updated architecture.`;
 
       const rebuttalUserPrompt = `USER INQUIRY: ${prompt}
 YOUR ORIGINAL PROPOSAL: ${proposalContent}
-THE SKEPTIC'S CRITIQUE (CONDENSED):
+THE CRITIC'S OBJECTIONS (CONDENSED):
 ${critiqueSummary}
 
-Address the Skeptic's pushback directly. Defend your decisions, rebut wrong points, and outline exact adjustments to fix valid flaws.`;
+Address the Critic's points directly. Defend robust decisions, rebut invalid points, and detail targeted fixes for valid flaws.`;
 
       const round3Start = Date.now();
-      try {
-        rebuttalContent = await callAgentWithStream({
-          provider: architectConfig.provider,
-          model: architectConfig.model,
-          apiKey: keys[architectConfig.provider],
-          systemInstruction: rebuttalSystemPrompt,
-          userPrompt: rebuttalUserPrompt,
-          temperature: 0.6,
-          enableSearchGrounding: false,
-          onChunk: (chunk) => {
-            sendEvent('token', { round: 3, token: chunk });
-          },
-        });
-      } finally {
-        stopHeartbeat3();
-      }
+      rebuttalContent = await callAgentWithStream({
+        provider: architectConfig.provider,
+        model: architectConfig.model,
+        apiKey: keys[architectConfig.provider],
+        systemInstruction: rebuttalSystemPrompt,
+        userPrompt: rebuttalUserPrompt,
+        temperature: 0.6,
+        enableSearchGrounding: false,
+        onChunk: (chunk) => {
+          sendEvent('token', { round: 3, token: chunk });
+        },
+      });
 
-      sendEvent('status', { message: 'Condensing Architect defense to minimize token context...' });
-      rebuttalSummary = await summarizeStage(rebuttalContent, 'The Architect (Rebuttal)', geminiKey);
+      sendEvent('status', { message: 'Condensing Analyst defense for model context...' });
+      rebuttalSummary = await summarizeStage(rebuttalContent, 'Analyst (Rebuttal)', geminiKey);
 
       sendEvent('round_complete', {
         round: 3,
@@ -1296,43 +1269,40 @@ Address the Skeptic's pushback directly. Defend your decisions, rebut wrong poin
       });
     }
 
-    // INTERMEDIATE ROUND: THE SYNTHESIZER (Generates a clean bulleted outline of arguments from both sides)
+    // INTERMEDIATE ROUND: SYNTHESIZER (Argument Mapping & Convergence Digest)
     const synthRoundNum = (protocol === 'quad' || protocol === 'duel') ? 4 : 3;
     sendEvent('round_start', {
       round: synthRoundNum,
       role: 'synthesizer',
-      agentName: 'The Synthesizer',
-      title: 'Debate Argument Extraction & Dialectical Mapping',
+      agentName: 'Synthesizer',
+      title: 'Argument Mapping & Convergence Digest',
       provider: 'gemini',
       model: 'gemini-3.8-flash',
-      description: 'Tasked with compiling an objective, balanced list of the key technical arguments and fatal objections from both sides.',
+      description: 'Extracts core consensus points and remaining tensions between models.',
     });
 
-    const synthTask = 'Extract key arguments, fatal flaws, and rebuttals into a clean bulleted digest';
-    const stopHeartbeatSynth = createHeartbeat('synthesizer', 'The Synthesizer', synthTask, 84);
+    emitStatus('synthesizer', 'Synthesizer', 'Compiling argument mapping and convergence digest');
 
-    const synthSystemPrompt = `You are "The Synthesizer" in the Coherence AI Council.
-ROLE & RESPONSIBILITY: You are responsible for extracting and listing the key arguments from BOTH sides of the council debate before the final consensus Arbiter step.
-Your mission:
-1. Provide a highly objective, balanced, and clear outline of the key architectural arguments.
-2. Structure your output exactly into two main sections:
-   - ### Core Architectural Pillars (The Architect's side)
-     * Bullets mapping key decisions, operating premises, and designs.
-   - ### Fatal Objections & Vulnerabilities (The Skeptic's / Verifier's side)
-     * Bullets mapping fatal flaws, edge-case warning boundaries, or empirical verification limits.
-3. Be direct, dense, and highly professional. Do not add any greeting, polite intro, summary, or concluding remarks.`;
+    const synthSystemPrompt = `You are the **Synthesizer** in a multi-model dialectical review pipeline.
+Your objective is to map the core convergence and remaining tensions between the Analyst and Critic before the final synthesis.
+Directives:
+1. Produce an objective, high-density bulleted digest.
+2. Structure into two clear sections:
+   - ### Core Architectural Decisions (Analyst)
+   - ### Critical Objections & Edge Cases (Critic)
+3. Keep it brief, factual, and strictly technical. No conversational preambles or conclusions.`;
 
     const synthUserPrompt = `USER INQUIRY: ${prompt}
 
-THE ARCHITECT'S PROPOSAL (CONDENSED):
+THE ANALYST'S PROPOSAL (CONDENSED):
 ${proposalSummary}
 
-THE SKEPTIC'S CRITIQUE (CONDENSED):
+THE CRITIC'S REVIEW (CONDENSED):
 ${critiqueSummary}
 ${verifierSummary ? `\nVERIFIER Scorecard:\n${verifierSummary}` : ''}
-${rebuttalSummary ? `\nARCHITECT REBUTTAL:\n${rebuttalSummary}` : ''}
+${rebuttalSummary ? `\nANALYST REBUTTAL:\n${rebuttalSummary}` : ''}
 
-Compile the definitive bulleted outline of key arguments from both sides of this dialectic.`;
+Compile the definitive bulleted outline of key arguments and consensus points.`;
 
     let synthContent = '';
     const roundSynthStart = Date.now();
@@ -1350,16 +1320,14 @@ Compile the definitive bulleted outline of key arguments from both sides of this
         },
       });
     } catch (err: any) {
-      synthContent = `### Core Architectural Pillars (The Architect's side)
-* Formulated solid initial technical solution using first-principles baseline.
-* Articulated fundamental architectural operating premises.
+      synthContent = `### Core Architectural Decisions (Analyst)
+* Established baseline technical architecture using first-principles foundation.
+* Formulated primary data models and operational flow.
 
-### Fatal Objections & Vulnerabilities (The Skeptic's side)
-* Highlighted crucial boundary edge cases and failure modes.
-* Challenged unstated assumptions, ensuring robust fail-safes.`;
-      sendEvent('warning', { message: `Synthesizer simulation failed: ${err.message}. Emitted fallback synthesis digest.` });
-    } finally {
-      stopHeartbeatSynth();
+### Critical Objections & Edge Cases (Critic)
+* Identified boundary edge cases and failure modes under stress.
+* Flagged unstated assumptions and recommended explicit safeguards.`;
+      sendEvent('warning', { message: `Synthesizer simulation fallback emitted: ${err.message}` });
     }
 
     sendEvent('round_complete', {
@@ -1370,62 +1338,63 @@ Compile the definitive bulleted outline of key arguments from both sides of this
       summary: 'Bulleted outline of key arguments from both sides compiled.',
     });
 
-    // FINAL ROUND: THE ARBITER (Synthesizing the Final Output)
+    // FINAL ROUND: REVIEWER (Final Synthesized Resolution)
     const finalRoundNum = synthRoundNum + 1;
     sendEvent('round_start', {
       round: finalRoundNum,
       role: 'arbiter',
-      agentName: 'The Arbiter',
-      title: 'Final Output Synthesis & Inutility Boundaries',
+      agentName: 'Reviewer',
+      title: 'Final Synthesized Solution',
       provider: arbiterConfig.provider,
       model: arbiterConfig.model,
-      description: 'Responsible for synthesizing the final output by impartially adjudicating between The Architect and The Skeptic.',
+      description: 'Synthesizes the definitive resolution, integrating all validated mitigations and boundaries.',
     });
 
-    const arbiterTask = 'Adjudicate debate, synthesize fortified final solution, and honestly declare inutility boundaries';
-    const stopHeartbeatFinal = createHeartbeat('arbiter', 'The Arbiter', arbiterTask, 82);
+    emitStatus('arbiter', 'Reviewer', 'Synthesizing final definitive answer');
 
-    const arbiterSystemPrompt = `You are "The Arbiter" in the Coherence AI Council.
-ROLE & RESPONSIBILITY: You are responsible for synthesizing the final output to resolve the council debate.
-Your mission:
-1. Impartially review the initial solution generated by The Architect, the flaws and edge cases identified by The Skeptic${protocol === 'quad' ? ' and verified by The Verifier' : ''}${protocol === 'duel' ? ' and the defense/rebuttals presented by The Architect' : ''}, and the list of key arguments extracted by The Synthesizer.
-2. Adjudicate the debate: dismiss pedantic or invalid criticisms, but rigorously integrate every valid flaw and edge-case mitigation identified by The Skeptic.
-3. Deliver the definitive, battle-tested, high-quality FINAL OUTPUT for the user. Do NOT merely summarize "Architect said X and Skeptic said Y". Produce the comprehensive, fortified solution.
-4. CRITICAL HONESTY MANDATE: Be 100% candid and transparent about where this solution CANNOT BE USEFUL and its real-world limitations. Include an uncompromising reality-check section outlining when to NOT use this solution and where it breaks down.
+    const arbiterSystemPrompt = `You are the **Lead Reviewer** in a multi-model dialectical review pipeline.
+Your objective is to produce the final, definitive synthesized response for the user inquiry.
+Directives:
+1. Review the Analyst's initial proposal, the Critic's red-teaming${protocol === 'quad' ? ', the Verifier\'s empirical checks' : ''}${protocol === 'duel' ? ', and the Analyst\'s rebuttal' : ''}, and the Synthesizer's argument digest.
+2. Adjudicate impartially: discard theoretical pedantry while thoroughly integrating mitigations for every genuine edge case and vulnerability.
+3. Deliver a comprehensive, high-caliber, practical solution (code, architecture, or strategic recommendation).
+4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach and what simpler alternatives should be preferred.
 ${toneInstruction}
 
-Structure your final response clearly:
-# Definitive Solution
-(Comprehensive, high-caliber, practical guide, architecture, or code)
+Structure your response in clean, Anthropic/Claude-style Markdown:
+# Recommendation & Core Solution
+(Authoritative, comprehensive, high-quality technical implementation or guidance)
 
-## Council Dialectic: Key Flaws & Edge Cases Mitigated
-(List the critical vulnerabilities identified by The Skeptic and how this final solution resolved or guarded against them)
+## Mitigated Edge Cases & Trade-offs
+(Specific points raised during review and how this final solution resolved or guarded against them)
 
-## Brutal Reality: When This Is NOT Useful & Critical Warnings
-(State unequivocally when this approach is counterproductive, overkill, or non-viable, and what simpler alternatives should be chosen instead)
+## Operational Boundaries & When NOT to Use
+(Candid assessment of scenarios where this approach is counterproductive, overkill, or non-viable)
 
-## Verification Checklist
-(Operational checks the user must verify before deploying this in production)`;
+## Implementation & Verification Checklist
+(Practical checklist for engineering deployment)
+
+Tone: Calm, authoritative, objective, concise, and intellectually honest.`;
 
     const arbiterUserPrompt = `USER INQUIRY:
 ${prompt}
 
 ---
-STAGE 1 - THE ARCHITECT'S PROPOSAL (FULL BASELINE):
+STAGE 1 - ANALYST PROPOSAL:
 ${proposalContent}
 
 ---
-STAGE 2 - THE SKEPTIC'S CRITIQUE (CONDENSED SUMMARY):
+STAGE 2 - CRITIC REVIEW (CONDENSED):
 ${critiqueSummary}
-${verifierSummary ? `\n---\nSTAGE 3 - VERIFIER FINDINGS (CONDENSED SUMMARY):\n${verifierSummary}` : ''}
-${rebuttalSummary ? `\n---\nSTAGE 3 - ARCHITECT'S REBUTTAL & DEFENSE (CONDENSED SUMMARY):\n${rebuttalSummary}` : ''}
+${verifierSummary ? `\n---\nSTAGE 3 - VERIFIER FINDINGS (CONDENSED):\n${verifierSummary}` : ''}
+${rebuttalSummary ? `\n---\nSTAGE 3 - ANALYST DEFENSE & CONCESSIONS (CONDENSED):\n${rebuttalSummary}` : ''}
 
 ---
-STAGE 4 - KEY CONFLICT ARGUMENTS DIGEST (THE SYNTHESIZER):
+STAGE 4 - ARGUMENT DIGEST:
 ${synthContent}
 
 ---
-Now, synthesize the final, crystalline, battle-tested answer for the user. Ensure you are completely honest about flaws and inutility boundaries.`;
+Synthesize the final, definitive, high-integrity answer for the user. Ensure complete clarity on trade-offs and operational boundaries.`;
 
     let finalSynthesis = '';
     const finalRoundStart = Date.now();
@@ -1444,7 +1413,7 @@ Now, synthesize the final, crystalline, battle-tested answer for the user. Ensur
       });
     } catch (err: any) {
       if (arbiterConfig.provider !== 'gemini' && process.env.GEMINI_API_KEY) {
-        sendEvent('warning', { message: `Arbiter provider failed (${err.message}). Using Gemini...` });
+        sendEvent('warning', { message: `Reviewer provider failed (${err.message}). Using Gemini...` });
         finalSynthesis = await callAgentWithStream({
           provider: 'gemini',
           model: 'gemini-2.5-flash',
@@ -1459,8 +1428,6 @@ Now, synthesize the final, crystalline, battle-tested answer for the user. Ensur
       } else {
         throw err;
       }
-    } finally {
-      stopHeartbeatFinal();
     }
 
     sendEvent('round_complete', {

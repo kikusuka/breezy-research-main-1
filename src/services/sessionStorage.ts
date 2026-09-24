@@ -6,209 +6,152 @@ export const STORAGE_ACTIVE_ID_KEY = 'synthexis_active_session_id_v1';
 
 export const SEED_SAMPLE_SESSIONS: DebateSession[] = [
   {
-    id: 'session-seed-event-driven-vs-batch',
-    prompt: 'Architect an ultra-low latency real-time ledger auditing pipeline: Event-Driven Kafka vs Periodic Micro-Batching with DuckDB.',
+    id: 'session-kafka-vs-duckdb',
+    prompt: 'Can you compare Kafka streaming with DuckDB micro-batching for our ledger system in simple terms? Which one should we pick?',
     protocol: 'trio',
-    tone: 'rigorous',
-    createdAt: Date.now() - 1000 * 60 * 45, // 45 minutes ago
-    updatedAt: Date.now() - 1000 * 60 * 42,
+    tone: 'balanced',
+    createdAt: Date.now() - 1000 * 60 * 12,
+    updatedAt: Date.now() - 1000 * 60 * 10,
     status: 'completed',
     steps: [
       {
         stepId: 'step-1',
         role: 'architect',
-        agentName: 'The Architect',
+        agentName: 'Claude 3.5 Sonnet',
         provider: 'gemini',
         model: 'gemini-3.8-flash',
         status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 45,
+        timestamp: Date.now() - 1000 * 60 * 12,
         durationMs: 3820,
-        content: `### Executive Architecture Baseline: Dual-Track Event Stream with Tiered CDC
-
-To fulfill an ultra-low latency ledger auditing mandate while preserving deterministic reconciliation, we deploy an **Asynchronous Log-Centric Architecture**:
-
-1. **Ingress & Ingestion**:
-   - Primary transactional writes land in an append-only transaction log (Distributed Kafka cluster with 3-way partition replication, \`acks=all\`, and \`min.insync.replicas=2\`).
-   - Transactions are serialized with strict monotonic event sequencing IDs per ledger partition key.
-
-2. **Real-Time Stream Verification**:
-   - Stream processing consumers (Apache Flink / Kafka Streams) execute continuous sliding-window anomaly and balance invariant validation within 10ms of publish.
-   - Dual-entry invariant verification: Every debit MUST yield an exact balanced credit in the same transaction block.
-
-3. **Storage Tiering**:
-   - Hot state: Redis Cluster storing active rolling 24-hour balances.
-   - Cold/Reconciliation state: Parquet columnar archives compacted on object storage for analytical queries.`,
+        content: `### The Pure Kafka Choice
+Partitioned topics guarantee **immutable append-only write throughput** without lock contention across distributed ledger workers.
+- 120k eps/node sustained throughput
+- Guaranteed durability with fsync ack=all
+- Operational consideration: heavier infrastructure overhead (KRaft quorum)`,
       },
       {
         stepId: 'step-2',
         role: 'skeptic',
-        agentName: 'The Skeptic',
+        agentName: 'GPT-4o',
         provider: 'gemini',
         model: 'gemini-3.8-flash',
         status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 44,
+        timestamp: Date.now() - 1000 * 60 * 11,
         durationMs: 4190,
-        content: `### Adversarial Critique & Latent Vulnerability Audit
-
-The Architect's purely event-driven model suffers from 3 critical production failure modes:
-
-1. **Out-of-Order Delivery & Partition Rebalancing Lag**:
-   - Kafka partitions serialize by key, but partition rebalances during node failures introduce transient consumer skew. If account balance invariants depend on cross-partition multi-account ledger entries (e.g., transferring Account A on Partition 1 to Account B on Partition 8), pure stream consumers cannot guarantee atomic snapshots without distributed locking overhead.
-
-2. **Poison Pill Invariant Halts**:
-   - A single malformed event in the continuous Flink stream that triggers an unhandled invariant exception risks blocking the consumer offset or dumping records into a dead-letter queue (DLQ), causing ledger desynchronization.
-
-3. **Compaction Storms vs. Write Amplification**:
-   - Compacting hot Kafka changelogs alongside analytical Parquet storage generates severe I/O thrashing during market surges.`,
+        content: `### Micro-Batching Risk Analysis
+Warns against direct concurrent writes to DuckDB files: embedded databases lack distributed WALs and risk catastrophic lockouts.
+- File-level lock contention under spike load
+- Superb in-memory analytical query speeds
+- Strict recommendation: read/audit tier only`,
       },
       {
         stepId: 'step-3',
-        role: 'arbiter',
-        agentName: 'The Arbiter',
+        role: 'synthesizer',
+        agentName: 'Gemini 1.5 Pro',
         provider: 'gemini',
         model: 'gemini-3.8-flash',
         status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 42,
+        timestamp: Date.now() - 1000 * 60 * 10,
         durationMs: 4430,
-        content: `### Council Consensus Synthesis & Hardened Architectural Specification
+        content: `### The Hybrid Setup
+Proposes a **bifurcated pipeline**: stream ingest via Kafka topics, micro-batching into S3 Parquet tables for zero-copy DuckDB analysis.
+- Instant balances via Kafka event streaming
+- Lightning 100M+ row ledger reconciliation
+- No lock interference on live financial writes`,
+      },
+      {
+        stepId: 'step-4',
+        role: 'arbiter',
+        agentName: 'Synthexis Reviewer',
+        provider: 'gemini',
+        model: 'gemini-3.8-flash',
+        status: 'completed',
+        timestamp: Date.now() - 1000 * 60 * 10,
+        durationMs: 4200,
+        content: `### Tri-Node Consensus Synthesis
+In short: **Kafka** is best if you need instant millisecond processing for every single transaction. **DuckDB** is much simpler and cheaper if waiting 5 seconds for batches is fine for your team.
 
-Having balanced the Architect's low-latency throughput with the Skeptic's distributed failure vectors, the Council ratifies the **Hybrid Strata-Log Architecture**:
-
-1. **Partition Grouping by Currency Ledger Shards**:
-   - Eliminate cross-partition skew by routing paired double-entry postings within shared partition boundary envelopes.
-
-2. **Sub-Second Micro-Batching Invariant Barrier**:
-   - Rather than pure per-event locking or heavy hourly batches, employ 250ms deterministic micro-batches. DuckDB in-process engines vectorize columnar balance assertions across the 250ms batch in under 8ms, yielding sub-100ms total audit latency with zero distributed locking.
-
-3. **Isolated DLQ with Non-Blocking Quarantine**:
-   - Ledger anomalies automatically quarantine disputed transaction paths into an active sandbox without stalling partition progression for uncontested accounts.`,
+**Recommendation: Go with the Hybrid approach for balanced cost and reliability.**`,
       },
     ],
-    finalOutput: `### Consensus Resolution: Hybrid Strata-Log Ledger Audit
+    finalOutput: `In short: **Kafka** is best if you need instant millisecond processing for every single transaction. **DuckDB** is much simpler and cheaper if waiting 5 seconds for batches is fine for your team.
 
-The Deliberation Council has converged on a verified, hardened pipeline for real-time ledger auditing:
+**Recommendation: Go with the Hybrid approach for balanced cost and reliability.**
 
-- **Ingress Layer**: Kafka partition envelopes with strict double-entry colocation to eliminate cross-partition synchronization lag.
-- **Verification Engine**: 250ms vectorized in-memory batch auditing combining the throughput of stream pipelines with the exact relational safety of columnar engines.
-- **Latency Profile**: Verified sub-100ms end-to-end anomaly detection with zero single-point-of-failure deadlocks.
-- **Failure Recovery**: Non-blocking account isolation quarantine protecting global pipeline throughput.`,
+- **Ingress Path**: Deploy Kafka partitioned topics for high-throughput append-only event streaming (120k eps/node) with strict \`ack=all\` durability.
+- **Audit & Analytics**: Periodically compact micro-batches into Parquet tables on object storage for zero-copy sub-second DuckDB reconciliation.
+- **Strict Boundary**: Avoid direct concurrent writes to raw DuckDB files on hot transactional paths to prevent file lock exhaustion.`,
     metrics: {
       durationMs: 12440,
-      consensusRate: 94,
+      consensusRate: 94.2,
       contentionLevel: 'Moderate',
       resolvedPointsCount: 7,
     },
   },
   {
-    id: 'session-seed-semantic-caching',
-    prompt: 'Design a high-throughput multi-tier semantic cache for enterprise LLM workloads with sub-5ms lookup latency.',
+    id: 'session-rlhf-alignment',
+    prompt: 'RLHF Alignment Dialectics: Refusal vs Helpfulness in Security Research Tooling',
     protocol: 'trio',
     tone: 'balanced',
-    createdAt: Date.now() - 1000 * 60 * 120, // 2 hours ago
-    updatedAt: Date.now() - 1000 * 60 * 118,
+    createdAt: Date.now() - 1000 * 60 * 2,
+    updatedAt: Date.now() - 1000 * 60 * 2,
     status: 'completed',
-    steps: [
-      {
-        stepId: 'step-1',
-        role: 'architect',
-        agentName: 'The Architect',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 120,
-        durationMs: 3450,
-        content: `### Tiered Semantic Cache Architecture
-- **L1 Exact Match**: In-memory Redis with xxHash64 hash index (<1ms).
-- **L2 Approximate KNN**: Qdrant vector index embedded with quantized embeddings (<8ms).
-- **L3 Cold Cache**: Distributed Key-Value store on SSD with TTL eviction policies.`,
-      },
-      {
-        stepId: 'step-2',
-        role: 'skeptic',
-        agentName: 'The Skeptic',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 119,
-        durationMs: 3980,
-        content: `### Vulnerability Audit: Semantic Drift & Cache Poisoning
-1. **Embedding Distance Ambiguity**: Cosine similarity thresholds above 0.92 still conflate inverted logic prompts (e.g., "Do not include X" vs "Include X").
-2. **Context Bleed**: Variable temperature requests cannot safely share deterministic cache entries.`,
-      },
-      {
-        stepId: 'step-3',
-        role: 'arbiter',
-        agentName: 'The Arbiter',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 118,
-        durationMs: 4120,
-        content: `### Ratified Consensus: Guardrailed Hybrid Semantic Gateway
-- Enforce strict negative-intent keyword hash filters prior to vector distance checks.
-- Parameterize cache key namespaces with generation temperature and user authorization scopes.`,
-      },
-    ],
-    finalOutput: `Ratified multi-tier semantic cache featuring pre-filter guardrails against semantic inversion and tenant-isolated namespaces.`,
+    steps: [],
+    finalOutput: `Resolved: Implement dual sandboxing with ephemeral HSM keys to safely permit automated vulnerability scanning without triggering over-refusal safety tripwires.`,
     metrics: {
-      durationMs: 11550,
-      consensusRate: 91,
+      durationMs: 11500,
+      consensusRate: 96.0,
       contentionLevel: 'Low',
       resolvedPointsCount: 5,
     },
   },
   {
-    id: 'session-seed-zero-trust-service-mesh',
-    prompt: 'Implement zero-trust mTLS service mesh authentication with automated ephemeral credential rotation across hybrid-cloud Kubernetes clusters.',
+    id: 'session-moe-routing',
+    prompt: 'MoE Routing Benchmarks across Triad Nodes and Expert Activation Decays',
     protocol: 'trio',
-    tone: 'aggressive',
-    createdAt: Date.now() - 1000 * 60 * 240, // 4 hours ago
-    updatedAt: Date.now() - 1000 * 60 * 238,
+    tone: 'balanced',
+    createdAt: Date.now() - 1000 * 60 * 60,
+    updatedAt: Date.now() - 1000 * 60 * 60,
     status: 'completed',
-    steps: [
-      {
-        stepId: 'step-1',
-        role: 'architect',
-        agentName: 'The Architect',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 240,
-        durationMs: 4100,
-        content: `### SPIFFE/SPIRE Cross-Cluster Federation
-Deploy SPIRE agents on each node using Kubernetes node attestation with Envoy sidecar proxies dynamically reloading short-lived X.509 SVIDs every 30 minutes.`,
-      },
-      {
-        stepId: 'step-2',
-        role: 'skeptic',
-        agentName: 'The Skeptic',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 239,
-        durationMs: 4620,
-        content: `### Red-Team Scrutiny: CA Latency Cascades & Thundering Herd
-1. **SPIRE Server Bottlenecks**: 30-minute rotation cycles across 5,000 pods trigger synchronized renewal spikes and intermediate CA timeouts during network partitions.
-2. **Revocation Deficits**: Short TTL without OCSP stapling leaves 30-minute exploitation windows for compromised nodes.`,
-      },
-      {
-        stepId: 'step-3',
-        role: 'arbiter',
-        agentName: 'The Arbiter',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'completed',
-        timestamp: Date.now() - 1000 * 60 * 238,
-        durationMs: 4780,
-        content: `### Fortified Specification: Jittered Rotation with Local Node Caching
-- Introduce uniform randomized jitter (±40%) to renewal schedules to flatten SPIRE CA request distribution.
-- Implement SPIFFE-aware eBPF socket filters for instant local connection termination upon node revocation signals.`,
-      },
-    ],
-    finalOutput: `Hardened zero-trust mesh deployment with jitter-stabilized SPIFFE renewals and eBPF revocation enforcement.`,
+    steps: [],
+    finalOutput: `Routing cost decay drops 42% under dynamic expert switching. Tail latency stabilized at 340ms with warmup caching.`,
     metrics: {
-      durationMs: 13500,
-      consensusRate: 88,
+      durationMs: 14200,
+      consensusRate: 89.0,
+      contentionLevel: 'Moderate',
+      resolvedPointsCount: 6,
+    },
+  },
+  {
+    id: 'session-sparse-attention',
+    prompt: 'Sparse Attention Kernels for 1M Token Context Windows in Low-Memory Clusters',
+    protocol: 'trio',
+    tone: 'rigorous',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24,
+    updatedAt: Date.now() - 1000 * 60 * 60 * 24,
+    status: 'completed',
+    steps: [],
+    finalOutput: `Adopt block-sparse FlashAttention kernels with rolling KV-cache eviction to preserve 98.4% retrieval accuracy under 24GB VRAM constraints.`,
+    metrics: {
+      durationMs: 15300,
+      consensusRate: 92.5,
+      contentionLevel: 'Low',
+      resolvedPointsCount: 8,
+    },
+  },
+  {
+    id: 'session-quantization-degradation',
+    prompt: 'Quantization Degradation in Edge Llama-3 8B under 4-Bit AWQ Precision Limits',
+    protocol: 'trio',
+    tone: 'rigorous',
+    createdAt: Date.now() - 1000 * 60 * 60 * 72,
+    updatedAt: Date.now() - 1000 * 60 * 60 * 72,
+    status: 'completed',
+    steps: [],
+    finalOutput: `Retain FP16 for query-key projections while quantizing feedforward layers to INT4 to prevent the 14.8% perplexity penalty in mathematical reasoning.`,
+    metrics: {
+      durationMs: 16800,
+      consensusRate: 85.2,
       contentionLevel: 'High',
       resolvedPointsCount: 9,
     },
