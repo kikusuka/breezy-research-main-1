@@ -292,8 +292,8 @@ export async function handleBackendRequest(
 
       let fullAnswer = '';
       await callAgentWithStream({
-        provider: provider === 'groq' ? 'groq' : provider === 'sambanova' ? 'sambanova' : 'gemini',
-        model: model || 'gemini-3.8-flash',
+        provider: (['groq', 'sambanova', 'openrouter'].includes(provider) ? provider : 'gemini') as any,
+        model: model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash'),
         apiKey: apiKey?.trim() || undefined,
         systemInstruction,
         userPrompt: formattedPrompt,
@@ -560,6 +560,7 @@ Structure your response in clean Markdown with clear headings.`;
             critiqueContent: '',
             discoveredSources,
             durationMs: totalDurationMs,
+            isSolo: true,
             apiKey: keys.gemini || env.GEMINI_API_KEY,
             env,
           });
@@ -571,8 +572,8 @@ Structure your response in clean Markdown with clear headings.`;
             researchMetrics,
             metrics: {
               durationMs: totalDurationMs,
-              consensusRate: 95,
-              contentionLevel: 'None (Solo)',
+              consensusRate: null,
+              contentionLevel: 'None (Solo Inquiry)',
               resolvedPointsCount: 1,
             },
           });

@@ -462,34 +462,11 @@ export const synapService = {
         riskImpact: item.riskImpact || '-2.5% Risk',
         history: [],
       }));
-    } catch {
-      // Fallback generator
-      return [
-        {
-          id: `item-${Date.now()}`,
-          type,
-          prompt:
-            type === 'flashcard'
-              ? 'What is the role of CaMKII in long-term potentiation?'
-              : 'Which receptor acts as the primary molecular coincidence detector in CA1 hippocampal synapses?',
-          answer:
-            'CaMKII autophosphorylates at Thr286 upon Ca²⁺/Calmodulin binding, remaining persistently active to phosphorylate AMPA receptors.',
-          options: [
-            'AMPA Receptor',
-            'NMDA Receptor',
-            'Kainate Receptor',
-            'GABA-A Receptor',
-          ],
-          correctIndex: 1,
-          explanation:
-            'NMDA receptors require simultaneous glutamate binding and postsynaptic depolarization to relieve the Mg²⁺ blockade.',
-          reference: 'Lecture 8 LTP & Kandel Ch. 12',
-          topic: 'Synaptic Plasticity',
-          vulnerability: 'moderate',
-          riskImpact: '-3.0% Risk',
-          history: [],
-        },
-      ];
+    } catch (err: any) {
+      console.warn('Synap study item generation error:', err);
+      throw new Error(
+        `Failed to parse generated study items from source notes. Your source materials are untouched. Please try generating again.`
+      );
     }
   },
 };

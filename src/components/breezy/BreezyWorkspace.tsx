@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../../services/apiClient';
+import { providerConfigService } from '../../services/providerConfigService';
 
 interface BreezyMessage {
   role: 'user' | 'assistant';

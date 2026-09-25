@@ -1,6 +1,7 @@
 /**
  * Structured Evidence Graph & Summarizer
  * Runtime-agnostic evidence graph extraction
+ * Strict Truthfulness: No fabricated metrics or artificial consensus clamping.
  */
 
 import { callAgentWithStream } from './providers';
@@ -44,21 +45,34 @@ export async function generateRealEvidenceGraph(opts: {
   critiqueContent: string;
   discoveredSources: any[];
   durationMs: number;
+  isSolo?: boolean;
   apiKey?: string;
   env?: BackendEnv;
 }): Promise<{ evidenceGraph: any; researchMetrics: any }> {
-  const { prompt, finalSynthesis, proposalContent, critiqueContent, discoveredSources, durationMs, apiKey, env = {} } = opts;
+  const { prompt, finalSynthesis, proposalContent, critiqueContent, discoveredSources, durationMs, isSolo = false, apiKey, env = {} } = opts;
 
-  const defaultMetrics = {
-    durationMs,
-    claimsIdentified: 4,
-    claimsSupported: 3,
-    claimsContradicted: 1,
-    claimsUnresolved: 0,
-    sourcesConsulted: discoveredSources.length || 3,
-    primarySourcesCount: discoveredSources.filter((s) => s.isPrimary).length || 1,
-    consensusRate: 92,
-  };
+  // In solo mode, there is no multi-agent debate consensus rate
+  if (isSolo) {
+    return {
+      evidenceGraph: {
+        researchPlan: [`Single-model inquiry: ${prompt.slice(0, 80)}`],
+        claims: [],
+        contradictions: [],
+        sourcesConsulted: discoveredSources,
+        auditStatus: 'solo_inquiry',
+      },
+      researchMetrics: {
+        durationMs,
+        claimsIdentified: 0,
+        claimsSupported: 0,
+        claimsContradicted: 0,
+        claimsUnresolved: 0,
+        sourcesConsulted: discoveredSources.length,
+        primarySourcesCount: 0,
+        consensusRate: null, // Truthful: No consensus measurement in solo mode
+      },
+    };
+  }
 
   try {
     const extractionPrompt = `You are a rigorous research auditor for an evidence-grounded research platform.
@@ -82,16 +96,15 @@ ${finalSynthesis.slice(0, 2000)}
 OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no markdown):
 {
   "researchPlan": [
-    "Subquestion 1 actually investigated",
-    "Subquestion 2 actually investigated",
-    "Subquestion 3 actually investigated"
+    "Subquestion 1 investigated",
+    "Subquestion 2 investigated"
   ],
   "claims": [
     {
       "id": "claim-1",
-      "claim": "Specific empirical or architectural assertion extracted from findings",
+      "claim": "Specific assertion extracted from findings",
       "status": "supported",
-      "confidence": 95,
+      "confidence": 85,
       "supportingSources": [{"title": "Source name", "url": "https://...", "snippet": "relevant quote"}],
       "counterEvidence": [],
       "analystStance": "Position in proposal",
@@ -104,9 +117,9 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       "id": "contra-1",
       "claimA": "Position A",
       "claimB": "Position B",
-      "description": "Why these two findings or positions were in conflict",
+      "description": "Why these positions were in conflict",
       "resolutionStatus": "resolved",
-      "reconciledResolution": "How the final synthesis resolved the conflict"
+      "reconciledResolution": "Resolution"
     }
   ]
 }`;
@@ -128,25 +141,21 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
 
     const researchPlan = Array.isArray(parsed.researchPlan) && parsed.researchPlan.length > 0
       ? parsed.researchPlan
-      : [
-          `Decompose requirements for: ${prompt.slice(0, 50)}`,
-          `Evaluate baseline proposal and identify operational edge cases`,
-          `Audit trade-offs and synthesize production boundary limits`,
-        ];
+      : [];
 
-    const claims = Array.isArray(parsed.claims) && parsed.claims.length > 0 ? parsed.claims : [];
+    const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
     const contradictions = Array.isArray(parsed.contradictions) ? parsed.contradictions : [];
 
-    const claimsIdentified = claims.length || 3;
+    const claimsIdentified = claims.length;
     const claimsSupported = claims.filter((c: any) => c.status === 'supported').length;
     const claimsContradicted = claims.filter((c: any) => c.status === 'contradicted').length;
     const claimsUnresolved = claims.filter((c: any) => c.status === 'unresolved').length;
     const sourcesConsulted = discoveredSources.length;
-    const primarySourcesCount = discoveredSources.filter((s) => s.isPrimary).length;
 
+    // Real, unclamped calculation: only compute rate when claims were actually identified
     const consensusRate = claimsIdentified > 0
-      ? Math.min(98, Math.max(78, Math.round(((claimsSupported + 0.5 * (claimsIdentified - claimsContradicted)) / claimsIdentified) * 100)))
-      : 92;
+      ? Math.round(((claimsSupported + 0.5 * (claimsIdentified - claimsContradicted - claimsUnresolved)) / claimsIdentified) * 100)
+      : null;
 
     const researchMetrics = {
       durationMs,
@@ -155,7 +164,7 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       claimsContradicted,
       claimsUnresolved,
       sourcesConsulted,
-      primarySourcesCount,
+      primarySourcesCount: 0,
       consensusRate,
     };
 
@@ -164,35 +173,30 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       claims,
       contradictions,
       sourcesConsulted: discoveredSources,
+      auditStatus: claimsIdentified > 0 ? 'audited' : 'insufficient_evidence',
     };
 
     return { evidenceGraph, researchMetrics };
   } catch (err) {
-    console.warn('Fallback generating evidence graph:', err);
+    console.warn('Evidence graph extraction could not parse structured findings:', err);
     return {
       evidenceGraph: {
-        researchPlan: [
-          `Analyze architectural core for: ${prompt.slice(0, 60)}`,
-          `Stress-test failure modes, durability, and lock contention`,
-          `Reconcile cross-source evidence into unified guidance`,
-        ],
-        claims: [
-          {
-            id: 'claim-1',
-            claim: `Primary solution resolves inquiry: ${prompt.slice(0, 80)}`,
-            status: 'supported',
-            confidence: 94,
-            supportingSources: discoveredSources.slice(0, 2),
-            counterEvidence: [],
-            analystStance: 'Formulated first-principles architecture.',
-            criticStance: 'Flagged boundary conditions and edge cases.',
-            reviewerVerdict: 'Synthesized with explicit operational limitations.',
-          },
-        ],
+        researchPlan: [],
+        claims: [],
         contradictions: [],
         sourcesConsulted: discoveredSources,
+        auditStatus: 'incomplete',
       },
-      researchMetrics: defaultMetrics,
+      researchMetrics: {
+        durationMs,
+        claimsIdentified: 0,
+        claimsSupported: 0,
+        claimsContradicted: 0,
+        claimsUnresolved: 0,
+        sourcesConsulted: discoveredSources.length,
+        primarySourcesCount: 0,
+        consensusRate: null, // Truthful: Report null on audit failure
+      },
     };
   }
 }
