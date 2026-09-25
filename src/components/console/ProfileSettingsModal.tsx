@@ -1,0 +1,359 @@
+import React, { useState, useEffect } from 'react';
+import { ProviderKeyConfig } from '../../types';
+
+interface ProfileSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave?: () => void;
+  keys?: ProviderKeyConfig;
+  onSaveKeys?: (newKeys: ProviderKeyConfig) => void;
+}
+
+export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  keys,
+  onSaveKeys,
+}) => {
+  const [activeTab, setActiveTab] = useState<'profile' | 'grounding'>('profile');
+
+  // LLM AI Core keys
+  const [provider, setProvider] = useState('gemini');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [model, setModel] = useState('gemini-3.8-flash');
+  const [key, setKey] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('You are a helpful, encouraging cognitive study coach.');
+
+  // Search Grounding Keys
+  const [tavilyKey, setTavilyKey] = useState('');
+  const [serperKey, setSerperKey] = useState('');
+  const [braveKey, setBraveKey] = useState('');
+
+  // Load current settings from shared storage key
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const raw = localStorage.getItem('synap:provider');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setProvider(parsed.type || 'gemini');
+          setBaseUrl(parsed.baseUrl || '');
+          setModel(parsed.model || 'gemini-3.8-flash');
+          setKey(parsed.key || '');
+          setSystemPrompt(parsed.systemPrompt || 'You are a helpful, encouraging cognitive study coach.');
+        }
+      } catch {}
+
+      // Load search grounding keys from prop or localStorage
+      try {
+        const savedKeysRaw = localStorage.getItem('synthexis_byok_keys');
+        const savedKeys = savedKeysRaw ? JSON.parse(savedKeysRaw) : {};
+        const activeKeys = keys || savedKeys;
+        setTavilyKey(activeKeys.tavily || '');
+        setSerperKey(activeKeys.serper || '');
+        setBraveKey(activeKeys.brave || '');
+
+        // Sync initial model key if empty
+        if (!key) {
+          if (provider === 'gemini') {
+            setKey(activeKeys.gemini || '');
+          } else if (provider === 'openai') {
+            setKey(activeKeys.groq || '');
+          }
+        }
+      } catch {}
+    }
+  }, [isOpen, keys]);
+
+  if (!isOpen) return null;
+
+  const handleSave = () => {
+    const config = {
+      type: provider,
+      baseUrl: provider === 'openai' ? baseUrl.trim() : undefined,
+      model: model.trim(),
+      key: key.trim(),
+      systemPrompt: systemPrompt.trim(),
+    };
+    try {
+      localStorage.setItem('synap:provider', JSON.stringify(config));
+    } catch {}
+
+    // Save search keys & LLM keys into synthexis key map to sync across Consensuses
+    try {
+      const savedKeysRaw = localStorage.getItem('synthexis_byok_keys');
+      const existingKeys = savedKeysRaw ? JSON.parse(savedKeysRaw) : {};
+
+      const updatedKeys: ProviderKeyConfig = {
+        ...existingKeys,
+        tavily: tavilyKey.trim() || undefined,
+        serper: serperKey.trim() || undefined,
+        brave: braveKey.trim() || undefined,
+      };
+
+      if (provider === 'gemini') {
+        updatedKeys.gemini = key.trim() || undefined;
+      } else if (provider === 'openai') {
+        updatedKeys.groq = key.trim() || undefined; // Synthexis uses groq for standard openai compatibility key
+      }
+
+      localStorage.setItem('synthexis_byok_keys', JSON.stringify(updatedKeys));
+
+      if (onSaveKeys) {
+        onSaveKeys(updatedKeys);
+      }
+    } catch (e) {
+      console.warn('Failed to sync common settings keys:', e);
+    }
+
+    if (onSave) onSave();
+    onClose();
+  };
+
+  const handleClearAll = () => {
+    if (
+      confirm(
+        'Are you sure you want to clear all local state, including course notebooks, sources, and chat threads? This action is irreversible.'
+      )
+    ) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#141822] rounded-2xl border border-white/10 p-6 sm:p-7 shadow-2xl flex flex-col gap-5 text-stone-100">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-white/5">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[#ccbdff] text-[24px]">
+              account_circle
+            </span>
+            <div>
+              <h2 className="font-sans text-base font-bold">
+                Unified Profile & Settings
+              </h2>
+              <span className="font-mono text-[10px] text-stone-400">
+                Active Enclave: Local Storage (Private & Shared)
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg text-[#cac4d4] hover:text-white hover:bg-white/5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+
+        {/* Profile Details Area */}
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5 shadow-inner">
+          <img
+            alt="User Avatar"
+            className="w-14 h-14 rounded-full object-cover ring-2 ring-[#9d85f2]/40"
+            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+          />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-sans text-sm font-bold text-stone-100">
+              Elena Rostova
+            </h3>
+            <p className="font-sans text-xs text-stone-400 mt-0.5">
+              Neuroscience & CS Senior Project
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px]">
+                <span className="w-1 h-1 bg-emerald-400 rounded-full"></span>
+                Workspace Synced (Syllabus Ch.12-14)
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-mono text-[10px]">
+                Active Enclave
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Sub-Tabs */}
+        <div className="flex items-center gap-1 p-1 bg-black/20 rounded-xl border border-white/5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
+              activeTab === 'profile'
+                ? 'bg-[#ccbdff] text-[#331282]'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            AI Core & Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('grounding')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
+              activeTab === 'grounding'
+                ? 'bg-[#ccbdff] text-[#331282]'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            Search Grounding Keys
+          </button>
+        </div>
+
+        {/* Settings Fields */}
+        <div className="flex flex-col gap-4 overflow-y-auto max-h-[280px] pr-1">
+          {activeTab === 'profile' ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  BYOK API Provider
+                </label>
+                <select
+                  value={provider}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setProvider(val);
+                    if (val === 'gemini') setModel('gemini-3.8-flash');
+                    else if (val === 'anthropic') setModel('claude-3-5-sonnet-20241022');
+                    else setModel('gpt-4o-mini');
+                  }}
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-stone-100 outline-none focus:border-[#9d85f2] cursor-pointer"
+                >
+                  <option value="gemini">Google Gemini (Native/Default)</option>
+                  <option value="openai">OpenAI-Compatible (Groq / Together / OpenRouter)</option>
+                  <option value="anthropic">Anthropic Claude</option>
+                </select>
+              </div>
+
+              {provider === 'openai' && (
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                    Base URL Endpoint
+                  </label>
+                  <input
+                    type="text"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="https://api.groq.com/openai/v1"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  Model ID
+                </label>
+                <input
+                  type="text"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  placeholder="gpt-4o-mini / gemini-3.8-flash"
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  BYOK API Key
+                </label>
+                <input
+                  type="password"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  placeholder="Paste your personal key credentials (sk-... / AIza...)"
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  System Instruction Override
+                </label>
+                <textarea
+                  rows={2}
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2] resize-none"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <p className="font-sans text-[11px] text-stone-400 leading-relaxed mb-1">
+                Configure your search engine keys to enable live real-time search grounding and fact-checking during dialectic inquiries.
+              </p>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  Tavily API Key
+                </label>
+                <input
+                  type="password"
+                  value={tavilyKey}
+                  onChange={(e) => setTavilyKey(e.target.value)}
+                  placeholder="tvly-..."
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  Serper (Google Search) Key
+                </label>
+                <input
+                  type="password"
+                  value={serperKey}
+                  onChange={(e) => setSerperKey(e.target.value)}
+                  placeholder="Paste Serper API Key..."
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  Brave Search Key
+                </label>
+                <input
+                  type="password"
+                  value={braveKey}
+                  onChange={(e) => setBraveKey(e.target.value)}
+                  placeholder="Enter Brave Search credentials..."
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-white/5">
+          <button
+            type="button"
+            onClick={handleClearAll}
+            className="px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 font-sans text-xs transition-colors cursor-pointer"
+          >
+            Clear All Data
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#cac4d4] hover:text-white cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-4 py-2 rounded-xl bg-[#ccbdff] hover:bg-white text-[#331282] text-xs font-bold transition-all shadow-md cursor-pointer"
+            >
+              Save Credentials
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

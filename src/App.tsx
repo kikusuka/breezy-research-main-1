@@ -15,6 +15,11 @@ import { LandingPageView } from './components/console/LandingPageView';
 import { IdeWorkspaceView } from './components/console/IdeWorkspaceView';
 import { GoogleCanvasView } from './components/console/GoogleCanvasView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
+import { SynapWorkspace } from './components/synap/SynapWorkspace';
+import { BreezyWorkspace } from './components/breezy/BreezyWorkspace';
+import { BreezySidebar } from './components/breezy/BreezySidebar';
+import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
+import { SynapHeader } from './components/synap/SynapHeader';
 
 import {
   ProviderKeyConfig,
@@ -57,6 +62,59 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [productMode, setProductMode] = useState<'breezy' | 'synthexis' | 'synap'>('synthexis');
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
+
+  // Breezy chat states
+  const [breezyChats, setBreezyChats] = useState<Record<string, any>>(() => {
+    try {
+      const raw = localStorage.getItem('breezy:chats');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [breezyActiveId, setBreezyActiveId] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('breezy:chats');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const keys = Object.keys(parsed);
+        return keys.length > 0 ? keys[0] : null;
+      }
+    } catch {}
+    return null;
+  });
+
+  const handleNewBreezyChat = () => {
+    const newId = `chat-${Date.now()}`;
+    const newChat = {
+      id: newId,
+      title: 'New chat',
+      messages: [],
+      createdAt: new Date().toISOString(),
+    };
+    const next = { [newId]: newChat, ...breezyChats };
+    setBreezyChats(next);
+    setBreezyActiveId(newId);
+    try {
+      localStorage.setItem('breezy:chats', JSON.stringify(next));
+    } catch {}
+  };
+
+  const handleDeleteBreezyChat = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = { ...breezyChats };
+    delete next[id];
+    setBreezyChats(next);
+    try {
+      localStorage.setItem('breezy:chats', JSON.stringify(next));
+    } catch {}
+    if (breezyActiveId === id) {
+      const remaining = Object.keys(next);
+      setBreezyActiveId(remaining.length ? remaining[0] : null);
+    }
+  };
 
   // Consensus mode toggle
   const [consensusMode, setConsensusMode] = useState<boolean>(() => {
@@ -497,6 +555,66 @@ export default function App() {
     });
   };
 
+  if (productMode === 'synap') {
+    return (
+      <div className="bg-[#0A0A0F] text-[#e4e1ed] min-h-screen font-sans antialiased overflow-x-hidden">
+        <SynapWorkspace
+          productMode={productMode}
+          onSelectProductMode={setProductMode}
+          onOpenProfile={() => setIsProfileSettingsOpen(true)}
+        />
+        <ProfileSettingsModal
+          isOpen={isProfileSettingsOpen}
+          onClose={() => setIsProfileSettingsOpen(false)}
+          keys={keys}
+          onSaveKeys={handleSaveKeys}
+        />
+      </div>
+    );
+  }
+
+  if (productMode === 'breezy') {
+    return (
+      <div className="flex bg-[#090d16] text-slate-100 min-h-screen font-sans antialiased overflow-x-hidden">
+        {/* Breezy Sidebar navigation panel */}
+        <BreezySidebar
+          chats={breezyChats}
+          activeId={breezyActiveId}
+          onSelectChat={setBreezyActiveId}
+          onNewChat={handleNewBreezyChat}
+          onDeleteChat={handleDeleteBreezyChat}
+          onOpenProfile={() => setIsProfileSettingsOpen(true)}
+          isOpenMobile={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+        />
+
+        <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
+          {/* Top Bar showing overall study readiness progress & product mode pill */}
+          <SynapHeader
+            readinessPercentage={81}
+            productMode={productMode}
+            onSelectProductMode={setProductMode}
+            onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
+            onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          />
+
+          {/* Core Breezy workspace panel */}
+          <BreezyWorkspace
+            onOpenSettings={() => setIsProfileSettingsOpen(true)}
+            toast={(msg) => alert(msg)}
+          />
+        </div>
+
+        <ProfileSettingsModal
+          isOpen={isProfileSettingsOpen}
+          onClose={() => setIsProfileSettingsOpen(false)}
+          keys={keys}
+          onSaveKeys={handleSaveKeys}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface font-sans text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
       {/* Persistent Left Sidebar */}
@@ -511,6 +629,7 @@ export default function App() {
         onToggleConsensusMode={handleToggleConsensusMode}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
+        onOpenProfile={() => setIsProfileSettingsOpen(true)}
       />
 
       {/* Main Workspace Stage */}
@@ -528,47 +647,7 @@ export default function App() {
 
         {/* Content Body Router */}
         <main className="relative pt-14 bg-[#10141a] min-h-screen flex-1 flex flex-col">
-          {productMode === 'breezy' ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0d1016]">
-              <div className="max-w-md flex flex-col items-center gap-4 p-8 rounded-2xl bg-[#161a22] border border-white/5">
-                <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
-                  <span className="material-symbols-outlined text-[32px]">air</span>
-                </div>
-                <h2 className="text-xl font-serif text-stone-100 font-medium">Breezy Workspace Active</h2>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  Breezy mode is configured for fast UI/UX iterations and breezy workflows. Paste your Breezy specs or codebase below to begin synchronization.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setProductMode('synthexis')}
-                  className="px-4 py-2 bg-stone-100 text-stone-950 rounded-xl text-xs font-semibold hover:bg-white transition-colors cursor-pointer"
-                >
-                  Return to Synthexis Core
-                </button>
-              </div>
-            </div>
-          ) : productMode === 'synap' ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0d1016]">
-              <div className="max-w-md flex flex-col items-center gap-4 p-8 rounded-2xl bg-[#161a22] border border-white/5">
-                <div className="w-16 h-16 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400 border border-violet-500/20">
-                  <span className="material-symbols-outlined text-[32px]">lan</span>
-                </div>
-                <h2 className="text-xl font-serif text-stone-100 font-medium">Synap Neural Mesh Active</h2>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  Synap distributed intelligence network is mounted. Ready for multi-agent graph reasoning and collaborative node mapping.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setProductMode('synthexis')}
-                  className="px-4 py-2 bg-stone-100 text-stone-950 rounded-xl text-xs font-semibold hover:bg-white transition-colors cursor-pointer"
-                >
-                  Return to Synthexis Core
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {activeTab === 'chat' && (
+          {activeTab === 'chat' && (
             <ResearchConversationView
               session={currentSession}
               isDeliberating={isDeliberating}
@@ -632,8 +711,6 @@ export default function App() {
               onOpenModels={() => setActiveTab('models')}
             />
           )}
-            </>
-          )}
         </main>
       </div>
 
@@ -645,6 +722,13 @@ export default function App() {
         sessions={sessions}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewDebate}
+      />
+
+      <ProfileSettingsModal
+        isOpen={isProfileSettingsOpen}
+        onClose={() => setIsProfileSettingsOpen(false)}
+        keys={keys}
+        onSaveKeys={handleSaveKeys}
       />
     </div>
   );
