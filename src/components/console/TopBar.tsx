@@ -11,6 +11,8 @@ interface TopBarProps {
   onNewResearch?: () => void;
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -21,104 +23,111 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNewResearch,
   onOpenSearch,
   onToggleMobileMenu,
+  theme = 'dark',
+  onToggleTheme,
 }) => {
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-[#10141a]/90 backdrop-blur-md border-b border-white/10 z-40 flex items-center justify-between px-4 sm:px-6">
-      {/* Zone 1: Brand Mark */}
-      <div className="flex items-center gap-3">
+    <header className={`fixed top-0 left-0 lg:left-64 right-0 h-14 backdrop-blur-md border-b z-40 flex items-center justify-between px-4 sm:px-6 transition-colors ${
+      theme === 'light'
+        ? 'bg-white/90 border-slate-200 text-slate-800'
+        : 'bg-[#10141a]/90 border-white/10 text-stone-100'
+    }`}>
+      {/* Zone 1: Brand / Sidebar Icon & Product Mode Switcher */}
+      <div className="flex items-center gap-3 sm:gap-4">
         <button
           type="button"
           onClick={onToggleMobileMenu}
-          className="p-1.5 text-stone-400 hover:text-stone-100 lg:hidden rounded-lg hover:bg-white/5"
+          className="p-1.5 text-stone-400 hover:text-stone-100 lg:hidden rounded-lg hover:bg-white/5 cursor-pointer"
           aria-label="Toggle Navigation"
         >
           <span className="material-symbols-outlined text-[20px]">menu</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => onSelectTab('chat')}
-          className="text-left group cursor-pointer flex items-center gap-2"
-        >
-          <span className="text-base font-serif font-medium tracking-tight text-stone-100 group-hover:text-stone-300 transition-colors">
-            {productMode === 'breezy' ? 'Breezy' : productMode === 'synap' ? 'Synap' : 'Synthexis'}
-          </span>
-        </button>
+        {/* Mode Switcher positioned right beside the sidebar icon for continuity */}
+        <div className={`flex items-center border rounded-full p-1 shadow-inner ${
+          theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-black/40 border-white/10'
+        }`}>
+          <button
+            type="button"
+            onClick={() => onSelectProductMode('breezy')}
+            className={`px-3 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+              productMode === 'breezy'
+                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[13px]">air</span>
+            <span>Breezy</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onSelectProductMode('synthexis');
+              onSelectTab('chat');
+            }}
+            className={`px-3 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+              productMode === 'synthexis'
+                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[13px]">psychology</span>
+            <span>Synthexis</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSelectProductMode('synap')}
+            className={`px-3 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+              productMode === 'synap'
+                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[13px]">lan</span>
+            <span>Synap</span>
+          </button>
+        </div>
       </div>
 
-      {/* Zone 2: Breezy / Synthexis / Synap Pill Switcher */}
-      <div className="hidden md:flex items-center bg-black/30 border border-white/10 rounded-full p-1 shadow-inner">
-        <button
-          type="button"
-          onClick={() => onSelectProductMode('breezy')}
-          className={`px-3.5 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
-            productMode === 'breezy'
-              ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
-              : 'text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[14px]">air</span>
-          <span>Breezy</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            onSelectProductMode('synthexis');
-            onSelectTab('chat');
-          }}
-          className={`px-3.5 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
-            productMode === 'synthexis'
-              ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
-              : 'text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[14px]">psychology</span>
-          <span>Synthexis</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectProductMode('synap')}
-          className={`px-3.5 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
-            productMode === 'synap'
-              ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
-              : 'text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[14px]">lan</span>
-          <span>Synap</span>
-        </button>
-      </div>
-
-      {/* Zone 3: Primary Actions */}
+      {/* Zone 2: Primary Actions (Search, Theme Toggle & Quick Jump) */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Search trigger */}
+        {/* Light / Dark Mode Toggle Button */}
+        {onToggleTheme && (
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className={`p-1.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-sans cursor-pointer ${
+              theme === 'light'
+                ? 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200'
+                : 'bg-white/5 border-white/10 text-stone-300 hover:text-white hover:bg-white/10'
+            }`}
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+            <span className="hidden sm:inline font-medium">
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onOpenSearch}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-stone-400 hover:text-stone-200 transition-colors text-xs"
-          title="Search research and notes (⌘K)"
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs cursor-pointer shadow-xs ${
+            theme === 'light'
+              ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+              : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-stone-300 hover:text-stone-100'
+          }`}
         >
-          <span className="material-symbols-outlined text-[15px]">search</span>
-          <span className="hidden sm:inline">Search</span>
-          <kbd className="hidden sm:inline font-mono text-[10px] text-stone-500 bg-white/5 px-1 py-0.5 rounded">
+          <span className="material-symbols-outlined text-[16px]">search</span>
+          <span className="hidden sm:inline font-sans">Quick Jump</span>
+          <kbd className="hidden sm:inline font-mono text-[10px] text-stone-400 bg-white/5 px-1 py-0.5 rounded">
             ⌘K
           </kbd>
-        </button>
-
-        {/* New Research Action */}
-        <button
-          type="button"
-          onClick={() => {
-            onNewResearch?.();
-            onSelectTab('chat');
-            onSelectProductMode('synthexis');
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-semibold shadow-sm transition-all"
-        >
-          <span className="material-symbols-outlined text-[16px]">add</span>
-          <span className="hidden sm:inline">New Research</span>
         </button>
       </div>
     </header>

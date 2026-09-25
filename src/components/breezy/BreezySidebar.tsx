@@ -1,5 +1,7 @@
 import React from 'react';
 
+export type BreezyTab = 'chat' | 'ide' | 'canvas';
+
 interface BreezyChat {
   id: string;
   title: string;
@@ -8,6 +10,8 @@ interface BreezyChat {
 }
 
 interface BreezySidebarProps {
+  activeTab: BreezyTab;
+  onSelectTab: (tab: BreezyTab) => void;
   chats: Record<string, BreezyChat>;
   activeId: string | null;
   onSelectChat: (id: string) => void;
@@ -19,6 +23,8 @@ interface BreezySidebarProps {
 }
 
 export const BreezySidebar: React.FC<BreezySidebarProps> = ({
+  activeTab,
+  onSelectTab,
   chats,
   activeId,
   onSelectChat,
@@ -43,15 +49,15 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-full w-72 bg-[#0d1322]/90 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-full w-72 bg-[#0d1322]/95 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="flex flex-col gap-4 flex-1 min-h-0">
-          {/* Header */}
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
+          {/* Brand Header */}
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400">
+              <div className="w-8 h-8 rounded-full bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.25)]">
                 <span className="material-symbols-outlined text-lg">air</span>
               </div>
               <span className="font-sans text-sm font-bold text-white tracking-tight">
@@ -67,24 +73,82 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
             </button>
           </div>
 
-          {/* New Chat trigger */}
+          {/* Primary Breezy Mode Navigation */}
+          <div className="flex flex-col gap-1 pt-1 pb-2 border-b border-slate-800/80">
+            <button
+              type="button"
+              onClick={() => {
+                onSelectTab('chat');
+                onCloseMobile?.();
+              }}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
+                activeTab === 'chat'
+                  ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 text-sky-300 border border-sky-500/30 shadow-[0_2px_10px_rgba(56,189,248,0.15)]'
+                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-[17px] ${activeTab === 'chat' ? 'text-sky-400' : 'text-slate-500'}`}>
+                forum
+              </span>
+              <span>Breezy Chat Streams</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSelectTab('ide');
+                onCloseMobile?.();
+              }}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
+                activeTab === 'ide'
+                  ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 text-sky-300 border border-sky-500/30 shadow-[0_2px_10px_rgba(56,189,248,0.15)]'
+                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-[17px] ${activeTab === 'ide' ? 'text-sky-400' : 'text-slate-500'}`}>
+                code
+              </span>
+              <span>Embedded IDE Workspace</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSelectTab('canvas');
+                onCloseMobile?.();
+              }}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
+                activeTab === 'canvas'
+                  ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 text-sky-300 border border-sky-500/30 shadow-[0_2px_10px_rgba(56,189,248,0.15)]'
+                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-[17px] ${activeTab === 'canvas' ? 'text-sky-400' : 'text-slate-500'}`}>
+                dashboard_customize
+              </span>
+              <span>Workspace Canvas</span>
+            </button>
+          </div>
+
+          {/* New Chat Action */}
           <button
             type="button"
             onClick={() => {
+              onSelectTab('chat');
               onNewChat();
               onCloseMobile?.();
             }}
-            className="w-full py-2 px-4 rounded-full bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-sans text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-all cursor-pointer"
+            className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-sans text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-all cursor-pointer"
           >
             <span className="material-symbols-outlined text-sm font-bold">add</span>
-            <span>New Chat</span>
+            <span>New Chat Stream</span>
           </button>
 
           {/* Stream List */}
-          <div className="flex-1 overflow-y-auto flex flex-col gap-4 mt-2">
+          <div className="flex-1 overflow-y-auto flex flex-col gap-3 mt-1">
             <div className="flex flex-col gap-1.5">
               <span className="px-2 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                Current Streams
+                Recent Streams
               </span>
 
               {chatList.length === 0 ? (
@@ -94,11 +158,12 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               ) : (
                 <div className="flex flex-col gap-1">
                   {chatList.map((c) => {
-                    const isActive = c.id === activeId;
+                    const isActive = c.id === activeId && activeTab === 'chat';
                     return (
                       <div
                         key={c.id}
                         onClick={() => {
+                          onSelectTab('chat');
                           onSelectChat(c.id);
                           onCloseMobile?.();
                         }}
@@ -123,7 +188,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
                         <button
                           type="button"
                           onClick={(e) => onDeleteChat(c.id, e)}
-                          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full hover:bg-slate-700 flex items-center justify-center text-slate-400 shrink-0"
+                          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full hover:bg-slate-700 flex items-center justify-center text-slate-400 shrink-0 cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[13px]">
                             close

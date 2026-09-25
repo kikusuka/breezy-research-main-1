@@ -12,12 +12,12 @@ import { ResearchNotesView } from './components/console/ResearchNotesView';
 import { ModelsConsensusView } from './components/console/ModelsConsensusView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
-import { IdeWorkspaceView } from './components/console/IdeWorkspaceView';
-import { GoogleCanvasView } from './components/console/GoogleCanvasView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
 import { SynapWorkspace } from './components/synap/SynapWorkspace';
 import { BreezyWorkspace } from './components/breezy/BreezyWorkspace';
-import { BreezySidebar } from './components/breezy/BreezySidebar';
+import { BreezySidebar, BreezyTab } from './components/breezy/BreezySidebar';
+import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
+import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace';
 import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
 import { SynapHeader } from './components/synap/SynapHeader';
 
@@ -61,8 +61,44 @@ export default function App() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [productMode, setProductMode] = useState<'breezy' | 'synthexis' | 'synap'>('synthexis');
+  const [productMode, setProductMode] = useState<'breezy' | 'synthexis' | 'synap'>(() => {
+    // Check URL params or hash first
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get('mode');
+    if (modeParam === 'synthexis' || modeParam === 'synap' || modeParam === 'breezy') {
+      return modeParam;
+    }
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes('synap')) return 'synap';
+    if (hash.includes('synthexis')) return 'synthexis';
+
+    const saved = localStorage.getItem('breezy_product_mode');
+    if (saved === 'synthexis' || saved === 'synap' || saved === 'breezy') {
+      return saved;
+    }
+    return 'breezy';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('breezy_product_mode', productMode);
+  }, [productMode]);
+
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
+  const [breezyTab, setBreezyTab] = useState<BreezyTab>('chat');
+
+  // Global Light/Dark Theme State
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('breezy_theme') as 'dark' | 'light') || 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('breezy_theme', theme);
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
 
   // Breezy chat states
   const [breezyChats, setBreezyChats] = useState<Record<string, any>>(() => {
@@ -557,11 +593,13 @@ export default function App() {
 
   if (productMode === 'synap') {
     return (
-      <div className="bg-[#0A0A0F] text-[#e4e1ed] min-h-screen font-sans antialiased overflow-x-hidden">
+      <div className={`min-h-screen font-sans antialiased overflow-x-hidden ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#0A0A0F] text-[#e4e1ed]'}`}>
         <SynapWorkspace
           productMode={productMode}
           onSelectProductMode={setProductMode}
           onOpenProfile={() => setIsProfileSettingsOpen(true)}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
         <ProfileSettingsModal
           isOpen={isProfileSettingsOpen}
@@ -575,9 +613,11 @@ export default function App() {
 
   if (productMode === 'breezy') {
     return (
-      <div className="flex bg-[#090d16] text-slate-100 min-h-screen font-sans antialiased overflow-x-hidden">
+      <div className={`flex min-h-screen font-sans antialiased overflow-x-hidden ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#090d16] text-slate-100'}`}>
         {/* Breezy Sidebar navigation panel */}
         <BreezySidebar
+          activeTab={breezyTab}
+          onSelectTab={setBreezyTab}
           chats={breezyChats}
           activeId={breezyActiveId}
           onSelectChat={setBreezyActiveId}
@@ -596,13 +636,29 @@ export default function App() {
             onSelectProductMode={setProductMode}
             onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
             onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            theme={theme}
+            onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
           />
 
-          {/* Core Breezy workspace panel */}
-          <BreezyWorkspace
-            onOpenSettings={() => setIsProfileSettingsOpen(true)}
-            toast={(msg) => alert(msg)}
-          />
+          {/* Breezy Sub-Views */}
+          {breezyTab === 'chat' && (
+            <BreezyWorkspace
+              onOpenSettings={() => setIsProfileSettingsOpen(true)}
+              toast={(msg) => alert(msg)}
+            />
+          )}
+
+          {breezyTab === 'ide' && (
+            <BreezyIdeWorkspace
+              onOpenSettings={() => setIsProfileSettingsOpen(true)}
+            />
+          )}
+
+          {breezyTab === 'canvas' && (
+            <BreezyCanvasWorkspace
+              onOpenSettings={() => setIsProfileSettingsOpen(true)}
+            />
+          )}
         </div>
 
         <ProfileSettingsModal
@@ -643,6 +699,8 @@ export default function App() {
           onNewResearch={handleNewDebate}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
 
         {/* Content Body Router */}
@@ -689,14 +747,6 @@ export default function App() {
 
           {activeTab === 'settings' && (
             <WorkspaceSettingsView keys={keys} onSaveKeys={handleSaveKeys} />
-          )}
-
-          {activeTab === 'ide' && (
-            <IdeWorkspaceView />
-          )}
-
-          {activeTab === 'canvas' && (
-            <GoogleCanvasView />
           )}
 
           {activeTab === 'landing' && (

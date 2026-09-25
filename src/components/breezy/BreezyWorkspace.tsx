@@ -306,7 +306,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       <div className="flex-1 flex flex-col w-full z-10">
         <main
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full pt-6 pb-48 scroll-smooth"
+          className="flex-1 overflow-y-auto w-full pt-24 sm:pt-28 pb-48 scroll-smooth"
         >
           <div className="w-full max-w-[768px] mx-auto px-4 sm:px-6 flex flex-col gap-6">
             {!activeChat || activeChat.messages.length === 0 ? (

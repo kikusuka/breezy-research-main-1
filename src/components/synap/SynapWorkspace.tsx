@@ -22,12 +22,16 @@ interface SynapWorkspaceProps {
   productMode?: ProductMode;
   onSelectProductMode?: (mode: ProductMode) => void;
   onOpenProfile?: () => void;
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
 }
 
 export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   productMode,
   onSelectProductMode,
   onOpenProfile,
+  theme,
+  onToggleTheme,
 }) => {
   const [activeView, setActiveView] = useState<SynapNavView>('notebooks');
   const [notebooks, setNotebooks] = useState<SynapNotebook[]>(() =>
@@ -249,6 +253,8 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
           onSelectProductMode={onSelectProductMode}
           onOpenQuickJump={() => setActiveView('weak-spots')}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
         />
 
         {/* View Router */}

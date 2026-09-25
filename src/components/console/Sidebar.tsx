@@ -1,7 +1,7 @@
 import React from 'react';
 import { DebateSession } from '../../types';
 
-export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing' | 'ide' | 'canvas';
+export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing';
 
 interface SidebarProps {
   activeTab: ConsoleTab;
@@ -122,38 +122,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <span className="material-symbols-outlined text-[17px]">tune</span>
                 <span>Models & Calibration</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab('ide');
-                  onCloseMobile?.();
-                }}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-sans transition-colors ${
-                  activeTab === 'ide'
-                    ? 'bg-white/10 text-stone-100 font-medium'
-                    : 'text-stone-400 hover:bg-white/5 hover:text-stone-200'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[17px]">code</span>
-                <span>Embedded IDE Workspace</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab('canvas');
-                  onCloseMobile?.();
-                }}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-sans transition-colors ${
-                  activeTab === 'canvas'
-                    ? 'bg-white/10 text-stone-100 font-medium'
-                    : 'text-stone-400 hover:bg-white/5 hover:text-stone-200'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[17px]">dashboard_customize</span>
-                <span>Workspace Canvas</span>
               </button>
 
               <button
