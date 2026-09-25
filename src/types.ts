@@ -11,6 +11,7 @@ export interface ProviderKeyConfig {
   tavily?: string;
   serper?: string;
   brave?: string;
+  [key: string]: string | undefined;
 }
 
 export interface OllamaConfig {

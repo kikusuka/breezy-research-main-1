@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProviderKeyConfig } from '../../types';
+import { providerConfigService } from '../../services/providerConfigService';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -30,37 +31,29 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [serperKey, setSerperKey] = useState('');
   const [braveKey, setBraveKey] = useState('');
 
-  // Load current settings from shared storage key
+  // Load current settings from canonical providerConfigService
   useEffect(() => {
     if (isOpen) {
       try {
-        const raw = localStorage.getItem('synap:provider');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          setProvider(parsed.type || 'gemini');
-          setBaseUrl(parsed.baseUrl || '');
-          setModel(parsed.model || 'gemini-3.8-flash');
-          setKey(parsed.key || '');
-          setSystemPrompt(parsed.systemPrompt || 'You are a helpful, encouraging cognitive study coach.');
-        }
-      } catch {}
+        const canonical = providerConfigService.getConfig();
+        const activeKeys = keys || canonical.keys;
 
-      // Load search grounding keys from prop or localStorage
-      try {
-        const savedKeysRaw = localStorage.getItem('synthexis_byok_keys');
-        const savedKeys = savedKeysRaw ? JSON.parse(savedKeysRaw) : {};
-        const activeKeys = keys || savedKeys;
+        setProvider(canonical.defaultProvider || 'gemini');
+        setModel(canonical.defaultModel || 'gemini-3.8-flash');
         setTavilyKey(activeKeys.tavily || '');
         setSerperKey(activeKeys.serper || '');
         setBraveKey(activeKeys.brave || '');
 
-        // Sync initial model key if empty
-        if (!key) {
-          if (provider === 'gemini') {
-            setKey(activeKeys.gemini || '');
-          } else if (provider === 'openai') {
-            setKey(activeKeys.groq || '');
-          }
+        const currentProviderKey = activeKeys[canonical.defaultProvider || 'gemini'];
+        if (currentProviderKey) {
+          setKey(currentProviderKey);
+        }
+
+        const raw = localStorage.getItem('synap:provider');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.baseUrl) setBaseUrl(parsed.baseUrl);
+          if (parsed.systemPrompt) setSystemPrompt(parsed.systemPrompt);
         }
       } catch {}
     }
@@ -80,10 +73,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       localStorage.setItem('synap:provider', JSON.stringify(config));
     } catch {}
 
-    // Save search keys & LLM keys into synthexis key map to sync across Consensuses
     try {
-      const savedKeysRaw = localStorage.getItem('synthexis_byok_keys');
-      const existingKeys = savedKeysRaw ? JSON.parse(savedKeysRaw) : {};
+      const existingKeys = providerConfigService.getKeys();
 
       const updatedKeys: ProviderKeyConfig = {
         ...existingKeys,
@@ -94,9 +85,21 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
       if (provider === 'gemini') {
         updatedKeys.gemini = key.trim() || undefined;
-      } else if (provider === 'openai') {
-        updatedKeys.groq = key.trim() || undefined; // Synthexis uses groq for standard openai compatibility key
+      } else if (provider === 'groq' || provider === 'openai') {
+        updatedKeys.groq = key.trim() || undefined;
+      } else if (provider === 'anthropic') {
+        updatedKeys.anthropic = key.trim() || undefined;
+      } else if (provider === 'sambanova') {
+        updatedKeys.sambanova = key.trim() || undefined;
+      } else if (provider === 'openrouter') {
+        updatedKeys.openrouter = key.trim() || undefined;
       }
+
+      providerConfigService.saveConfig({
+        defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
+        defaultModel: model.trim() || 'gemini-3.8-flash',
+        keys: updatedKeys,
+      });
 
       localStorage.setItem('synthexis_byok_keys', JSON.stringify(updatedKeys));
 

@@ -93,6 +93,8 @@ export async function handleBackendRequest(
   const url = new URL(req.url);
   const path = url.pathname;
 
+  const clientIp = getClientIdentifier(req);
+
   // 1. Health & Status
   if (path === '/api/health' && req.method === 'GET') {
     const hasServerGemini = Boolean(env.GEMINI_API_KEY);
@@ -107,6 +109,24 @@ export async function handleBackendRequest(
       timestamp: Date.now(),
     };
     return createJsonResponse(healthData, 200, req, env);
+  }
+
+  // Rate-limiting check for API endpoints
+  if (
+    path === '/api/vault/verify-key' ||
+    path === '/api/breezy/chat' ||
+    path === '/api/debate/summarize' ||
+    path === '/api/debate/stream'
+  ) {
+    const rateCheck = checkServerRateLimit(clientIp, 20, 60000);
+    if (!rateCheck.allowed) {
+      return createJsonResponse(
+        { error: 'Rate limit exceeded (20 requests per minute). Please wait a moment.' },
+        429,
+        req,
+        env
+      );
+    }
   }
 
   // 2. Vault key verification
@@ -344,8 +364,8 @@ export async function handleBackendRequest(
 
       let fullAnswer = '';
       await callAgentWithStream({
-        provider: (['groq', 'sambanova', 'openrouter'].includes(provider) ? provider : 'gemini') as any,
-        model: model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash'),
+        provider: (['groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
+        model: model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-3.8-flash'),
         apiKey: apiKey?.trim() || undefined,
         systemInstruction,
         userPrompt: formattedPrompt,

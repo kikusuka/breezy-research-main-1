@@ -360,7 +360,7 @@ export default function App() {
       {
         stepId: 'step-1',
         role: 'architect',
-        agentName: 'Claude 3.5 Sonnet',
+        agentName: 'Synthexis Architect',
         provider: 'gemini',
         model: 'gemini-3.8-flash',
         status: 'running',
@@ -370,7 +370,7 @@ export default function App() {
       {
         stepId: 'step-2',
         role: 'skeptic',
-        agentName: 'GPT-4o',
+        agentName: 'Synthexis Skeptic',
         provider: 'gemini',
         model: 'gemini-3.8-flash',
         status: 'pending',
@@ -380,7 +380,7 @@ export default function App() {
       {
         stepId: 'step-3',
         role: 'synthesizer',
-        agentName: 'Gemini 1.5 Pro',
+        agentName: 'Synthexis Synthesizer',
         provider: 'gemini',
         model: 'gemini-3.8-flash',
         status: 'pending',

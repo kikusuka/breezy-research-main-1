@@ -152,19 +152,21 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       }
     }, 50);
 
-    // Call real AI endpoint (uses server Gemini key by default, or client BYOK if present)
+    // Call real AI endpoint (uses canonical providerConfigService, falling back to server key)
     setIsThinking(true);
-    const byokRaw = localStorage.getItem('synap:provider');
-    let apiKey = '';
-    let model = 'gemini-3.8-flash';
-    let provider = 'gemini';
+    const canonicalConfig = providerConfigService.getConfig();
+    let provider = canonicalConfig.defaultProvider || 'gemini';
+    let model = canonicalConfig.defaultModel || 'gemini-3.8-flash';
+    let apiKey = providerConfigService.getKey(provider) || '';
 
+    // Legacy override check if present
     try {
+      const byokRaw = localStorage.getItem('synap:provider');
       if (byokRaw) {
         const parsed = JSON.parse(byokRaw);
-        apiKey = parsed.key || '';
-        model = parsed.model || 'gemini-3.8-flash';
-        provider = parsed.type || 'gemini';
+        if (parsed.key) apiKey = parsed.key;
+        if (parsed.model) model = parsed.model;
+        if (parsed.type) provider = parsed.type;
       }
     } catch {}
 
