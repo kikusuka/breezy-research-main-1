@@ -55,6 +55,7 @@ export default function App() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [productMode, setProductMode] = useState<'breezy' | 'synthexis' | 'synap'>('synthexis');
 
   // Consensus mode toggle
   const [consensusMode, setConsensusMode] = useState<boolean>(() => {
@@ -517,6 +518,8 @@ export default function App() {
         <TopBar
           activeTab={activeTab}
           onSelectTab={setActiveTab}
+          productMode={productMode}
+          onSelectProductMode={setProductMode}
           onNewResearch={handleNewDebate}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -524,7 +527,47 @@ export default function App() {
 
         {/* Content Body Router */}
         <main className="relative pt-14 bg-[#10141a] min-h-screen flex-1 flex flex-col">
-          {activeTab === 'chat' && (
+          {productMode === 'breezy' ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0d1016]">
+              <div className="max-w-md flex flex-col items-center gap-4 p-8 rounded-2xl bg-[#161a22] border border-white/5">
+                <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+                  <span className="material-symbols-outlined text-[32px]">air</span>
+                </div>
+                <h2 className="text-xl font-serif text-stone-100 font-medium">Breezy Workspace Active</h2>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  Breezy mode is configured for fast UI/UX iterations and breezy workflows. Paste your Breezy specs or codebase below to begin synchronization.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setProductMode('synthexis')}
+                  className="px-4 py-2 bg-stone-100 text-stone-950 rounded-xl text-xs font-semibold hover:bg-white transition-colors cursor-pointer"
+                >
+                  Return to Synthexis Core
+                </button>
+              </div>
+            </div>
+          ) : productMode === 'synap' ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0d1016]">
+              <div className="max-w-md flex flex-col items-center gap-4 p-8 rounded-2xl bg-[#161a22] border border-white/5">
+                <div className="w-16 h-16 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400 border border-violet-500/20">
+                  <span className="material-symbols-outlined text-[32px]">lan</span>
+                </div>
+                <h2 className="text-xl font-serif text-stone-100 font-medium">Synap Neural Mesh Active</h2>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  Synap distributed intelligence network is mounted. Ready for multi-agent graph reasoning and collaborative node mapping.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setProductMode('synthexis')}
+                  className="px-4 py-2 bg-stone-100 text-stone-950 rounded-xl text-xs font-semibold hover:bg-white transition-colors cursor-pointer"
+                >
+                  Return to Synthexis Core
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'chat' && (
             <ResearchConversationView
               session={currentSession}
               isDeliberating={isDeliberating}
@@ -583,6 +626,8 @@ export default function App() {
               onOpenNotes={() => setActiveTab('notes')}
               onOpenModels={() => setActiveTab('models')}
             />
+          )}
+            </>
           )}
         </main>
       </div>

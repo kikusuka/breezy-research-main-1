@@ -1,9 +1,13 @@
 import React from 'react';
 import { ConsoleTab } from './Sidebar';
 
+export type ProductMode = 'breezy' | 'synthexis' | 'synap';
+
 interface TopBarProps {
   activeTab: ConsoleTab;
   onSelectTab: (tab: ConsoleTab) => void;
+  productMode: ProductMode;
+  onSelectProductMode: (mode: ProductMode) => void;
   onNewResearch?: () => void;
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
@@ -12,6 +16,8 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({
   activeTab,
   onSelectTab,
+  productMode,
+  onSelectProductMode,
   onNewResearch,
   onOpenSearch,
   onToggleMobileMenu,
@@ -32,53 +38,58 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('chat')}
-          className="text-left group cursor-pointer"
+          className="text-left group cursor-pointer flex items-center gap-2"
         >
           <span className="text-base font-serif font-medium tracking-tight text-stone-100 group-hover:text-stone-300 transition-colors">
-            Synthexis
+            {productMode === 'breezy' ? 'Breezy' : productMode === 'synap' ? 'Synap' : 'Synthexis'}
           </span>
         </button>
       </div>
 
-      {/* Zone 2: Navigation Links (Clean Text, No Badges) */}
-      <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-stone-400">
+      {/* Zone 2: Breezy / Synthexis / Synap Pill Switcher */}
+      <div className="hidden md:flex items-center bg-black/30 border border-white/10 rounded-full p-1 shadow-inner">
         <button
           type="button"
-          onClick={() => onSelectTab('chat')}
-          className={`transition-colors hover:text-stone-100 ${
-            activeTab === 'chat' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          onClick={() => onSelectProductMode('breezy')}
+          className={`px-3.5 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+            productMode === 'breezy'
+              ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+              : 'text-stone-400 hover:text-stone-200'
           }`}
         >
-          Research
+          <span className="material-symbols-outlined text-[14px]">air</span>
+          <span>Breezy</span>
         </button>
+
         <button
           type="button"
-          onClick={() => onSelectTab('notes')}
-          className={`transition-colors hover:text-stone-100 ${
-            activeTab === 'notes' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          onClick={() => {
+            onSelectProductMode('synthexis');
+            onSelectTab('chat');
+          }}
+          className={`px-3.5 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+            productMode === 'synthexis'
+              ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+              : 'text-stone-400 hover:text-stone-200'
           }`}
         >
-          Notes & Archive
+          <span className="material-symbols-outlined text-[14px]">psychology</span>
+          <span>Synthexis</span>
         </button>
+
         <button
           type="button"
-          onClick={() => onSelectTab('models')}
-          className={`transition-colors hover:text-stone-100 ${
-            activeTab === 'models' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          onClick={() => onSelectProductMode('synap')}
+          className={`px-3.5 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+            productMode === 'synap'
+              ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+              : 'text-stone-400 hover:text-stone-200'
           }`}
         >
-          Models & Calibration
+          <span className="material-symbols-outlined text-[14px]">lan</span>
+          <span>Synap</span>
         </button>
-        <button
-          type="button"
-          onClick={() => onSelectTab('settings')}
-          className={`transition-colors hover:text-stone-100 ${
-            activeTab === 'settings' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
-          }`}
-        >
-          Settings
-        </button>
-      </nav>
+      </div>
 
       {/* Zone 3: Primary Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
@@ -102,6 +113,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           onClick={() => {
             onNewResearch?.();
             onSelectTab('chat');
+            onSelectProductMode('synthexis');
           }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-semibold shadow-sm transition-all"
         >
