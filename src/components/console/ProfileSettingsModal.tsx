@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ProviderKeyConfig } from '../../types';
-import { providerConfigService } from '../../services/providerConfigService';
+import { providerConfigService, AVAILABLE_MODELS, PRESET_ROLE_CONFIGS } from '../../services/providerConfigService';
+import { userProfileService, UserProfile } from '../../services/userProfileService';
+import { authService, AuthUser } from '../../services/authService';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -17,7 +19,15 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   keys,
   onSaveKeys,
 }) => {
-  const [activeTab, setActiveTab] = useState<'routing' | 'profile' | 'grounding'>('routing');
+  const [activeTab, setActiveTab] = useState<'user' | 'routing' | 'profile' | 'grounding'>('user');
+
+  // User Profile & Auth State
+  const [profile, setProfile] = useState<UserProfile>(() => userProfileService.getProfile());
+  const [displayName, setDisplayName] = useState(profile.displayName);
+  const [email, setEmail] = useState(profile.email);
+  const [roleTitle, setRoleTitle] = useState(profile.roleTitle);
+  const [organization, setOrganization] = useState(profile.organization);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
 
   // Role Routing State
   const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>('balanced');
@@ -40,10 +50,17 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [serperKey, setSerperKey] = useState('');
   const [braveKey, setBraveKey] = useState('');
 
-  // Load current settings from canonical providerConfigService
+  // Load current settings from canonical services
   useEffect(() => {
     if (isOpen) {
       try {
+        const p = userProfileService.getProfile();
+        setProfile(p);
+        setDisplayName(p.displayName);
+        setEmail(p.email);
+        setRoleTitle(p.roleTitle);
+        setOrganization(p.organization);
+
         const canonical = providerConfigService.getConfig();
         const activeKeys = keys || canonical.keys;
 
@@ -66,20 +83,33 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         if (currentProviderKey) {
           setKey(currentProviderKey);
         }
-
-        const raw = localStorage.getItem('synap:provider');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed.baseUrl) setBaseUrl(parsed.baseUrl);
-          if (parsed.systemPrompt) setSystemPrompt(parsed.systemPrompt);
-        }
       } catch {}
     }
   }, [isOpen, keys]);
 
+  useEffect(() => {
+    const unsub = authService.onAuthChange((user) => {
+      setAuthUser(user);
+      if (user) {
+        if (user.displayName) setDisplayName(user.displayName);
+        if (user.email) setEmail(user.email);
+      }
+    });
+    return () => unsub();
+  }, []);
+
   if (!isOpen) return null;
 
   const handleSave = () => {
+    // Save user profile
+    userProfileService.saveProfile({
+      displayName: displayName.trim() || 'Pranav B',
+      email: email.trim() || 'bpranav763@gmail.com',
+      roleTitle: roleTitle.trim() || 'Principal Systems Engineer',
+      organization: organization.trim() || 'Breezy Research Lab',
+      authorizationType: authUser ? 'google_oauth' : 'session_enclave',
+    });
+
     const config = {
       type: provider,
       baseUrl: provider === 'openai' ? baseUrl.trim() : undefined,
@@ -173,34 +203,19 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
           </button>
         </div>
 
-        {/* Profile Details Area */}
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5 shadow-inner">
-          <img
-            alt="User Avatar"
-            className="w-14 h-14 rounded-full object-cover ring-2 ring-[#9d85f2]/40"
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-          />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-sans text-sm font-bold text-stone-100">
-              Elena Rostova
-            </h3>
-            <p className="font-sans text-xs text-stone-400 mt-0.5">
-              Neuroscience & CS Senior Project
-            </p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px]">
-                <span className="w-1 h-1 bg-emerald-400 rounded-full"></span>
-                Workspace Synced (Syllabus Ch.12-14)
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-mono text-[10px]">
-                Active Enclave
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Modal Sub-Tabs */}
         <div className="flex items-center gap-1 p-1 bg-black/20 rounded-xl border border-white/5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('user')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
+              activeTab === 'user'
+                ? 'bg-[#ccbdff] text-[#331282]'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            Profile & Auth
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab('routing')}
@@ -210,7 +225,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            Customize Roles
+            Model Setup
           </button>
           <button
             type="button"
@@ -237,8 +252,124 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         </div>
 
         {/* Settings Fields */}
-        <div className="flex flex-col gap-4 overflow-y-auto max-h-[300px] pr-1">
-          {activeTab === 'routing' ? (
+        <div className="flex flex-col gap-4 overflow-y-auto max-h-[320px] pr-1">
+          {activeTab === 'user' ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4 p-3.5 rounded-xl bg-white/[0.03] border border-white/5">
+                <div className="w-12 h-12 rounded-full bg-[#ccbdff]/20 text-[#ccbdff] border border-[#ccbdff]/30 flex items-center justify-center font-bold text-lg shrink-0">
+                  {displayName ? displayName.charAt(0).toUpperCase() : 'P'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-sans text-xs font-bold text-stone-100 truncate">
+                      {displayName || 'Researcher'}
+                    </span>
+                    <span className={`font-mono text-[9px] px-2 py-0.5 rounded-full ${authUser ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'}`}>
+                      {authUser ? 'Google OAuth Active' : 'Session Enclave Active'}
+                    </span>
+                  </div>
+                  <p className="font-sans text-[11px] text-stone-400 truncate mt-0.5">
+                    {email || 'bpranav763@gmail.com'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your display name..."
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@organization.com"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                    Research Discipline / Role
+                  </label>
+                  <input
+                    type="text"
+                    value={roleTitle}
+                    onChange={(e) => setRoleTitle(e.target.value)}
+                    placeholder="e.g. Principal Systems Engineer"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                    Organization / Lab
+                  </label>
+                  <input
+                    type="text"
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    placeholder="e.g. Breezy Research Lab"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/5 flex flex-col gap-2">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  Google Workspace Authorization
+                </label>
+                {authUser ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                      <span>Connected as {authUser.email}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => authService.signOut()}
+                      className="px-3 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-[11px] font-semibold transition-colors cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await authService.signInWithGoogle();
+                        if (res?.user) {
+                          setAuthUser(res.user);
+                          if (res.user.displayName) setDisplayName(res.user.displayName);
+                          if (res.user.email) setEmail(res.user.email);
+                        }
+                      } catch (e: any) {
+                        alert(`Authorization error: ${e.message}`);
+                      }
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-100 font-sans text-xs font-semibold border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">key</span>
+                    <span>Sign in with Google OAuth</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : activeTab === 'routing' ? (
             <div className="flex flex-col gap-4">
               <div>
                 <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold block mb-2">
@@ -246,14 +377,19 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'fast', name: 'Fast', desc: 'Speed optimized' },
+                    { id: 'fast', name: 'Fast', desc: '1 model · Fast' },
                     { id: 'balanced', name: 'Balanced', desc: 'Multi-perspective' },
-                    { id: 'deep', name: 'Deep', desc: 'Max verification' },
+                    { id: 'deep', name: 'Deep', desc: 'Rigorous 4-stage' },
                   ].map((item) => (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => setPreset(item.id as any)}
+                      onClick={() => {
+                        setPreset(item.id as any);
+                        if (PRESET_ROLE_CONFIGS[item.id]) {
+                          setRoles(PRESET_ROLE_CONFIGS[item.id]);
+                        }
+                      }}
                       className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                         preset === item.id
                           ? 'bg-[#9d85f2]/15 border-[#9d85f2] text-white'
@@ -269,41 +405,79 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
               <div className="flex flex-col gap-2 mt-1">
                 <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
-                  Role Model Routing
+                  Model Setup per Role
                 </label>
-                <div className="flex flex-col gap-2 bg-black/30 border border-white/5 rounded-xl p-3">
+                <div className="flex flex-col gap-3 bg-black/30 border border-white/5 rounded-xl p-3">
                   {[
-                    { key: 'architect', title: 'Analyst', desc: 'Initial argument & hypothesis' },
-                    { key: 'skeptic', title: 'Critic', desc: 'Skeptical stress-testing' },
-                    { key: 'verifier', title: 'Verifier', desc: 'Fact & constraint checking' },
-                    { key: 'arbiter', title: 'Synthesizer', desc: 'Final executive summary' },
-                  ].map((role) => (
-                    <div key={role.key} className="flex items-center justify-between gap-3 text-xs pb-2 border-b border-white/5 last:border-b-0 last:pb-0">
-                      <div>
-                        <div className="font-semibold text-stone-200">{role.title}</div>
-                        <div className="font-mono text-[10px] text-stone-400">{role.desc}</div>
+                    { key: 'architect', title: 'Analyst', desc: 'Builds initial argument' },
+                    { key: 'skeptic', title: 'Critic', desc: 'Tries to break it' },
+                    { key: 'verifier', title: 'Verifier', desc: 'Checks facts & constraints' },
+                    { key: 'arbiter', title: 'Synthesizer', desc: 'Produces final answer' },
+                  ].map((role) => {
+                    const currentSeat = roles[role.key as keyof typeof roles] || { provider: 'gemini', model: 'gemini-3.8-flash' };
+                    const currentProvider = currentSeat.provider || 'gemini';
+                    const currentModel = currentSeat.model || 'gemini-3.8-flash';
+                    const activeKey = providerConfigService.getKey(currentProvider);
+                    const hasKey = Boolean(activeKey) || currentProvider === 'gemini';
+                    const modelsList = AVAILABLE_MODELS[currentProvider] || [];
+
+                    return (
+                      <div key={role.key} className="flex flex-col gap-1.5 pb-2 border-b border-white/5 last:border-b-0 last:pb-0">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-semibold text-xs text-stone-200">{role.title}</span>
+                            <span className="font-mono text-[10px] text-stone-400 ml-2">{role.desc}</span>
+                          </div>
+                          {!hasKey && (
+                            <span className="font-mono text-[9px] text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+                              Requires Key
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            value={currentProvider}
+                            onChange={(e) => {
+                              const p = e.target.value as any;
+                              const defaultM = (AVAILABLE_MODELS[p] && AVAILABLE_MODELS[p][0]?.id) || 'gemini-3.8-flash';
+                              setRoles((prev) => ({
+                                ...prev,
+                                [role.key]: { provider: p, model: defaultM },
+                              }));
+                              setPreset('custom');
+                            }}
+                            className="bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#9d85f2] cursor-pointer"
+                          >
+                            <option value="gemini">Google Gemini</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="groq">Groq LPU</option>
+                            <option value="sambanova">SambaNova</option>
+                            <option value="openrouter">OpenRouter</option>
+                          </select>
+
+                          <select
+                            value={currentModel}
+                            onChange={(e) => {
+                              const m = e.target.value;
+                              setRoles((prev) => ({
+                                ...prev,
+                                [role.key]: { ...prev[role.key as keyof typeof roles], model: m },
+                              }));
+                              setPreset('custom');
+                            }}
+                            className="bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#9d85f2] cursor-pointer truncate"
+                          >
+                            {modelsList.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                      <select
-                        value={roles[role.key as keyof typeof roles]?.provider || 'gemini'}
-                        onChange={(e) => {
-                          const p = e.target.value as any;
-                          const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash';
-                          setRoles((prev) => ({
-                            ...prev,
-                            [role.key]: { provider: p, model: defaultM },
-                          }));
-                          setPreset('custom');
-                        }}
-                        className="bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#9d85f2] cursor-pointer"
-                      >
-                        <option value="gemini">Google Gemini</option>
-                        <option value="anthropic">Anthropic Claude</option>
-                        <option value="groq">Groq (Llama 3.3)</option>
-                        <option value="sambanova">SambaNova (Llama/Qwen)</option>
-                        <option value="openrouter">OpenRouter</option>
-                      </select>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

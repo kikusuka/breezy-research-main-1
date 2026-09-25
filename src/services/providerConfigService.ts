@@ -21,6 +21,29 @@ export interface CanonicalProviderKeys {
   [key: string]: string | undefined;
 }
 
+export const AVAILABLE_MODELS: Record<string, { id: string; name: string; description: string }[]> = {
+  gemini: [
+    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', description: 'Fast, highly intelligent reasoning & code' },
+    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', description: 'Ultra-lightweight low-latency model' },
+  ],
+  anthropic: [
+    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Best-in-class deep reasoning & analytical synthesis' },
+    { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'Ultra-fast lightweight Claude model' },
+  ],
+  groq: [
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Groq LPUs ultra-fast open weights reasoning' },
+    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B Instruct', description: 'Fast MoE architecture' },
+  ],
+  sambanova: [
+    { id: 'Meta-Llama-3.3-70B-Instruct', name: 'Meta Llama 3.3 70B', description: 'High-speed SambaNova reconfigurable dataflow' },
+    { id: 'Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B Instruct', description: 'Top open coding & math model' },
+  ],
+  openrouter: [
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B (OpenRouter)', description: 'Unified router access' },
+    { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1 (OpenRouter)', description: 'Deep reasoning & chain-of-thought verification' },
+  ],
+};
+
 export interface CanonicalWorkspaceConfig {
   defaultProvider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic';
   defaultModel: string;
@@ -41,12 +64,28 @@ export interface CanonicalWorkspaceConfig {
 
 const CANONICAL_STORAGE_KEY = 'breezy_canonical_provider_config';
 
-const DEFAULT_ROLES: CanonicalWorkspaceConfig['roles'] = {
-  architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
-  skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
-  verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
-  arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+export const PRESET_ROLE_CONFIGS: Record<string, CanonicalWorkspaceConfig['roles']> = {
+  fast: {
+    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+  },
+  balanced: {
+    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    skeptic: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+  },
+  deep: {
+    architect: { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022' },
+    skeptic: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+    verifier: { provider: 'sambanova', model: 'Qwen2.5-72B-Instruct' },
+    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+  },
 };
+
+const DEFAULT_ROLES: CanonicalWorkspaceConfig['roles'] = PRESET_ROLE_CONFIGS.balanced;
 
 export const providerConfigService = {
   /**
@@ -129,12 +168,10 @@ export const providerConfigService = {
   getSeatsPayload(config?: CanonicalWorkspaceConfig) {
     const current = config || this.getConfig();
     const roles = current.roles || DEFAULT_ROLES;
-    const keys = current.keys || {};
 
-    // Auto-resolve seats based on available keys if user hasn't explicitly set custom providers
     const resolveSeat = (roleKey: keyof CanonicalWorkspaceConfig['roles'], fallbackModel: string) => {
       const assigned = roles[roleKey];
-      if (assigned && keys[assigned.provider]) {
+      if (assigned && assigned.provider && assigned.model) {
         return { provider: assigned.provider, model: assigned.model };
       }
       return { provider: 'gemini', model: fallbackModel };

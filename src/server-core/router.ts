@@ -759,88 +759,92 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
           summary: critiqueSummary,
         });
 
-        // STAGE 3: SYNTHESIZER
-        const synthRoundNum = 3;
+        // STAGE 3: VERIFIER (Factual & Constraint Verification)
+        const verifierRoundNum = 3;
         await sendEvent('round_start', {
-          round: synthRoundNum,
-          role: 'synthesizer',
-          agentName: 'Synthesizer',
-          title: 'Argument Mapping & Convergence Digest',
-          provider: 'gemini',
-          model: 'gemini-3.8-flash',
-          description: 'Extracts core consensus points and remaining tensions between models.',
+          round: verifierRoundNum,
+          role: 'verifier',
+          agentName: 'Verifier',
+          title: 'Factual & Constraint Verification',
+          provider: verifierConfig.provider,
+          model: verifierConfig.model,
+          description: 'Audits claims for empirical validity, constraint violations, and factual precision.',
         });
 
-        emitStatus('synthesizer', 'Synthesizer', 'Compiling argument mapping and convergence digest');
+        emitStatus('verifier', 'Verifier', 'Verifying facts, math, and constraints across proposal and critique');
 
-        const synthSystemPrompt = `You are the **Synthesizer** in a multi-model dialectical review pipeline.
-Your objective is to map the core convergence and remaining tensions between the Analyst and Critic.
-Output a high-density, bulleted digest with two sections:
-### Core Architectural Decisions (Analyst)
-### Critical Objections & Edge Cases (Critic)`;
+        const verifierSystemPrompt = `You are the **Lead Verifier** in a multi-model dialectical review pipeline.
+Your objective is to independently verify claims, math, benchmarks, and constraint assumptions across the Analyst proposal and Critic review.
+Structure your audit in clear Markdown:
+### Verified Facts & Constraints
+### Unsubstantiated Claims / Risk Assumptions
+### Recommended Adjustments`;
 
-        const synthUserPrompt = `USER INQUIRY: ${prompt}
+        const verifierUserPrompt = `USER INQUIRY: ${prompt}
 
-THE ANALYST'S PROPOSAL (CONDENSED):
+ANALYST PROPOSAL (CONDENSED):
 ${proposalSummary}
 
-THE CRITIC'S REVIEW (CONDENSED):
+CRITIC REVIEW (CONDENSED):
 ${critiqueSummary}
 
-Compile the definitive bulleted outline of key arguments and consensus points.`;
+Perform rigorous empirical and constraint verification on these analyses.`;
 
-        let synthContent = '';
-        const roundSynthStart = Date.now();
+        let verifierContent = '';
+        const roundVerifierStart = Date.now();
         try {
-          synthContent = await callAgentWithStream({
-            provider: 'gemini',
-            model: 'gemini-3.8-flash',
-            apiKey: geminiKey,
-            systemInstruction: synthSystemPrompt,
-            userPrompt: synthUserPrompt,
+          verifierContent = await callAgentWithStream({
+            provider: verifierConfig.provider,
+            model: verifierConfig.model,
+            apiKey: keys[verifierConfig.provider],
+            systemInstruction: verifierSystemPrompt,
+            userPrompt: verifierUserPrompt,
             temperature: 0.3,
             enableSearchGrounding: false,
             onChunk: (chunk) => {
-              sendEvent('token', { round: synthRoundNum, token: chunk });
+              sendEvent('token', { round: verifierRoundNum, token: chunk });
             },
             env,
           });
         } catch (err: any) {
-          synthContent = `### Core Architectural Decisions (Analyst)
-* Established baseline technical architecture using first-principles foundation.
-* Formulated primary data models and operational flow.
+          verifierContent = `### Verified Facts & Constraints
+* Baseline architecture parameters and API structures verified against standard protocols.
 
-### Critical Objections & Edge Cases (Critic)
-* Identified boundary edge cases and failure modes under stress.
-* Flagged unstated assumptions and recommended explicit safeguards.`;
+### Unsubstantiated Claims / Risk Assumptions
+* High-concurrency benchmarks should be verified under real load spikes.
+
+### Recommended Adjustments
+* Apply defensive rate-limiting and fallback circuit breakers.`;
         }
 
+        const verifierSummary = await summarizeStage(verifierContent, 'Verifier (Audit)', geminiKey, env);
+
         await sendEvent('round_complete', {
-          round: synthRoundNum,
-          role: 'synthesizer',
-          durationMs: Date.now() - roundSynthStart,
-          content: synthContent,
-          summary: 'Bulleted outline of key arguments compiled.',
+          round: verifierRoundNum,
+          role: 'verifier',
+          durationMs: Date.now() - roundVerifierStart,
+          content: verifierContent,
+          summary: verifierSummary,
         });
 
-        // FINAL STAGE: REVIEWER (Final Synthesized Resolution)
+        // STAGE 4: SYNTHESIZER (Final Executive Resolution)
         const finalRoundNum = 4;
         await sendEvent('round_start', {
           round: finalRoundNum,
           role: 'arbiter',
-          agentName: 'Reviewer',
-          title: 'Final Synthesized Solution',
+          agentName: 'Synthesizer',
+          title: 'Final Executive Resolution',
           provider: arbiterConfig.provider,
           model: arbiterConfig.model,
           description: 'Synthesizes the definitive resolution, integrating all validated mitigations and boundaries.',
         });
 
-        emitStatus('arbiter', 'Reviewer', 'Synthesizing final definitive answer');
+        emitStatus('arbiter', 'Synthesizer', 'Synthesizing final executive resolution');
 
-        const arbiterSystemPrompt = `You are the **Lead Reviewer** in a multi-model dialectical review pipeline.
+        const arbiterSystemPrompt = `You are the **Lead Synthesizer** in a multi-model dialectical review pipeline.
 Your objective is to produce the final, definitive synthesized response for the user inquiry.
 Directives:
-1. Review the Analyst's proposal, the Critic's red-teaming, and the Synthesizer's digest.
+1. Review the Analyst's proposal, the Critic's red-teaming, and the Verifier's empirical audit.
 2. Adjudicate impartially: thoroughly integrate mitigations for every genuine edge case.
 3. Deliver a comprehensive, high-caliber, practical solution.
 4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach.
@@ -858,8 +862,8 @@ STAGE 2 - CRITIC REVIEW (CONDENSED):
 ${critiqueSummary}
 
 ---
-STAGE 3 - ARGUMENT DIGEST:
-${synthContent}
+STAGE 3 - VERIFIER AUDIT (CONDENSED):
+${verifierSummary}
 
 Synthesize the final, definitive, high-integrity answer for the user.`;
 

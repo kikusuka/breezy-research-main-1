@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { EvidenceGraphView } from './EvidenceGraphView';
+import { providerConfigService, AVAILABLE_MODELS, PRESET_ROLE_CONFIGS } from '../../services/providerConfigService';
 
 interface LandingPageViewProps {
   onLaunchWorkspace: (prompt?: string, depth?: 'solo' | 'standard' | 'deep') => void;
@@ -15,6 +16,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [inputText, setInputText] = useState('');
   const [researchDepth, setResearchDepth] = useState<'solo' | 'standard' | 'deep'>('standard');
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
+  const [showModelSetup, setShowModelSetup] = useState(false);
+
+  const [config, setConfig] = useState(() => providerConfigService.getConfig());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -161,53 +165,137 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </div>
           )}
 
-          {/* Depth selection (Appears smoothly when typing) */}
-          {isUserTyping && (
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-white/5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 bg-black/25 p-0.5 rounded-lg border border-white/5 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => setResearchDepth('solo')}
-                    title="One model. Fastest response."
-                    className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                      researchDepth === 'solo'
-                        ? 'bg-white/10 text-stone-100'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Solo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setResearchDepth('standard')}
-                    title="Several perspectives + web search sources."
-                    className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                      researchDepth === 'standard'
-                        ? 'bg-white/10 text-stone-100'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Research
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setResearchDepth('deep')}
-                    title="More models + rigorous verification."
-                    className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                      researchDepth === 'deep'
-                        ? 'bg-white/10 text-stone-100'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Deep
-                  </button>
-                </div>
-                <span className="text-[10px] text-stone-400 font-mono">
-                  {researchDepth === 'solo' && 'One model. Fastest.'}
-                  {researchDepth === 'standard' && 'Several perspectives + web sources.'}
-                  {researchDepth === 'deep' && 'More models + rigorous verification.'}
-                </span>
+          {/* Quick Model Setup Control Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-white/5 font-sans">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-black/30 p-0.5 rounded-lg border border-white/5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResearchDepth('solo');
+                    const updated = { ...config, preset: 'fast' as const, roles: PRESET_ROLE_CONFIGS.fast };
+                    setConfig(updated);
+                    providerConfigService.saveConfig(updated);
+                  }}
+                  title="One model. Fastest response."
+                  className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
+                    researchDepth === 'solo'
+                      ? 'bg-white/10 text-stone-100 shadow-xs'
+                      : 'text-stone-400 hover:text-stone-200'
+                  }`}
+                >
+                  Fast
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResearchDepth('standard');
+                    const updated = { ...config, preset: 'balanced' as const, roles: PRESET_ROLE_CONFIGS.balanced };
+                    setConfig(updated);
+                    providerConfigService.saveConfig(updated);
+                  }}
+                  title="3 perspectives: Analyst + Critic + Synthesizer."
+                  className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
+                    researchDepth === 'standard'
+                      ? 'bg-white/10 text-stone-100 shadow-xs'
+                      : 'text-stone-400 hover:text-stone-200'
+                  }`}
+                >
+                  Balanced
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResearchDepth('deep');
+                    const updated = { ...config, preset: 'deep' as const, roles: PRESET_ROLE_CONFIGS.deep };
+                    setConfig(updated);
+                    providerConfigService.saveConfig(updated);
+                  }}
+                  title="4 stages: Analyst + Critic + Verifier + Synthesizer."
+                  className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
+                    researchDepth === 'deep'
+                      ? 'bg-white/10 text-stone-100 shadow-xs'
+                      : 'text-stone-400 hover:text-stone-200'
+                  }`}
+                >
+                  Deep
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowModelSetup(!showModelSetup)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-stone-300 text-xs transition-colors cursor-pointer border border-white/5"
+              >
+                <span className="material-symbols-outlined text-[14px]">tune</span>
+                <span className="font-mono text-[11px]">Model Setup</span>
+                <span className="material-symbols-outlined text-[14px]">expand_more</span>
+              </button>
+            </div>
+
+            <span className="text-[10px] text-stone-400 font-mono">
+              {researchDepth === 'solo' && '1 model · Fast'}
+              {researchDepth === 'standard' && 'Analyst + Critic + Synthesizer'}
+              {researchDepth === 'deep' && 'Analyst + Critic + Verifier + Synthesizer'}
+            </span>
+          </div>
+
+          {/* Model Setup Popover Panel */}
+          {showModelSetup && (
+            <div className="mt-3 p-4 rounded-xl bg-[#141822] border border-white/10 shadow-2xl text-left flex flex-col gap-3 text-stone-200 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                <span className="font-sans text-xs font-bold text-stone-100">Model Setup per Role</span>
+                <button
+                  type="button"
+                  onClick={() => setShowModelSetup(false)}
+                  className="text-stone-400 hover:text-stone-200 text-xs cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {[
+                  { key: 'architect', title: 'Analyst', desc: 'Builds argument' },
+                  { key: 'skeptic', title: 'Critic', desc: 'Stress-tests claims' },
+                  { key: 'verifier', title: 'Verifier', desc: 'Checks facts & math' },
+                  { key: 'arbiter', title: 'Synthesizer', desc: 'Final resolution' },
+                ].map((role) => {
+                  const currentSeat = config.roles?.[role.key as keyof typeof config.roles] || { provider: 'gemini', model: 'gemini-3.8-flash' };
+                  const modelsList = AVAILABLE_MODELS[currentSeat.provider] || [];
+
+                  return (
+                    <div key={role.key} className="p-2 rounded-lg bg-black/30 border border-white/5 flex flex-col gap-1">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="font-semibold text-stone-200">{role.title}</span>
+                        <span className="font-mono text-[9px] text-stone-400 uppercase">{currentSeat.provider}</span>
+                      </div>
+                      <select
+                        value={currentSeat.model}
+                        onChange={(e) => {
+                          const nextM = e.target.value;
+                          const nextConfig = {
+                            ...config,
+                            preset: 'custom' as const,
+                            roles: {
+                              ...config.roles,
+                              [role.key]: { ...currentSeat, model: nextM },
+                            },
+                          };
+                          setConfig(nextConfig);
+                          providerConfigService.saveConfig(nextConfig);
+                        }}
+                        className="bg-black/60 border border-white/10 rounded px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#ccbdff] cursor-pointer"
+                      >
+                        {modelsList.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
