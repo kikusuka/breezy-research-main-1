@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProductMode } from '../console/TopBar';
+import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
 
 interface SynapHeaderProps {
   readinessPercentage: number;
@@ -45,39 +46,39 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
             <button
               type="button"
               onClick={() => onSelectProductMode('breezy')}
-              className={`px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
                 productMode === 'breezy'
                   ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              <span className="material-symbols-outlined text-[13px]">air</span>
+              <BreezyLogoIcon className="w-4 h-4 text-sky-400" />
               <span>Breezy</span>
             </button>
 
             <button
               type="button"
               onClick={() => onSelectProductMode('synthexis')}
-              className={`px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
                 productMode === 'synthexis'
                   ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              <span className="material-symbols-outlined text-[13px]">psychology</span>
+              <SynthexisLogoIcon className="w-4 h-4" />
               <span>Synthexis</span>
             </button>
 
             <button
               type="button"
               onClick={() => onSelectProductMode('synap')}
-              className={`px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
                 productMode === 'synap'
                   ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              <span className="material-symbols-outlined text-[13px]">lan</span>
+              <SynapLogoIcon className="w-4 h-4" />
               <span>Synap</span>
             </button>
           </div>

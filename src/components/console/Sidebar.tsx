@@ -1,5 +1,6 @@
 import React from 'react';
 import { DebateSession } from '../../types';
+import { SynthexisLogoIcon } from '../icons/ProductLogos';
 
 export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing';
 
@@ -52,8 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onSelectTab('chat');
                 onCloseMobile?.();
               }}
-              className="text-left"
+              className="text-left flex items-center gap-2"
             >
+              <SynthexisLogoIcon className="w-5 h-5" />
               <span className="font-serif text-base font-medium tracking-tight text-stone-100">
                 Synthexis
               </span>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BreezyLogoIcon } from '../icons/ProductLogos';
 
 export type BreezyTab = 'chat' | 'ide' | 'canvas';
 
@@ -58,7 +59,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.25)]">
-                <span className="material-symbols-outlined text-lg">air</span>
+                <BreezyLogoIcon className="w-4 h-4 text-sky-400" />
               </div>
               <span className="font-sans text-sm font-bold text-white tracking-tight">
                 Breezy

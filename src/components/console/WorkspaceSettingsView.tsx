@@ -3,6 +3,7 @@ import { ProviderKeyConfig } from '../../types';
 import { authService, AuthUser } from '../../services/authService';
 import { workspaceService, GoogleDriveFile, GmailMessage, CalendarEvent } from '../../services/workspaceService';
 import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
+import { providerConfigService } from '../../services/providerConfigService';
 
 interface WorkspaceSettingsViewProps {
   keys: ProviderKeyConfig;
@@ -19,6 +20,16 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [webhookUrl, setWebhookUrl] = useState<string>('https://hooks.slack.com/services/T04G/B02/synthexis-alerts');
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string>('Settings updated: Dialectic rules propagated to 3 nodes');
+
+  // Role routing & presets
+  const canonical = providerConfigService.getConfig();
+  const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>(canonical.preset || 'balanced');
+  const [roles, setRoles] = useState(canonical.roles || {
+    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+  });
 
   // Key inputs
   const [geminiKey, setGeminiKey] = useState(keys.gemini || '');
@@ -603,6 +614,106 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         {activeTab === 'general' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
             <div className="lg:col-span-8 flex flex-col gap-8">
+              {/* Role Model Customization Section */}
+              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-[#ccbdff]/10 text-[#ccbdff]">
+                      <span className="material-symbols-outlined text-[20px]">account_tree</span>
+                    </div>
+                    <div>
+                      <h2 className="font-sans text-base font-semibold text-stone-100">Role Model Routing</h2>
+                      <p className="font-sans text-xs text-stone-400">
+                        Assign distinct AI model families to each research role in the dialectic pipeline
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <label className="font-mono text-[10px] text-stone-400 uppercase tracking-wider font-semibold">
+                    Research Style Presets
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'fast', name: 'Fast', desc: 'Speed optimized (Single model)' },
+                      { id: 'balanced', name: 'Balanced', desc: 'Multi-perspective analysis' },
+                      { id: 'deep', name: 'Deep', desc: 'Rigorous cross-verification' },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setPreset(item.id as any);
+                          const cfg = providerConfigService.getConfig();
+                          cfg.preset = item.id as any;
+                          providerConfigService.saveConfig(cfg);
+                          setToastMessage(`Research preset updated to ${item.name}`);
+                          setShowToast(true);
+                          setTimeout(() => setShowToast(false), 2500);
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          preset === item.id
+                            ? 'bg-[#ccbdff]/15 border-[#ccbdff] text-white'
+                            : 'bg-black/20 border-white/5 text-stone-400 hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="font-sans text-xs font-bold text-stone-200">{item.name}</div>
+                        <div className="font-mono text-[10px] opacity-70 mt-0.5">{item.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-2">
+                  <label className="font-mono text-[10px] text-stone-400 uppercase tracking-wider font-semibold">
+                    Role Assignments
+                  </label>
+                  <div className="flex flex-col gap-3 bg-black/20 border border-white/5 rounded-xl p-4">
+                    {[
+                      { key: 'architect', title: 'Analyst', desc: 'Framing & core thesis proposal' },
+                      { key: 'skeptic', title: 'Critic', desc: 'Identifies logical flaws & counter-evidence' },
+                      { key: 'verifier', title: 'Verifier', desc: 'Fact & constraint validation' },
+                      { key: 'arbiter', title: 'Synthesizer', desc: 'Executive resolution & summary' },
+                    ].map((role) => (
+                      <div key={role.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/5 last:border-b-0 last:pb-0">
+                        <div>
+                          <div className="font-sans text-xs font-semibold text-stone-200">{role.title}</div>
+                          <div className="font-mono text-[10px] text-stone-400">{role.desc}</div>
+                        </div>
+                        <select
+                          value={roles[role.key as keyof typeof roles]?.provider || 'gemini'}
+                          onChange={(e) => {
+                            const p = e.target.value as any;
+                            const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash';
+                            const nextRoles = {
+                              ...roles,
+                              [role.key]: { provider: p, model: defaultM },
+                            };
+                            setRoles(nextRoles as any);
+                            setPreset('custom');
+                            const cfg = providerConfigService.getConfig();
+                            cfg.preset = 'custom';
+                            cfg.roles = nextRoles as any;
+                            providerConfigService.saveConfig(cfg);
+                            setToastMessage(`Assigned ${p.toUpperCase()} to ${role.title}`);
+                            setShowToast(true);
+                            setTimeout(() => setShowToast(false), 2500);
+                          }}
+                          className="bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 outline-none focus:border-[#ccbdff] cursor-pointer"
+                        >
+                          <option value="gemini">Google Gemini</option>
+                          <option value="anthropic">Anthropic Claude</option>
+                          <option value="groq">Groq (Llama 3.3)</option>
+                          <option value="sambanova">SambaNova (Llama/Qwen)</option>
+                          <option value="openrouter">OpenRouter</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
               <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
