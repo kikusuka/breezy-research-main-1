@@ -38,7 +38,11 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
 
   // Integration States (GitHub)
   const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('synthexis_github_token') || '');
-  const [isGithubConnected, setIsGithubConnected] = useState<boolean>(Boolean(localStorage.getItem('synthexis_github_token')));
+  const [githubAuthMode, setGithubAuthMode] = useState<'none' | 'pat' | 'oauth'>(() => {
+    const token = localStorage.getItem('synthexis_github_token') || '';
+    if (!token) return 'none';
+    return (localStorage.getItem('breezy_github_auth_mode') as any) || 'pat';
+  });
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>('');
   const [repoContents, setRepoContents] = useState<GitHubContent[]>([]);
@@ -75,10 +79,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
 
   // GitHub loader
   useEffect(() => {
-    if (isGithubConnected && githubToken) {
+    if (githubAuthMode !== 'none' && githubToken) {
       loadGithubRepos(githubToken);
     }
-  }, [isGithubConnected, githubToken]);
+  }, [githubAuthMode, githubToken]);
 
   const loadGithubRepos = async (token: string) => {
     setIsLoadingGithub(true);
@@ -123,7 +127,8 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const handleConnectGithub = () => {
     if (!githubToken.trim()) return;
     localStorage.setItem('synthexis_github_token', githubToken.trim());
-    setIsGithubConnected(true);
+    localStorage.setItem('breezy_github_auth_mode', 'pat');
+    setGithubAuthMode('pat');
     setToastMessage('GitHub Personal Access Token registered.');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
@@ -131,12 +136,13 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
 
   const handleDisconnectGithub = () => {
     localStorage.removeItem('synthexis_github_token');
+    localStorage.removeItem('breezy_github_auth_mode');
     setGithubToken('');
-    setIsGithubConnected(false);
+    setGithubAuthMode('none');
     setGithubRepos([]);
     setSelectedRepo('');
     setRepoContents([]);
-    setToastMessage('GitHub disconnected.');
+    setToastMessage('GitHub connection cleared.');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -146,44 +152,16 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
       const res = await authService.signInWithGithub();
       if (res) {
         setGithubToken(res.accessToken);
-        setIsGithubConnected(true);
+        localStorage.setItem('synthexis_github_token', res.accessToken);
+        localStorage.setItem('breezy_github_auth_mode', 'oauth');
+        setGithubAuthMode('oauth');
         setToastMessage('GitHub OAuth Authorized Successfully!');
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
       }
     } catch (err: any) {
-      alert(`GitHub OAuth Popup connection failed: ${err.message}. Enabling sandbox fallback options instead.`);
+      alert(`GitHub OAuth connection issue: ${err.message}. You can also enter a Personal Access Token below.`);
     }
-  };
-
-  const handleInstantAutoAuthorize = () => {
-    // Generate a high-performance sandbox mock-token that acts as an auto-authorized state
-    const sandboxToken = 'ghp_synthexis_sandbox_token_demo_authenticated';
-    localStorage.setItem('synthexis_github_token', sandboxToken);
-    setGithubToken(sandboxToken);
-    setIsGithubConnected(true);
-    // Automatically load verified sandbox repo structure
-    setGithubRepos([
-      {
-        id: 1042,
-        name: 'synthexis-ledger-node',
-        full_name: 'boddupalli-pranav/synthexis-ledger-node',
-        description: 'Primary distributed ledger and transaction streaming pipeline',
-        private: true,
-        html_url: 'https://github.com/boddupalli-pranav/synthexis-ledger-node'
-      },
-      {
-        id: 2045,
-        name: 'cognitive-consensus-core',
-        full_name: 'boddupalli-pranav/cognitive-consensus-core',
-        description: 'Multi-node dialectic validation and arbiter consensus engine',
-        private: false,
-        html_url: 'https://github.com/boddupalli-pranav/cognitive-consensus-core'
-      }
-    ]);
-    setToastMessage('1-Click Sandbox Token Auto-Authorized!');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
   };
 
   const handleSelectRepo = async (repoFullName: string) => {
@@ -504,12 +482,24 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                   </div>
                 </div>
 
-                {isGithubConnected ? (
+                {githubAuthMode !== 'none' ? (
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-emerald-400 text-[18px]">verified</span>
-                        <span className="text-stone-200 font-medium">PAT Token Active</span>
+                        {githubAuthMode === 'oauth' ? (
+                          <>
+                            <span className="material-symbols-outlined text-emerald-400 text-[18px]">verified</span>
+                            <div className="flex flex-col">
+                              <span className="text-stone-200 font-medium">GitHub OAuth Connected</span>
+                              <span className="text-[10px] text-emerald-400">Live Account Linked</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-emerald-400 text-[18px]">key</span>
+                            <span className="text-stone-200 font-medium">PAT Token Active</span>
+                          </>
+                        )}
                       </div>
                       <button
                         type="button"
@@ -562,30 +552,19 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    {/* Native One-Click Authorize & OAuth buttons */}
-                    <div className="flex flex-col gap-2.5">
-                      <button
-                        type="button"
-                        onClick={handleGithubOAuthPopup}
-                        className="w-full bg-[#24292e] hover:bg-[#2f363d] border border-white/10 text-stone-100 font-sans text-xs font-semibold py-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">account_circle</span>
-                        <span>Sign in with GitHub OAuth</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleInstantAutoAuthorize}
-                        className="w-full bg-[#1b2b20] hover:bg-[#253e2d] border border-emerald-500/20 text-emerald-300 font-sans text-xs font-semibold py-2.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <span className="material-symbols-outlined text-[16px] text-emerald-400">offline_pin</span>
-                        <span>1-Click Auto-Authorize Sandbox</span>
-                      </button>
-                    </div>
+                    {/* Native GitHub OAuth button */}
+                    <button
+                      type="button"
+                      onClick={handleGithubOAuthPopup}
+                      className="w-full bg-[#24292e] hover:bg-[#2f363d] border border-white/10 text-stone-100 font-sans text-xs font-semibold py-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">account_circle</span>
+                      <span>Sign in with GitHub OAuth</span>
+                    </button>
 
                     <div className="relative flex py-1 items-center">
                       <div className="flex-grow border-t border-white/5"></div>
-                      <span className="flex-shrink mx-3 text-[10px] text-stone-500 uppercase tracking-widest font-mono">or manual key</span>
+                      <span className="flex-shrink mx-3 text-[10px] text-stone-500 uppercase tracking-widest font-mono">or personal access token</span>
                       <div className="flex-grow border-t border-white/5"></div>
                     </div>
 
@@ -599,7 +578,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                         className="bg-[#1c212a] border border-white/10 rounded-lg px-3 py-2 text-xs text-stone-100 outline-none focus:border-white/20"
                       />
                       <p className="text-[10px] text-stone-500 leading-relaxed">
-                        Specify a custom token if you want to connect a dedicated private organization repository manually.
+                        Specify a custom read-only token to connect repositories securely.
                       </p>
                     </div>
 
@@ -609,7 +588,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                       disabled={!githubToken.trim()}
                       className="w-full bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      Verify Token
+                      Connect Token
                     </button>
                   </div>
                 )}

@@ -1,200 +1,110 @@
-# Synthexis - Strategic Research Lab
+# Breezy Playground
 
-A professional multi-agent AI research platform that runs entirely in your browser with zero backend costs.
+> **Weightless AI Workspace, Deep Technical Research, Cloud Code Engineering & Grounded Study Engine**
 
-## 🚀 Key Features
+Breezy Playground is a unified, multi-mode developer and researcher platform. It brings conversational AI, multi-perspective technical inquiry, ephemeral code execution, and grounded knowledge analysis into a cohesive, responsive browser interface.
 
-### **Multi-Mode AI Research**
-- **Council Mode**: Multi-agent debate (Architect, Skeptic, Verifier, Arbiter, Synthesizer)
-- **Solo Mode**: Single model research for quick answers
-- **Offline Support**: Use Ollama/PocketPal for local AI inference
+---
 
-### **Data Ownership & Privacy**
-- **Google Drive Storage**: All sessions saved to YOUR Drive, not our servers
-- **Zero Infrastructure Costs**: We don't pay for storage, you own your data
-- **Cross-Device Sync**: Access your research from any device
-- **Local-First**: Works offline with cached data
+## 🏛️ Architecture & Unified Workspaces
 
-### **Advanced Capabilities**
-- **PDF Analysis**: Upload and analyze research papers
-- **Code Execution**: Run code snippets in sandboxed environment
-- **Multiple Providers**: Gemini, Groq, SambaNova, OpenRouter, Ollama
-- **Search Grounding**: Real-time web search integration
+Breezy Playground is structured as a single platform shell hosting specialized workspaces:
 
-## 🛠️ Setup Instructions
-
-### 1. Firebase Authentication Setup
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Enable **Google Sign-In**:
-   - Go to Authentication → Sign-in method
-   - Enable Google provider
-   - Add your authorized domains
-4. Copy your Firebase config
-
-### 2. Google Drive API Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable **Google Drive API**
-3. Create OAuth 2.0 credentials:
-   - Go to APIs & Services → Credentials
-   - Create OAuth client ID (Web application)
-   - Add authorized redirect URIs
-4. Copy your Client ID
-
-### 3. Environment Configuration
-
-Create a `.env` file in the root directory:
-
-```env
-# Firebase Config (Required for Auth)
-VITE_FIREBASE_API_KEY=your_api_key_here
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
-
-# Google OAuth (Required for Drive)
-VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+```text
+                             BREEZY PLAYGROUND
+                                     │
+      ┌──────────────────┬───────────┴───────────┬──────────────────┐
+      │                  │                       │                  │
+    Breezy           Synthexis                 Build              Synap
+(Conversational    (Technical Research      (Cloud IDE &      (Study & Knowledge
+   Workspace)      & Evidence Engine)    Ephemeral Runner)         Engine)
 ```
 
-### 4. Install Dependencies
+### 1. Breezy (Core Interactive Workspace)
+* **Persistent Threads**: Instant conversation tracking stored locally and organized by topic.
+* **Canvas Prototype**: Interactive layout for authoring and outlining presentations, tasks, and coursework. *(Clearly designated in preview mode while live Google Workspace OAuth sync is in active development).*
+* **Design & Theme**: High-contrast, accessibility-checked Dark and Light mode support with smooth palette transitions.
 
+### 2. Synthexis (Deep Technical Research)
+* **Multi-Perspective Synthesis**: Reconciles thesis arguments, critical counter-arguments, and synthesis findings from top-tier LLMs.
+* **Search Grounding Abstraction**: Pluggable provider interface supporting:
+  * **SearXNG** (Self-hostable privacy-first metasearch)
+  * **Tavily Search**
+  * **Google Search Grounding**
+  * **Brave Search**, **Serper**, and **DuckDuckGo**
+* **Truthful Evidence Graph**: Maps claims directly to retrieved sources, explicitly reporting whether evidence currently supports each claim without inflated verification claims.
+* **Structured Export**: Markdown export with complete citation trails and inquiry parameters.
+
+### 3. Build (Breezy IDE)
+* **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
+* **Simulated ANSI Terminal**: Real-time log streamer supporting ANSI color escape codes, live text filter search, auto-scrolling, and keyboard shortcuts (`Cmd+K` / `Ctrl+K` to clear, `Cmd+Shift+Down` to jump to bottom).
+* **Ephemeral Cloud Execution**: Headless dispatch to Google Colab and cloud compute runtimes with automatic TTL cleanup, ensuring zero persistent storage bloat on Google Drive.
+
+### 4. Synap (Knowledge & Study Workspace)
+* **Source-Grounded Notebooks**: Ingest documents, text files, and reference notes.
+* **Weak-Spot Diagnostic**: Evaluates mastery levels and flags topics requiring review.
+* **Recall & Spaced Repetition**: Flashcards and quizzes linked directly to study items.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Motion, D3.js |
+| **Backend Server** | Node.js, Express (`server.ts`), Server-Sent Events (SSE) streaming proxy |
+| **AI Integration** | `@google/genai` (Gemini 2.5 / 3.x), Groq, SambaNova, OpenRouter |
+| **Code Highlighting** | Prism.js |
+| **Persistence** | IndexedDB, LocalStorage, optional Firebase / Google Drive sync |
+
+---
+
+## 🔐 Security & Data Handling Model
+
+* **Local-First Storage**: User chat threads, research sessions, and notebook data are stored in local browser storage (IndexedDB and LocalStorage).
+* **Transparent Credentials**: API keys (BYOK) are routed via the Express backend server proxy to prevent exposure.
+* **Explicit Authentication States**: Connected services strictly differentiate between real authenticated connections (OAuth / Personal Access Tokens) and local Sandbox Demo modes.
+* **Audited Scopes**: When connecting third-party services, access is requested strictly for necessary capabilities (e.g. read-only repository inspection).
+* **Transparent Model Failover**: If a requested AI model is temporarily rate-limited or unavailable, the backend gracefully switches to a compatible fallback model and explicitly notifies the user in the response stream.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+* Node.js 18+ and npm
+
+### 1. Installation
 ```bash
 npm install
 ```
 
-### 5. Run Development Server
+### 2. Environment Configuration
+Create a `.env` file in the project root:
+```env
+# Optional server-side Gemini API key for default workspace queries
+GEMINI_API_KEY=your_gemini_api_key_here
 
+# Optional: SearXNG endpoint for self-hosted search
+SEARXNG_URL=https://your-searxng-instance.example.com
+```
+
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
+The application will launch on `http://localhost:3000`.
 
-## 🔐 Authentication Flow
-
-1. User clicks "Sign in with Google"
-2. Firebase handles OAuth popup
-3. On success, user can optionally connect Google Drive
-4. If Drive connected: sync sessions to `/Synthexis_Data/sessions/`
-5. If no Drive: use local IndexedDB storage
-
-## 📁 Google Drive Structure
-
-```
-My Drive/
-└── Synthexis_Data/
-    ├── synthexis_metadata.json (session index)
-    └── sessions/
-        ├── session_abc123.json
-        ├── session_def456.json
-        └── ...
+### 4. Production Build
+```bash
+npm run build
+npm start
 ```
 
-## 🌐 Offline Mode with Ollama
+---
 
-### Setup Ollama
+## 📌 Project Standards & Guidelines
 
-1. Install Ollama: https://ollama.ai
-2. Pull models:
-   ```bash
-   ollama pull llama3.2
-   ollama pull mistral
-   ```
-3. Ollama runs on `http://localhost:11434` by default
-
-### Configure in App
-
-1. Go to Settings → AI Providers
-2. Enable "Ollama (Offline)"
-3. Select your local model
-4. Start researching without internet!
-
-## 📄 PDF Analysis
-
-1. Click the paperclip icon in the input
-2. Select PDF file(s)
-3. App extracts text and metadata
-4. Use extracted content in debates
-
-## 🎨 Design Philosophy
-
-- **Professional Blue/Gray Theme**: Clean, corporate aesthetic
-- **Minimal Animations**: Focus on productivity, not flashiness
-- **Plain Language**: No theatrical "Council Chamber" metaphors
-- **Accessibility**: WCAG 2.1 AA compliant
-
-## 🚧 Roadmap
-
-### Phase 1: Core Features (Current)
-- ✅ Google Drive integration
-- ✅ Ollama offline support
-- ✅ Solo mode
-- ✅ PDF analysis
-- ⏳ Code execution (WebContainers)
-
-### Phase 2: Advanced Features
-- ⏳ Team collaboration
-- ⏳ Public shareable transcripts
-- ⏳ Usage analytics dashboard
-- ⏳ Custom agent personas
-
-### Phase 3: Monetization
-- ⏳ Freemium tiers
-- ⏳ Usage quotas
-- ⏳ Stripe integration
-- ⏳ Enterprise features
-
-## 🛡️ Security Considerations
-
-### Current Implementation
-- API keys stored in localStorage (encrypted at rest recommended)
-- Google OAuth tokens managed by Firebase
-- Drive files private to user's account
-
-### Future Improvements
-- Server-side API key management
-- End-to-end encryption for sensitive sessions
-- Key rotation mechanisms
-- XSS protection hardening
-
-## 📊 Cost Model
-
-**For Users:**
-- Free: Google Drive storage (counts against your quota)
-- API costs: Your own API keys (Gemini, Groq, etc.)
-- Offline: Free with Ollama (your electricity)
-
-**For Platform:**
-- Hosting: ~$0 (static site on Vercel/Netlify)
-- Database: $0 (using user's Drive)
-- Auth: Free tier (Firebase)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Submit PR with description
-
-## 📝 License
-
-MIT License - See LICENSE file
-
-## 💡 Why This Architecture?
-
-Traditional SaaS:
-```
-User → Our Server → Our Database → Our Costs → Monthly Subscription
-```
-
-Synthexis Model:
-```
-User → Browser → Their Drive → Their Control → Pay Only for API Usage
-```
-
-**Benefits:**
-- Zero infrastructure costs = sustainable free tier
-- Users own their data = GDPR compliant by design
-- Cross-device sync = better UX
-- No vendor lock-in = user trust
+1. **Truthful UI State**: No simulated action or mock token may present itself as an active third-party connection. Prototypes and previews must be explicitly labeled.
+2. **Real Metrics**: No fabricated telemetry numbers or pseudo-scientific confidence percentages. Every displayed metric must derive from a real calculation or source count.
+3. **No Theatrical Terminology**: User interfaces prioritize clear, respectful, domain-appropriate language over speculative sci-fi jargon.

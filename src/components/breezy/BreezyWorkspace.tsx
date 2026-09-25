@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from '@google/genai';
 
 interface BreezyMessage {
   role: 'user' | 'assistant';
@@ -151,40 +150,21 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       }
     }, 50);
 
-    // Call BYOK endpoint directly
+    // Call real AI endpoint (uses server Gemini key by default, or client BYOK if present)
     setIsThinking(true);
     const byokRaw = localStorage.getItem('synap:provider');
     let apiKey = '';
     let model = 'gemini-3.8-flash';
-    let type = 'gemini';
-    let baseUrl = 'https://api.openai.com/v1';
+    let provider = 'gemini';
 
     try {
       if (byokRaw) {
         const parsed = JSON.parse(byokRaw);
         apiKey = parsed.key || '';
         model = parsed.model || 'gemini-3.8-flash';
-        type = parsed.type || 'gemini';
-        baseUrl = parsed.baseUrl || 'https://api.openai.com/v1';
+        provider = parsed.type || 'gemini';
       }
     } catch {}
-
-    if (!apiKey) {
-      const errorMsg: BreezyMessage = {
-        role: 'assistant',
-        content: '⚠️ No API Key found in settings! Click on the Profile Card in the sidebar to configure your BYOK credentials first.',
-        timestamp: 'Just now',
-      };
-      saveChats({
-        ...finalChats,
-        [currentId]: {
-          ...updatedChat,
-          messages: [...updatedMessages, errorMsg],
-        },
-      });
-      setIsThinking(false);
-      return;
-    }
 
     const aiPlaceholder: BreezyMessage = {
       role: 'assistant',
@@ -202,36 +182,25 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
     });
 
     try {
-      let aiText = '';
-      if (type === 'gemini') {
-        const ai = new GoogleGenAI({ apiKey });
-        const sysInst = "You are Breezy, an exceptionally encouraging, lightweight, and responsive workspace companion. Keep answers clear and styled beautifully with markdown.";
-        const resp = await ai.models.generateContent({
-          model: model || 'gemini-3.8-flash',
-          contents: `${sysInst}\n\nUser query: ${userMsg.content}`,
-        });
-        aiText = resp.text || 'Synthesis complete.';
-      } else {
-        const url = (baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '') + '/chat/completions';
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: model || 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: 'You are Breezy, a lightweight cognitive helper.' },
-              { role: 'user', content: userMsg.content }
-            ],
-            temperature: 0.7,
-          })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
-        aiText = data.choices?.[0]?.message?.content || 'Completed.';
+      const response = await fetch('/api/breezy/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: userMsg.content,
+          history: updatedMessages.slice(-6),
+          provider,
+          model,
+          apiKey: apiKey || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server responded with ${response.status}`);
       }
+
+      const data = await response.json();
+      const aiText = data.text || 'Synthesis complete.';
 
       saveChats({
         ...finalChats,
@@ -256,7 +225,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
             ...updatedMessages,
             {
               role: 'assistant',
-              content: `⚠️ API Error: ${e.message}`,
+              content: `⚠️ Generation Note: ${e.message}`,
               timestamp: 'Just now',
             },
           ],

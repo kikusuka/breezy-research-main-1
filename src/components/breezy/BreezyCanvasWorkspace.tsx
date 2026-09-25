@@ -1,365 +1,623 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-interface SlideItem {
+export type CanvasCardType = 'idea' | 'research' | 'code' | 'task';
+export type CanvasCardColor = 'sky' | 'emerald' | 'amber' | 'violet' | 'slate';
+
+export interface CanvasCard {
   id: string;
+  type: CanvasCardType;
   title: string;
-  slidesCount: number;
-  lastModified: string;
-}
-
-interface TaskItem {
-  id: string;
-  title: string;
-  status: 'needsAction' | 'completed';
-  due?: string;
-}
-
-interface ClassroomCourse {
-  id: string;
-  name: string;
-  section: string;
-  room?: string;
-  ownerId: string;
+  content: string;
+  color: CanvasCardColor;
+  tags: string[];
+  completed?: boolean;
+  createdAt: string;
 }
 
 interface BreezyCanvasWorkspaceProps {
   onOpenSettings?: () => void;
 }
 
-export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'slides' | 'tasks' | 'classroom'>('slides');
-  const [isConnected, setIsConnected] = useState<boolean>(() => {
-    return Boolean(sessionStorage.getItem('breezy_g_token') || sessionStorage.getItem('synthexis_g_token'));
-  });
-  
-  // States for Slides, Tasks, Classroom
-  const [slides, setSlides] = useState<SlideItem[]>([
-    { id: 'slide-1', title: 'Q3 Breezy Cognitive Flow & Real-Time Agents', slidesCount: 12, lastModified: '1 hour ago' },
-    { id: 'slide-2', title: 'Neuroscience & AI Architecture Research Deck', slidesCount: 18, lastModified: 'Yesterday' }
-  ]);
-  const [tasks, setTasks] = useState<TaskItem[]>([
-    { id: 'task-1', title: 'Review BYOK credential routing across all workspaces', status: 'completed' },
-    { id: 'task-2', title: 'Sync embedded IDE sandbox and live container VMs', status: 'needsAction', due: 'Tomorrow' },
-    { id: 'task-3', title: 'Optimize Google Slides presentation outlines generator', status: 'needsAction', due: 'Friday' }
-  ]);
-  const [courses, setCourses] = useState<ClassroomCourse[]>([
-    { id: 'course-1', name: 'Advanced Cognitive Computing & Agent Swarms', section: 'Lab Section 01', room: 'Virtual Pod 3', ownerId: 'Prof. Alistair Vance' },
-    { id: 'course-2', name: 'Interactive UI Systems & Atmospheric Design', section: 'Fall 2026', room: 'Studio Beta', ownerId: 'Dr. Elena Rostova' }
-  ]);
+const DEFAULT_CARDS: CanvasCard[] = [
+  {
+    id: 'card-1',
+    type: 'research',
+    title: 'Distributed Consensus & Event Sourcing',
+    content: 'Investigating high-throughput append-only transaction logs. Comparing Kafka topic partitioning with Raft-replicated memory state machines.',
+    color: 'sky',
+    tags: ['Architecture', 'Distributed-Systems'],
+    createdAt: new Date().toLocaleDateString(),
+  },
+  {
+    id: 'card-2',
+    type: 'code',
+    title: 'SSE Streaming Handler Pattern',
+    content: 'const eventStream = new EventSource("/api/debate/stream");\neventStream.onmessage = (e) => handleToken(JSON.parse(e.data));',
+    color: 'emerald',
+    tags: ['TypeScript', 'Backend'],
+    createdAt: new Date().toLocaleDateString(),
+  },
+  {
+    id: 'card-3',
+    type: 'idea',
+    title: 'Epistemic Uncertainty Scoring in Evidence Trees',
+    content: 'Extract claim-level contradictions automatically and render a calibrated confidence index based on retrieved domain authority.',
+    color: 'violet',
+    tags: ['Research', 'AI'],
+    createdAt: new Date().toLocaleDateString(),
+  },
+  {
+    id: 'card-4',
+    type: 'task',
+    title: 'Verify mobile viewport scaling across iPhone and iPad',
+    content: 'Ensure touch targets >= 44px, sticky bottoms adapt to dynamic viewport height (100dvh), and drawers close on selection.',
+    color: 'amber',
+    tags: ['Mobile', 'UI'],
+    completed: true,
+    createdAt: new Date().toLocaleDateString(),
+  },
+];
 
-  const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-  const [newSlideTitle, setNewSlideTitle] = useState<string>('');
+export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () => {
+  const [cards, setCards] = useState<CanvasCard[]>(() => {
+    try {
+      const stored = localStorage.getItem('breezy:canvas:cards');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_CARDS;
+  });
+
+  const [activeFilter, setActiveFilter] = useState<'all' | CanvasCardType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isExpandingId, setIsExpandingId] = useState<string | null>(null);
+  const [isAddingCard, setIsAddingCard] = useState(false);
+
+  // New card form state
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
+  const [newType, setNewType] = useState<CanvasCardType>('idea');
+  const [newColor, setNewColor] = useState<CanvasCardColor>('sky');
+  const [newTagInput, setNewTagInput] = useState('');
+
+  // Editing card state
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+
+  // Persist cards
+  const saveCards = (next: CanvasCard[]) => {
+    setCards(next);
+    try {
+      localStorage.setItem('breezy:canvas:cards', JSON.stringify(next));
+    } catch {}
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleConnectGoogle = () => {
-    const token = 'ya29.a0_breezy_canvas_authed_token_' + Date.now();
-    sessionStorage.setItem('breezy_g_token', token);
-    setIsConnected(true);
-    showToast('Successfully connected Google Workspace Canvas (Slides, Tasks, Classroom).');
-  };
-
-  const handleCreateTask = (e: React.FormEvent) => {
+  const handleCreateCard = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    const item: TaskItem = {
-      id: `task-${Date.now()}`,
-      title: newTaskTitle.trim(),
-      status: 'needsAction',
-      due: 'Today'
+    if (!newTitle.trim()) return;
+
+    const tags = newTagInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const newCard: CanvasCard = {
+      id: `card-${Date.now()}`,
+      type: newType,
+      title: newTitle.trim(),
+      content: newContent.trim(),
+      color: newColor,
+      tags: tags.length ? tags : ['General'],
+      completed: newType === 'task' ? false : undefined,
+      createdAt: new Date().toLocaleDateString(),
     };
-    setTasks([item, ...tasks]);
-    setNewTaskTitle('');
-    showToast('Task synchronized to Google Tasks successfully.');
+
+    saveCards([newCard, ...cards]);
+    setNewTitle('');
+    setNewContent('');
+    setNewTagInput('');
+    setIsAddingCard(false);
+    showToast('New canvas card added.');
   };
 
-  const handleCreateSlide = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSlideTitle.trim()) return;
-    const item: SlideItem = {
-      id: `slide-${Date.now()}`,
-      title: newSlideTitle.trim(),
-      slidesCount: 1,
-      lastModified: 'Just now'
-    };
-    setSlides([item, ...slides]);
-    setNewSlideTitle('');
-    showToast('Google Slides presentation created and synchronized.');
+  const handleDeleteCard = (id: string) => {
+    saveCards(cards.filter((c) => c.id !== id));
+    showToast('Card deleted.');
   };
 
-  const toggleTaskStatus = (id: string) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, status: t.status === 'completed' ? 'needsAction' : 'completed' } : t));
-    showToast('Task status updated.');
+  const handleToggleTask = (id: string) => {
+    saveCards(
+      cards.map((c) =>
+        c.id === id ? { ...c, completed: !c.completed } : c
+      )
+    );
+  };
+
+  const startEditCard = (card: CanvasCard) => {
+    setEditingCardId(card.id);
+    setEditTitle(card.title);
+    setEditContent(card.content);
+  };
+
+  const saveEditCard = (id: string) => {
+    saveCards(
+      cards.map((c) =>
+        c.id === id
+          ? { ...c, title: editTitle.trim() || c.title, content: editContent }
+          : c
+      )
+    );
+    setEditingCardId(null);
+    showToast('Changes saved.');
+  };
+
+  // Real AI Expansion using /api/breezy/chat
+  const handleAiExpand = async (card: CanvasCard) => {
+    setIsExpandingId(card.id);
+    showToast('Synthesizing expansion with AI...');
+
+    try {
+      const prompt = `You are Breezy Canvas AI. Expand this research/thought card with structured, actionable insights, technical specifics, or implementation details. Keep it concise (under 120 words):\n\nCARD TITLE: ${card.title}\nCARD CONTENT: ${card.content || '(empty)'}`;
+
+      const res = await fetch('/api/breezy/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!res.ok) throw new Error('AI generation service error');
+      const data = await res.json();
+      const expansionText = data.text;
+
+      saveCards(
+        cards.map((c) =>
+          c.id === card.id
+            ? {
+                ...c,
+                content: c.content
+                  ? `${c.content}\n\n---\n**AI Synthesis:**\n${expansionText}`
+                  : expansionText,
+              }
+            : c
+        )
+      );
+      showToast('AI analysis appended to card.');
+    } catch (err: any) {
+      showToast(`AI Expansion note: ${err.message}`);
+    } finally {
+      setIsExpandingId(null);
+    }
+  };
+
+  const handleExportMarkdown = () => {
+    const md = cards
+      .map(
+        (c) =>
+          `### [${c.type.toUpperCase()}] ${c.title}\n*Tags: ${c.tags.join(', ')} | Date: ${c.createdAt}*\n\n${c.content}\n\n---`
+      )
+      .join('\n\n');
+
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `breezy-canvas-export-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Canvas exported to Markdown.');
+  };
+
+  // Filter and search
+  const filteredCards = cards.filter((card) => {
+    const matchesFilter = activeFilter === 'all' || card.type === activeFilter;
+    const matchesSearch =
+      searchQuery === '' ||
+      card.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesFilter && matchesSearch;
+  });
+
+  const getColorClasses = (color: CanvasCardColor) => {
+    switch (color) {
+      case 'sky':
+        return 'border-sky-500/30 bg-gradient-to-b from-sky-950/20 to-slate-900/40 text-sky-300';
+      case 'emerald':
+        return 'border-emerald-500/30 bg-gradient-to-b from-emerald-950/20 to-slate-900/40 text-emerald-300';
+      case 'amber':
+        return 'border-amber-500/30 bg-gradient-to-b from-amber-950/20 to-slate-900/40 text-amber-300';
+      case 'violet':
+        return 'border-violet-500/30 bg-gradient-to-b from-violet-950/20 to-slate-900/40 text-violet-300';
+      default:
+        return 'border-slate-700/60 bg-slate-900/40 text-slate-300';
+    }
+  };
+
+  const getTypeIcon = (type: CanvasCardType) => {
+    switch (type) {
+      case 'idea':
+        return 'lightbulb';
+      case 'research':
+        return 'science';
+      case 'code':
+        return 'code_blocks';
+      case 'task':
+        return 'check_circle';
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full min-h-[calc(100vh-3.5rem)] pb-24 bg-[#090d16] text-slate-100 font-sans antialiased overflow-y-auto">
+    <div className="flex-1 flex flex-col w-full min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4rem)] bg-[#090d16] text-slate-100 font-sans antialiased overflow-y-auto">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-2xl bg-[#0d1322] text-slate-100 shadow-2xl flex items-center gap-3 border border-sky-500/30 animate-in fade-in slide-in-from-bottom-3">
-          <span className="material-symbols-outlined text-sky-400 text-[20px]">task_alt</span>
-          <div className="flex flex-col">
-            <span className="font-sans text-xs font-semibold">Breezy Canvas</span>
-            <span className="font-mono text-[11px] text-slate-400">{toastMessage}</span>
-          </div>
+        <div className="fixed bottom-6 right-6 z-50 p-3.5 sm:p-4 rounded-2xl bg-[#0d1322] text-slate-100 shadow-2xl flex items-center gap-3 border border-sky-500/30 animate-in fade-in slide-in-from-bottom-3 text-xs">
+          <span className="material-symbols-outlined text-sky-400 text-[18px]">info</span>
+          <span className="font-sans font-medium text-slate-200">{toastMessage}</span>
         </div>
       )}
 
-      {/* Atmospheric Background Glows */}
-      <div className="absolute top-20 left-1/3 w-[600px] h-[300px] bg-gradient-to-b from-sky-500/10 via-indigo-950/15 to-transparent blur-3xl pointer-events-none z-0 rounded-full"></div>
+      {/* Atmospheric Background */}
+      <div className="absolute top-12 left-1/3 w-[600px] h-[300px] bg-gradient-to-b from-sky-500/10 via-indigo-950/15 to-transparent blur-3xl pointer-events-none z-0 rounded-full"></div>
 
-      <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-8 flex flex-col gap-8 relative z-10">
-        {/* Header Strip */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-800/80">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase text-sky-400 tracking-wider bg-sky-500/10 px-2.5 py-1 rounded-full font-bold border border-sky-500/20">
-                Workspace Canvas Engine
-              </span>
-              <span className="flex h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-              <span className="font-mono text-xs text-slate-400">Google Workspace Integrated</span>
+      <div className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-24 flex flex-col gap-6 relative z-10">
+        {/* Header Toolbar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-sky-400 text-[20px]">space_dashboard</span>
+              <h1 className="font-sans text-xl sm:text-2xl text-white font-bold tracking-tight">
+                Breezy Research & Ideation Canvas
+              </h1>
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-white tracking-tight font-bold">
-              Google Slides, Tasks & Classroom Canvas
-            </h1>
-            <p className="font-sans text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Unified AI reading and interactive authoring layer for Google Slides presentations, Google Tasks, and Google Classroom educational coursework.
+            <p className="font-sans text-xs sm:text-sm text-slate-400">
+              Interactive workspace for organizing research findings, architecture patterns, and project notes.
             </p>
           </div>
 
-          {!isConnected ? (
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleConnectGoogle}
-              className="px-4 py-2.5 bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-sans text-xs font-bold rounded-xl transition-all shadow-[0_4px_16px_rgba(56,189,248,0.35)] flex items-center gap-2 cursor-pointer shrink-0"
+              onClick={() => setIsAddingCard(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-sans text-xs font-bold rounded-xl transition-all shadow-[0_4px_16px_rgba(56,189,248,0.3)] flex items-center gap-1.5 cursor-pointer min-h-[40px]"
             >
-              <span className="material-symbols-outlined text-[18px]">add_link</span>
-              <span>Authorize Google Canvas</span>
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              <span>New Card</span>
             </button>
-          ) : (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 border border-sky-500/20 text-sky-300 rounded-xl text-xs font-mono">
-              <span className="material-symbols-outlined text-[16px] text-sky-400">verified</span>
-              <span>Canvas Connected (Active Scopes)</span>
+
+            <button
+              type="button"
+              onClick={handleExportMarkdown}
+              className="px-3 py-2 bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-sans text-xs font-medium rounded-xl transition-all border border-slate-700/80 flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+              title="Export all cards as Markdown"
+            >
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              <span className="hidden sm:inline">Export</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filter & Search Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0d1322]/80 backdrop-blur-md p-2 rounded-2xl border border-slate-800/80">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            {(['all', 'idea', 'research', 'code', 'task'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveFilter(tab)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-sans font-medium whitespace-nowrap transition-all cursor-pointer capitalize flex items-center gap-1.5 ${
+                  activeFilter === tab
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                {tab !== 'all' && (
+                  <span className="material-symbols-outlined text-[14px]">
+                    {getTypeIcon(tab)}
+                  </span>
+                )}
+                <span>{tab === 'all' ? 'All Cards' : `${tab}s`}</span>
+                <span className="text-[10px] opacity-60">
+                  ({tab === 'all' ? cards.length : cards.filter((c) => c.type === tab).length})
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search Input */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#070b14] border border-slate-700/80 rounded-xl">
+            <span className="material-symbols-outlined text-slate-400 text-[16px]">search</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search ideas, tags, code..."
+              className="bg-transparent border-0 outline-none text-xs text-slate-100 placeholder:text-slate-500 w-full sm:w-48"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-slate-400 hover:text-slate-200"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Modal / Card Creator Drawer */}
+        {isAddingCard && (
+          <div className="p-4 sm:p-6 rounded-2xl bg-[#0d1424] border border-sky-500/30 shadow-2xl flex flex-col gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span className="font-sans text-sm font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-sky-400 text-[18px]">post_add</span>
+                Create New Canvas Card
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAddingCard(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
             </div>
-          )}
-        </div>
 
-        {/* Sub-Tab Navigation */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('slides')}
-            className={`px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-              activeSubTab === 'slides'
-                ? 'bg-gradient-to-r from-sky-500 to-sky-400 text-slate-950 font-bold shadow-[0_2px_12px_rgba(56,189,248,0.3)]'
-                : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">slideshow</span>
-            <span>Google Slides Decks ({slides.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('tasks')}
-            className={`px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-              activeSubTab === 'tasks'
-                ? 'bg-gradient-to-r from-sky-500 to-sky-400 text-slate-950 font-bold shadow-[0_2px_12px_rgba(56,189,248,0.3)]'
-                : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">task_alt</span>
-            <span>Google Tasks ({tasks.filter(t => t.status === 'needsAction').length} pending)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('classroom')}
-            className={`px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-              activeSubTab === 'classroom'
-                ? 'bg-gradient-to-r from-sky-500 to-sky-400 text-slate-950 font-bold shadow-[0_2px_12px_rgba(56,189,248,0.3)]'
-                : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">school</span>
-            <span>Google Classroom ({courses.length})</span>
-          </button>
-        </div>
-
-        {/* Sub-Tab Contents */}
-        {activeSubTab === 'slides' && (
-          <div className="flex flex-col gap-6 animate-in fade-in duration-200">
-            <div className="p-6 rounded-2xl bg-slate-900/50 backdrop-blur-xl border border-slate-800/80 flex flex-col gap-5 shadow-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
-                    <span className="material-symbols-outlined text-[22px]">slideshow</span>
-                  </div>
-                  <div>
-                    <h3 className="font-sans text-sm font-bold text-white">Google Slides AI Presentations</h3>
-                    <p className="text-[11px] text-slate-400">Generate, outline, and synchronize presentations directly through Breezy</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleCreateSlide} className="flex items-center gap-2">
+            <form onSubmit={handleCreateCard} className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-mono text-slate-400 block mb-1">Card Title</label>
                   <input
                     type="text"
-                    value={newSlideTitle}
-                    onChange={(e) => setNewSlideTitle(e.target.value)}
-                    placeholder="New slide deck title..."
-                    className="bg-[#050811] border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none w-56 focus:border-sky-400/50"
+                    required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="e.g., Real-Time Event Driven State Machine"
+                    className="w-full bg-[#050811] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-sky-400"
                   />
-                  <button
-                    type="submit"
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-[0_2px_10px_rgba(56,189,248,0.3)]"
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-mono text-slate-400 block mb-1">Type</label>
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value as CanvasCardType)}
+                    className="w-full bg-[#050811] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-sky-400"
                   >
-                    Create Deck
-                  </button>
-                </form>
+                    <option value="idea">💡 Idea / Concept</option>
+                    <option value="research">🔬 Technical Research</option>
+                    <option value="code">💻 Code Snippet</option>
+                    <option value="task">✅ Action Item</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {slides.map((s) => (
-                  <div key={s.id} className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 flex flex-col justify-between gap-3 hover:border-sky-500/30 transition-all">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] text-amber-400 font-mono uppercase tracking-wider">Presentation Deck</span>
-                      <h4 className="text-white font-semibold text-sm">{s.title}</h4>
-                      <span className="text-[11px] text-slate-400">{s.slidesCount} slides • Modified {s.lastModified}</span>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
-                      <button
-                        type="button"
-                        onClick={() => showToast(`AI is generating outline for: "${s.title}"`)}
-                        className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/20 rounded-lg text-xs transition-colors flex items-center gap-1 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">auto_fix_high</span>
-                        <span>AI Outline</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => window.open('https://docs.google.com/presentation', '_blank')}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition-colors flex items-center gap-1 cursor-pointer ml-auto"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                        <span>Open Slides</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              <div>
+                <label className="text-[11px] font-mono text-slate-400 block mb-1">Content / Markdown Details</label>
+                <textarea
+                  rows={4}
+                  value={newContent}
+                  onChange={(e) => setNewContent(e.target.value)}
+                  placeholder="Elaborate your hypothesis, implementation details, notes, or checklist steps..."
+                  className="w-full bg-[#050811] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-sky-400 leading-relaxed font-sans"
+                />
               </div>
-            </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-mono text-slate-400 block mb-1">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    placeholder="Architecture, Database, High-Performance"
+                    className="w-full bg-[#050811] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-sky-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-mono text-slate-400 block mb-1">Card Color Theme</label>
+                  <div className="flex items-center gap-2 pt-1">
+                    {(['sky', 'emerald', 'amber', 'violet', 'slate'] as CanvasCardColor[]).map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setNewColor(c)}
+                        className={`w-7 h-7 rounded-full border-2 transition-all cursor-pointer ${
+                          c === 'sky'
+                            ? 'bg-sky-500'
+                            : c === 'emerald'
+                            ? 'bg-emerald-500'
+                            : c === 'amber'
+                            ? 'bg-amber-500'
+                            : c === 'violet'
+                            ? 'bg-violet-500'
+                            : 'bg-slate-600'
+                        } ${newColor === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingCard(false)}
+                  className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-sans text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+                >
+                  Save to Canvas
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
-        {activeSubTab === 'tasks' && (
-          <div className="flex flex-col gap-6 animate-in fade-in duration-200">
-            <div className="p-6 rounded-2xl bg-slate-900/50 backdrop-blur-xl border border-slate-800/80 flex flex-col gap-5 shadow-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400 border border-sky-500/20">
-                    <span className="material-symbols-outlined text-[22px]">task_alt</span>
-                  </div>
-                  <div>
-                    <h3 className="font-sans text-sm font-bold text-white">Google Tasks Canvas</h3>
-                    <p className="text-[11px] text-slate-400">Manage tasks, organize milestones, and let Breezy schedule items automatically</p>
-                  </div>
-                </div>
+        {/* Cards Grid */}
+        {filteredCards.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredCards.map((card) => {
+              const isEditing = editingCardId === card.id;
+              const isExpanding = isExpandingId === card.id;
 
-                <form onSubmit={handleCreateTask} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Add new task..."
-                    className="bg-[#050811] border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none w-56 focus:border-sky-400/50"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-[0_2px_10px_rgba(56,189,248,0.3)]"
-                  >
-                    Add Task
-                  </button>
-                </form>
-              </div>
+              return (
+                <div
+                  key={card.id}
+                  className={`rounded-2xl p-4 sm:p-5 border backdrop-blur-xl flex flex-col justify-between transition-all hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)] ${getColorClasses(
+                    card.color
+                  )}`}
+                >
+                  {/* Card Header */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">
+                          {getTypeIcon(card.type)}
+                        </span>
+                        <span className="font-mono text-[10px] uppercase tracking-wider font-bold opacity-80">
+                          {card.type}
+                        </span>
+                      </div>
 
-              <div className="flex flex-col gap-2">
-                {tasks.map((t) => (
-                  <div key={t.id} className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80 flex items-center justify-between gap-4 hover:border-sky-500/30 transition-all">
-                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleAiExpand(card)}
+                          disabled={isExpanding}
+                          className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
+                          title="Expand card with AI analysis"
+                        >
+                          <span className={`material-symbols-outlined text-[16px] ${isExpanding ? 'animate-spin text-sky-400' : ''}`}>
+                            {isExpanding ? 'sync' : 'auto_awesome'}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => (isEditing ? saveEditCard(card.id) : startEditCard(card))}
+                          className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                          title={isEditing ? 'Save changes' : 'Edit card'}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            {isEditing ? 'check' : 'edit'}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCard(card.id)}
+                          className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                          title="Delete card"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Card Title */}
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full bg-[#050811] border border-slate-700 rounded-lg px-2.5 py-1 text-sm font-bold text-white outline-none focus:border-sky-400"
+                      />
+                    ) : (
+                      <h3 className="font-sans text-sm sm:text-base font-bold text-white leading-snug">
+                        {card.title}
+                      </h3>
+                    )}
+
+                    {/* Card Body */}
+                    {isEditing ? (
+                      <textarea
+                        rows={4}
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full bg-[#050811] border border-slate-700 rounded-lg p-2 text-xs text-slate-200 outline-none focus:border-sky-400 leading-relaxed font-sans"
+                      />
+                    ) : (
+                      <div className="font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-line py-1">
+                        {card.type === 'code' ? (
+                          <pre className="p-2.5 rounded-xl bg-black/40 border border-white/5 font-mono text-[11px] overflow-x-auto text-emerald-300">
+                            <code>{card.content}</code>
+                          </pre>
+                        ) : (
+                          card.content
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card Footer: Tags & Status */}
+                  <div className="pt-3 mt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {card.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Task Toggle or Date */}
+                    {card.type === 'task' ? (
                       <button
                         type="button"
-                        onClick={() => toggleTaskStatus(t.id)}
-                        className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
-                          t.status === 'completed' ? 'bg-sky-500 text-slate-950 font-bold' : 'border border-slate-600 hover:border-sky-400'
+                        onClick={() => handleToggleTask(card.id)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
+                          card.completed
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        {t.status === 'completed' && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
-                      </button>
-                      <span className={`text-xs ${t.status === 'completed' ? 'line-through text-slate-500' : 'text-slate-200 font-medium'}`}>
-                        {t.title}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {t.due && (
-                        <span className="text-[10px] font-mono text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded-md">
-                          Due: {t.due}
+                        <span className="material-symbols-outlined text-[14px]">
+                          {card.completed ? 'check_circle' : 'radio_button_unchecked'}
                         </span>
-                      )}
-                    </div>
+                        <span>{card.completed ? 'Completed' : 'Pending'}</span>
+                      </button>
+                    ) : (
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {card.createdAt}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-
-        {activeSubTab === 'classroom' && (
-          <div className="flex flex-col gap-6 animate-in fade-in duration-200">
-            <div className="p-6 rounded-2xl bg-slate-900/50 backdrop-blur-xl border border-slate-800/80 flex flex-col gap-5 shadow-xl">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                  <span className="material-symbols-outlined text-[22px]">school</span>
-                </div>
-                <div>
-                  <h3 className="font-sans text-sm font-bold text-white">Google Classroom Canvas</h3>
-                  <p className="text-[11px] text-slate-400">View courses, assignments, student submissions, and AI-powered syllabus reviews</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {courses.map((c) => (
-                  <div key={c.id} className="p-5 rounded-xl bg-slate-950/40 border border-slate-800/80 flex flex-col justify-between gap-4 hover:border-sky-500/30 transition-all">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] text-indigo-400 font-mono uppercase tracking-wider">{c.section}</span>
-                      <h4 className="text-white font-bold text-sm">{c.name}</h4>
-                      <span className="text-[11px] text-slate-400">Instructor: {c.ownerId} • Room: {c.room}</span>
-                    </div>
-                    <div className="flex items-center gap-2 pt-3 border-t border-slate-800/80">
-                      <button
-                        type="button"
-                        onClick={() => showToast(`AI is analyzing syllabus announcements for ${c.name}`)}
-                        className="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">announcement</span>
-                        <span>AI Announcements</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => window.open('https://classroom.google.com', '_blank')}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer ml-auto"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">open_in_new</span>
-                        <span>Classroom</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        ) : (
+          <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">
+            <span className="material-symbols-outlined text-3xl text-slate-600">dashboard_customize</span>
+            <p className="text-sm font-medium text-slate-300">No cards match the active filter</p>
+            <p className="text-xs text-slate-500 max-w-sm">
+              Create a new note, research inquiry, or code snippet using the button above.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAddingCard(true)}
+              className="mt-2 px-3.5 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-semibold"
+            >
+              Add Card
+            </button>
           </div>
         )}
       </div>

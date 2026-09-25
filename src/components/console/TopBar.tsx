@@ -33,26 +33,26 @@ export const TopBar: React.FC<TopBarProps> = ({
         : 'bg-[#10141a]/90 border-white/10 text-stone-100'
     }`}>
       {/* Zone 1: Brand / Sidebar Icon & Product Mode Switcher */}
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <button
           type="button"
           onClick={onToggleMobileMenu}
-          className="p-1.5 text-stone-400 hover:text-stone-100 lg:hidden rounded-lg hover:bg-white/5 cursor-pointer"
+          className="w-10 h-10 flex items-center justify-center text-stone-400 hover:text-stone-100 lg:hidden rounded-xl hover:bg-white/5 active:bg-white/10 cursor-pointer shrink-0"
           aria-label="Toggle Navigation"
         >
-          <span className="material-symbols-outlined text-[20px]">menu</span>
+          <span className="material-symbols-outlined text-[22px]">menu</span>
         </button>
 
         {/* Mode Switcher positioned right beside the sidebar icon for continuity */}
-        <div className={`flex items-center border rounded-full p-1 shadow-inner ${
+        <div className={`flex items-center border rounded-full p-0.5 sm:p-1 shadow-inner shrink-0 ${
           theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-black/40 border-white/10'
         }`}>
           <button
             type="button"
             onClick={() => onSelectProductMode('breezy')}
-            className={`px-3 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer ${
               productMode === 'breezy'
-                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
@@ -66,9 +66,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               onSelectProductMode('synthexis');
               onSelectTab('chat');
             }}
-            className={`px-3 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer ${
               productMode === 'synthexis'
-                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
@@ -79,9 +79,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={() => onSelectProductMode('synap')}
-            className={`px-3 py-1 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer ${
               productMode === 'synap'
-                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >

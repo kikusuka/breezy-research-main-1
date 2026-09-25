@@ -91,36 +91,30 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
 
   return (
     <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)]">
-      {/* Session Metadata Sub-Header Strip */}
+      {/* Status Bar */}
       <div className="px-4 sm:px-6 py-2.5 bg-surface-container-low/70 border-b border-outline-variant/20 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 font-mono text-xs text-outline">
-            <span className="text-tertiary">synthexis</span>
+            <span className="text-tertiary">breezy</span>
             <span className="text-outline-variant">/</span>
-            <span className="text-on-surface-variant">workspace</span>
+            <span className="text-on-surface-variant">research</span>
             <span className="text-outline-variant">/</span>
             <span className="text-primary font-medium truncate max-w-[160px]">
               session-{session.id.slice(0, 8)}
             </span>
           </div>
           <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-outline-variant"></span>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-high border border-secondary/30">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
-            </span>
-            <span className="font-mono text-[10px] text-secondary tracking-wider font-semibold">
-              3 NODES SYNCED (18ms)
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/30">
+            <span className={`h-2 w-2 rounded-full ${isDeliberating ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></span>
+            <span className="font-mono text-[10px] text-on-surface-variant tracking-wider font-semibold uppercase">
+              {isDeliberating ? 'Research in Progress' : 'Research Ready'}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 font-mono text-[11px] text-outline">
-          <span className="px-2 py-0.5 bg-surface-container rounded border border-outline-variant/20">
-            Cluster ID: #042-US-EAST
-          </span>
-          <span className="hidden md:inline-block px-2 py-0.5 bg-surface-container rounded border border-outline-variant/20 text-tertiary">
-            Protocol: Tri-Consensus v2.4
+          <span className="px-2 py-0.5 bg-surface-container rounded border border-outline-variant/20 text-tertiary">
+            Multi-Perspective Research
           </span>
         </div>
       </div>
@@ -185,25 +179,25 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
           </div>
         </div>
 
-        {/* 2. Tri-Node Consensus Synthesis Card */}
+        {/* 2. Research Synthesis Card */}
         <div className="relative overflow-hidden rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 sm:p-6 shadow-sm backdrop-blur-md">
           {/* Top verdict bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-secondary-container/40 border border-secondary/30 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-secondary text-[20px]">verified</span>
+                <span className="material-symbols-outlined text-secondary text-[20px]">psychology</span>
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="font-sans text-base font-semibold text-on-surface">
-                    Tri-Node Consensus Synthesis
+                    Research Synthesis
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary border border-secondary/30 font-mono text-[10px] uppercase font-semibold">
-                    Unanimous Fit
+                    Synthesized
                   </span>
                 </div>
                 <span className="font-mono text-[11px] text-outline mt-0.5">
-                  3 of 3 Engines Polled • Deterministic Reconciliation ({durationText})
+                  Integrated analysis across consulted models and search sources ({durationText})
                 </span>
               </div>
             </div>
@@ -214,8 +208,8 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 onClick={onOpenModelsTab}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant/40 hover:border-primary/40 text-on-surface-variant hover:text-on-surface font-mono text-[11px] transition-all"
               >
-                <span className="material-symbols-outlined text-[15px] text-primary">insights</span>
-                <span>Telemetry & Convergence (0.058 bits)</span>
+                <span className="material-symbols-outlined text-[15px] text-primary">tune</span>
+                <span>Configured Models</span>
               </button>
             </div>
           </div>
@@ -224,41 +218,35 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
           <div className="py-4">
             <div className="font-mono text-[11px] uppercase text-secondary tracking-wider font-semibold mb-1.5 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-              <span>Consensus Recommendation</span>
+              <span>Key Findings & Synthesis</span>
             </div>
 
             {session.finalOutput ? (
               <div className="text-on-surface font-sans text-sm sm:text-[15px] leading-relaxed prose prose-invert max-w-none">
                 <ReactMarkdown>{session.finalOutput}</ReactMarkdown>
               </div>
-            ) : isDeliberating && activeRound >= 3 ? (
-              <div className="flex items-center gap-3 py-2 text-primary font-mono text-xs">
+            ) : isDeliberating ? (
+              <div className="flex items-center gap-3 py-6 text-primary font-mono text-xs">
                 <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
-                <span>Reviewer synthesizing final consensus answer from all 3 nodes...</span>
+                <span>Synthesizing research findings and verifying evidence across sources...</span>
               </div>
             ) : (
-              <p className="text-on-surface font-sans text-sm sm:text-[15px] leading-relaxed">
-                <strong className="text-on-surface font-semibold">Kafka for realtime continuous ingestion</strong>{' '}
-                paired with <strong className="text-on-surface font-semibold">DuckDB for analytical audits</strong>.
-                Kafka guarantees sub-5ms write tracking and fault-tolerant log ordering, while DuckDB delivers high-speed zero-copy reconciliation against Parquet snapshots without locking transactional writes.
-              </p>
+              <div className="py-8 text-center text-xs text-on-surface-variant flex flex-col items-center justify-center gap-2 border border-dashed border-outline-variant/30 rounded-xl my-2 bg-surface-container/10">
+                <span className="material-symbols-outlined text-outline text-2xl">hourglass_empty</span>
+                <p className="font-medium text-on-surface">No research output generated yet</p>
+                <p className="text-[11px] text-outline max-w-md">
+                  Submit an inquiry below to run research across connected search engines and AI models.
+                </p>
+              </div>
             )}
           </div>
 
-          {/* Telemetry Metrics bar */}
+          {/* Details bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-outline-variant/20 text-outline font-mono text-xs">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                Agreement: <strong className="text-on-surface font-medium">{agreementScore}%</strong>
-              </span>
-              <span>•</span>
-              <span>
-                Latency: <strong className="text-on-surface font-medium">{durationText}</strong>
-              </span>
-              <span>•</span>
-              <span>
-                Ingress: <strong className="text-secondary font-medium">&lt; 3.2ms</strong>
+                Duration: <strong className="text-on-surface font-medium">{durationText}</strong>
               </span>
             </div>
 
@@ -267,7 +255,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               onClick={onOpenModelsTab}
               className="text-primary hover:underline flex items-center gap-1 text-xs transition-colors"
             >
-              <span>Mathematical delta matrix</span>
+              <span>Inspect AI providers</span>
               <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
             </button>
           </div>
@@ -347,37 +335,22 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                       {streamingRoundText || 'Generating first-principles architecture proposal...'}
                     </div>
                   ) : (
-                    <p>
-                      Partitioned topics guarantee <strong className="text-on-surface">immutable append-only write throughput</strong> without lock contention across distributed ledger workers.
+                    <p className="text-outline text-xs italic py-2">
+                      Initial analysis will appear here once the inquiry begins.
                     </p>
                   )}
                 </div>
-
-                <div className="flex flex-col gap-1.5 pt-1 text-xs">
-                  <div className="flex items-center gap-2 text-on-surface">
-                    <span className="material-symbols-outlined text-secondary text-[15px]">check_circle</span>
-                    <span>120k eps/node sustained throughput</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-on-surface">
-                    <span className="material-symbols-outlined text-secondary text-[15px]">check_circle</span>
-                    <span>Guaranteed durability with fsync ack=all</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-tertiary">
-                    <span className="material-symbols-outlined text-outline text-[15px]">info</span>
-                    <span>Heavier operational overhead (KRaft quorum)</span>
-                  </div>
-                </div>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-outline-variant/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-outline">96% Confidence</span>
+              <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
+                <span className="font-mono text-[11px] text-outline">Stage 1</span>
                 <span className="font-mono text-[10px] text-primary uppercase font-semibold px-2 py-0.5 rounded bg-primary-container/20 border border-primary/30">
-                  Primary Write Path
+                  Initial Hypothesis
                 </span>
               </div>
             </div>
 
-            {/* Card 2: GPT-4o / Critic */}
+            {/* Card 2: Critic */}
             <div className="rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 flex flex-col justify-between shadow-xs hover:border-outline-variant/60 transition-all">
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between">
@@ -386,15 +359,12 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                       <span className="material-symbols-outlined text-error text-[18px]">security</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-on-surface">GPT-4o</span>
+                      <span className="font-sans text-sm font-semibold text-on-surface">Adversarial Critic</span>
                       <span className="font-mono text-[10px] text-error uppercase tracking-wider font-medium">
-                        Adversarial Critic • Risk (Antithesis)
+                        Counter-Arguments & Limitations
                       </span>
                     </div>
                   </div>
-                  <span className="font-mono text-[11px] text-error bg-surface-container px-2 py-0.5 rounded border border-outline-variant/30">
-                    Risk Flag
-                  </span>
                 </div>
 
                 <div className="text-xs font-sans text-on-surface-variant leading-relaxed min-h-[60px]">
@@ -404,40 +374,25 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                     </div>
                   ) : isDeliberating && activeRound === 2 ? (
                     <div className="font-mono text-[11px] text-error">
-                      {streamingRoundText || 'Red-teaming proposal and inspecting failure modes...'}
+                      {streamingRoundText || 'Stress-testing claims and inspecting failure modes...'}
                     </div>
                   ) : (
-                    <p>
-                      Warns against direct concurrent writes to DuckDB files: embedded databases lack distributed WALs and risk catastrophic lockouts under spike load.
+                    <p className="text-outline text-xs italic py-2">
+                      Counter-perspectives and risk analysis will appear here.
                     </p>
                   )}
                 </div>
-
-                <div className="flex flex-col gap-1.5 pt-1 text-xs">
-                  <div className="flex items-center gap-2 text-error">
-                    <span className="material-symbols-outlined text-error text-[15px]">warning</span>
-                    <span>File-level lock contention under spike load</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-on-surface">
-                    <span className="material-symbols-outlined text-secondary text-[15px]">check_circle</span>
-                    <span>Superb in-memory analytical query speeds</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-tertiary">
-                    <span className="material-symbols-outlined text-outline text-[15px]">info</span>
-                    <span>Strict recommendation: read/audit tier only</span>
-                  </div>
-                </div>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-outline-variant/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-outline">Audit: Strict Read</span>
+              <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
+                <span className="font-mono text-[11px] text-outline">Stage 2</span>
                 <span className="font-mono text-[10px] text-error uppercase font-semibold px-2 py-0.5 rounded bg-error-container/30 border border-error/30">
-                  Reject Standalone Write
+                  Critical Audit
                 </span>
               </div>
             </div>
 
-            {/* Card 3: Gemini 1.5 Pro / Synthesizer */}
+            {/* Card 3: Synthesizer */}
             <div className="rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 flex flex-col justify-between shadow-xs hover:border-outline-variant/60 transition-all">
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between">
@@ -446,15 +401,12 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                       <span className="material-symbols-outlined text-secondary text-[18px]">account_tree</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Gemini 1.5 Pro</span>
+                      <span className="font-sans text-sm font-semibold text-on-surface">Synthesis Model</span>
                       <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-medium">
-                        Synthesis • Architecture
+                        Reconciliation & Tradeoffs
                       </span>
                     </div>
                   </div>
-                  <span className="font-mono text-[11px] text-secondary bg-surface-container px-2 py-0.5 rounded border border-outline-variant/30">
-                    Dual Tier
-                  </span>
                 </div>
 
                 <div className="text-xs font-sans text-on-surface-variant leading-relaxed min-h-[60px]">
@@ -463,32 +415,17 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                       {stepSynthesizer.content.slice(0, 240)}...
                     </div>
                   ) : (
-                    <p>
-                      Proposes a <strong className="text-on-surface">bifurcated pipeline</strong>: stream ingest via Kafka topics, micro-batching into S3 Parquet tables for zero-copy DuckDB analysis.
+                    <p className="text-outline text-xs italic py-2">
+                      Tradeoff reconciliation and synthesis will appear after audit rounds.
                     </p>
                   )}
                 </div>
-
-                <div className="flex flex-col gap-1.5 pt-1 text-xs">
-                  <div className="flex items-center gap-2 text-on-surface">
-                    <span className="material-symbols-outlined text-secondary text-[15px]">check_circle</span>
-                    <span>Instant balances via Kafka event streaming</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-on-surface">
-                    <span className="material-symbols-outlined text-secondary text-[15px]">check_circle</span>
-                    <span>Lightning 100M+ row ledger reconciliation</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-on-surface">
-                    <span className="material-symbols-outlined text-secondary text-[15px]">check_circle</span>
-                    <span>No lock interference on live financial writes</span>
-                  </div>
-                </div>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-outline-variant/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-outline">Score: 98/100</span>
+              <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
+                <span className="font-mono text-[11px] text-outline">Stage 3</span>
                 <span className="font-mono text-[10px] text-secondary uppercase font-semibold px-2 py-0.5 rounded bg-secondary-container/30 border border-secondary/30">
-                  Optimal Pattern
+                  Consolidated View
                 </span>
               </div>
             </div>

@@ -171,8 +171,8 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>('Refactor codebase via Breezy IDE');
 
-  // Active Center Workspace View Mode: 'code' | 'preview' | 'terminal'
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'code' | 'preview' | 'terminal'>('code');
+  // Active Center Workspace View Mode: 'files' | 'code' | 'preview' | 'terminal'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'files' | 'code' | 'preview' | 'terminal'>('code');
 
   // Background Cloud Jobs State
   const [activeCloudJob, setActiveCloudJob] = useState<CloudJobStatus | null>(null);
@@ -623,7 +623,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
       {/* Main Workspace Area */}
       <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-[#090d16]">
         {/* Left Sidebar: Repo / Files Browser */}
-        <div className="w-full md:w-64 border-r border-slate-800/80 flex flex-col bg-[#0b0f19] shrink-0">
+        <div className={`w-full md:w-64 border-r border-slate-800/80 flex flex-col bg-[#0b0f19] shrink-0 ${activeWorkspaceTab === 'files' ? 'flex' : 'hidden md:flex'}`}>
           <div className="p-3 border-b border-slate-800/80 flex flex-col gap-2">
             <span className="font-mono text-[10px] uppercase text-slate-400 font-bold tracking-wider">
               Repositories & Sources
@@ -703,53 +703,70 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
         </div>
 
         {/* Center / Right Panel: Code Editor with Prism.js vs Live Preview vs Terminal */}
-        <div className="flex-1 flex flex-col min-w-0 h-full bg-[#050811]">
+        <div className={`flex-1 flex flex-col min-w-0 h-full bg-[#050811] ${activeWorkspaceTab === 'files' ? 'hidden md:flex' : 'flex'}`}>
           {/* Workspace Tab Switcher Header */}
-          <div className="h-11 border-b border-slate-800/80 px-4 bg-[#0d1322] flex items-center justify-between shrink-0">
+          <div className="h-11 border-b border-slate-800/80 px-2 sm:px-4 bg-[#0d1322] flex items-center justify-between shrink-0 overflow-x-auto scrollbar-none">
             <div className="flex items-center gap-1">
+              {/* Files tab button on mobile screens */}
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceTab('files')}
+                className={`md:hidden px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1 cursor-pointer transition-all ${
+                  activeWorkspaceTab === 'files'
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[15px]">folder_open</span>
+                <span>Files</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setActiveWorkspaceTab('code')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'code'
                     ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                 }`}
               >
                 <span className="material-symbols-outlined text-[15px]">edit_note</span>
-                <span>Code Editor (Prism.js)</span>
+                <span className="hidden sm:inline">Code Editor</span>
+                <span className="sm:hidden">Code</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveWorkspaceTab('preview')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'preview'
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                 }`}
               >
                 <span className="material-symbols-outlined text-[15px]">visibility</span>
-                <span>Live Preview (Runner)</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1"></span>
+                <span className="hidden sm:inline">Live Preview</span>
+                <span className="sm:hidden">Preview</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5"></span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveWorkspaceTab('terminal')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'terminal'
                     ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                 }`}
               >
                 <span className="material-symbols-outlined text-[15px]">terminal</span>
-                <span>ANSI Terminal & Logs ({previewLogs.length})</span>
+                <span className="hidden sm:inline">ANSI Terminal ({previewLogs.length})</span>
+                <span className="sm:hidden">Terminal</span>
               </button>
             </div>
 
             {/* Terminal Search Filter & Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 ml-2">
               <div className="flex items-center gap-1 bg-[#050811] border border-slate-700/80 rounded-lg px-2 py-1">
                 <span className="material-symbols-outlined text-[13px] text-slate-400">search</span>
                 <input
@@ -757,40 +774,34 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
                   value={logSearchQuery}
                   onChange={(e) => setLogSearchQuery(e.target.value)}
                   placeholder="Filter logs..."
-                  className="bg-transparent border-0 outline-none text-[10px] font-mono text-slate-200 w-24 sm:w-32 placeholder:text-slate-500"
+                  className="bg-transparent border-0 outline-none text-[10px] font-mono text-slate-200 w-20 sm:w-32 placeholder:text-slate-500"
                 />
-                {logSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setLogSearchQuery('')}
-                    className="text-[10px] text-slate-500 hover:text-slate-300"
-                  >
-                    ×
-                  </button>
-                )}
               </div>
 
-              <button
-                type="button"
-                onClick={handleClearLogs}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700/80 text-[10px] font-mono flex items-center gap-1.5 cursor-pointer transition-all"
-                title="Reset terminal history and preview logs (Cmd+K)"
-              >
-                <span className="material-symbols-outlined text-[13px] text-amber-400">cleaning_services</span>
-                <span>Clear Logs</span>
-              </button>
+              {activeWorkspaceTab === 'terminal' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleClearLogs}
+                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-mono border border-slate-700 transition-colors flex items-center gap-1"
+                    title="Clear Terminal Output (Cmd+K)"
+                  >
+                    <span className="material-symbols-outlined text-[12px]">delete_sweep</span>
+                    <span className="hidden sm:inline">Clear</span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveWorkspaceTab('terminal');
-                  terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700/80 text-[10px] font-mono flex items-center gap-1 cursor-pointer"
-                title="Jump to bottom (Cmd+Shift+Down)"
-              >
-                <span className="material-symbols-outlined text-[13px]">arrow_downward</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-[10px] font-mono flex items-center gap-1 cursor-pointer"
+                    title="Jump to bottom (Cmd+Shift+Down)"
+                  >
+                    <span className="material-symbols-outlined text-[12px]">arrow_downward</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

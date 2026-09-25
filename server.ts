@@ -99,9 +99,16 @@ async function callAgentWithStream(params: CallAgentParams): Promise<string> {
           });
 
           let fullText = '';
+          let announcedFallback = false;
           for await (const chunk of responseStream) {
             const text = chunk.text;
             if (text) {
+              if (m !== rawModel && !announcedFallback) {
+                const notice = `> *Model Notice: Requested model '${rawModel}' was unavailable. Continued with '${m}'.*\n\n`;
+                onChunk(notice);
+                fullText += notice;
+                announcedFallback = true;
+              }
               fullText += text;
               onChunk(text);
             }
@@ -1775,6 +1782,43 @@ Synthesize the final, definitive, high-integrity answer for the user. Ensure com
       message: err.message || 'An unexpected error occurred during debate deliberation.',
     });
     res.end();
+  }
+});
+
+// Breezy conversational AI & Canvas expansion endpoint
+app.post('/api/breezy/chat', async (req: Request, res: Response) => {
+  try {
+    const { prompt, history = [], provider = 'gemini', model = 'gemini-3.8-flash', apiKey } = req.body;
+    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const systemInstruction = 'You are Breezy, an exceptionally capable, weightless AI engineering and research assistant. Deliver direct, accurate, beautifully structured answers with markdown. Provide real technical solutions, code examples, or research insights without generic disclaimers.';
+
+    let formattedPrompt = prompt.trim();
+    if (Array.isArray(history) && history.length > 0) {
+      const prior = history.slice(-6).map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n');
+      formattedPrompt = `Conversation History:\n${prior}\n\nUser: ${prompt.trim()}`;
+    }
+
+    let fullAnswer = '';
+    await callAgentWithStream({
+      provider: provider === 'groq' ? 'groq' : (provider === 'sambanova' ? 'sambanova' : 'gemini'),
+      model: model || 'gemini-3.8-flash',
+      apiKey: apiKey?.trim() || undefined,
+      systemInstruction,
+      userPrompt: formattedPrompt,
+      temperature: 0.7,
+      enableSearchGrounding: false,
+      onChunk: (chunk) => {
+        fullAnswer += chunk;
+      },
+    });
+
+    return res.json({ text: fullAnswer || 'Synthesis completed.' });
+  } catch (err: any) {
+    console.error('Breezy chat error:', err);
+    return res.status(500).json({ error: err.message || 'Chat generation failed' });
   }
 });
 

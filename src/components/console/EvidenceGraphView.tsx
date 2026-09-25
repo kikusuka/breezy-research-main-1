@@ -42,7 +42,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
         <span className="material-symbols-outlined text-3xl text-stone-500 mb-2">schema</span>
         <h4 className="text-sm font-medium text-stone-200">No Evidence Trail Available Yet</h4>
         <p className="text-xs text-stone-400 mt-1 max-w-md mx-auto">
-          Start a research inquiry to extract verifiable claims, cross-reference primary sources, and map contradictions.
+          Start a research inquiry to extract claims, cross-reference sources, and map contradictions.
         </p>
       </div>
     );
@@ -75,7 +75,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
               {supportedClaims}
             </span>
             <span className="text-[11px] text-stone-400">
-              verified
+              supported by sources
             </span>
           </div>
         </div>
@@ -103,7 +103,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
               {unresolvedClaims}
             </span>
             <span className="text-[11px] text-stone-400">
-              {unresolvedClaims === 0 ? 'high confidence' : 'open questions'}
+              {unresolvedClaims === 0 ? 'evidence currently supports this' : 'open questions'}
             </span>
           </div>
         </div>
@@ -115,7 +115,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[17px] text-stone-400">menu_book</span>
             <span className="text-xs font-semibold text-stone-200 tracking-wide">
-              Verified Claims & Sources
+              Claims & Supporting Evidence
             </span>
           </div>
           <span className="text-[11px] text-stone-400">
