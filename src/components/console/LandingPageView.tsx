@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { EvidenceGraphView } from './EvidenceGraphView';
 
 interface LandingPageViewProps {
-  onLaunchWorkspace: (prompt?: string) => void;
+  onLaunchWorkspace: (prompt?: string, depth?: 'quick' | 'standard' | 'deep') => void;
   onOpenNotes: () => void;
   onOpenModels: () => void;
 }
@@ -12,473 +12,262 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   onOpenNotes,
   onOpenModels,
 }) => {
-  const [selectedDemoIndex, setSelectedDemoIndex] = useState(0);
+  const [inputText, setInputText] = useState('');
+  const [researchDepth, setResearchDepth] = useState<'quick' | 'standard' | 'deep'>('standard');
+  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const demoScenarios = [
+  const isUserTyping = inputText.trim().length > 0;
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+    }
+  }, [inputText]);
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+    const prompt = inputText.trim();
+    setInputText('');
+    setAttachedFile(null);
+    onLaunchWorkspace(prompt, researchDepth);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachedFile({
+        name: file.name,
+        size: `${(file.size / 1024).toFixed(1)} KB`,
+      });
+    }
+  };
+
+  // Sample real engineering topics with clean descriptions (No AI hype language)
+  const realScenarios = [
     {
-      title: 'Kafka Streams vs. DuckDB for Financial Ledgers',
-      category: 'Distributed Systems & Fintech',
-      query: 'Can you compare Kafka streaming with DuckDB micro-batching for our ledger system in simple terms? Which one should we pick?',
-      analyst: {
-        model: 'Claude 3.5 Sonnet',
-        role: 'Lead Analyst • Ingestion (Thesis)',
-        point: 'Partitioned append-only write topics guarantee sub-5ms latency and horizontal consumer scaling with zero locking contention.',
-        tag: '120k eps/node sustained',
-      },
-      critic: {
-        model: 'GPT-4o',
-        role: 'Adversarial Critic • Risk (Antithesis)',
-        point: 'Warns against direct writes to DuckDB: embedded SQLite/DuckDB files lack distributed WAL failovers and lock up under concurrency spikes.',
-        tag: 'Concurrent lock failure mode',
-      },
-      synthesis: {
-        model: 'Gemini 1.5 Pro',
-        role: 'Harmonizer & Synthesizer',
-        point: 'Bifurcated architecture: Stream ingest and transactional write-ahead logs through Kafka, micro-batch into Parquet for DuckDB analytical reconciliations.',
-        verdict: '94.2% Unanimous Consensus',
-      },
+      title: 'PostgreSQL + pgvector vs. Standalone Pinecone',
+      description: 'Evaluating architectural performance trade-offs, vacuuming locks, and indexing overhead when storing 10M+ embeddings.',
+      prompt: 'At 10M+ 1536-dimension embeddings, when does PostgreSQL pgvector degrade, and when is a dedicated vector index like Pinecone genuinely worth it?',
     },
     {
-      title: 'PostgreSQL + pgvector vs. Dedicated Pinecone Index',
-      category: 'Vector Retrieval & Scalability',
-      query: 'Should we store embeddings directly in PostgreSQL using pgvector or pay for a dedicated managed vector DB like Pinecone?',
-      analyst: {
-        model: 'Claude 3.5 Sonnet',
-        role: 'Lead Analyst • Unified Storage',
-        point: 'ACID guarantees and zero ETL synchronization lag. Filter metadata in standard relational SQL joins without secondary network hops.',
-        tag: 'Single datastore simplicity',
-      },
-      critic: {
-        model: 'GPT-4o',
-        role: 'Adversarial Critic • Resource Contention',
-        point: 'HNSW index builds consume heavy CPU/RAM; at 5M+ 1536-dim vectors, vacuuming and write contention degrades transactional DB performance.',
-        tag: 'Memory spike hazard',
-      },
-      synthesis: {
-        model: 'Gemini 1.5 Pro',
-        role: 'Harmonizer & Synthesizer',
-        point: 'Use pgvector below 2M vectors with IVFFlat. Only split into standalone vector nodes once vector cache thrashing impacts relational OLTP latency.',
-        verdict: '91.8% Validated Consensus',
-      },
+      title: 'Kafka Streams vs. DuckDB for Ledger Ingestion',
+      description: 'Comparing write-ahead transactional logs with analytical micro-batching for continuous financial ledger consistency.',
+      prompt: 'Is DuckDB micro-batching suitable for a high-frequency financial transaction ledger, or is Kafka mandatory for continuous consistency?',
     },
     {
       title: 'Modular Go Monolith vs. Kubernetes Microservices',
-      category: 'Backend Architecture',
-      query: 'Is migrating our 5-person engineering team to Kubernetes microservices worth the operational overhead, or should we stay on a modular Go monolith?',
-      analyst: {
-        model: 'Claude 3.5 Sonnet',
-        role: 'Lead Analyst • Velocity Baseline',
-        point: 'Modular Go monolith with domain packages and internal interfaces compiles in seconds, deploys via single binary, and eliminates network serialization tax.',
-        tag: 'Max team velocity',
-      },
-      critic: {
-        model: 'GPT-4o',
-        role: 'Adversarial Critic • Failure Blast Radius',
-        point: 'Single runtime crashes take down the entire platform. Microservices isolate memory leaks, crash loops, and enable independent deployment cadences.',
-        tag: 'Blast radius isolation',
-      },
-      synthesis: {
-        model: 'Gemini 1.5 Pro',
-        role: 'Harmonizer & Synthesizer',
-        point: 'Adopt a strict modular monolith with separate goroutine worker pools. Adopt microservices only when organizational team boundaries dictate separate repository ownership.',
-        verdict: '96.5% Definite Consensus',
-      },
+      description: 'Understanding team size and request load inflection points where splitting a single codebase adds positive value.',
+      prompt: 'Under what concrete load and team size thresholds does a modular Go monolith break down and justify migrating to Kubernetes microservices?',
     },
   ];
 
-  const activeDemo = demoScenarios[selectedDemoIndex];
-
   return (
-    <div className="flex flex-col w-full bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 px-4 sm:px-8 border-b border-outline-variant/20">
-        {/* Subtle background ambient mesh */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-primary/8 blur-[120px] rounded-full pointer-events-none"></div>
+    <div className="flex flex-col w-full min-h-screen bg-[#10141a] text-stone-200">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv"
+      />
 
-        <div className="max-w-5xl mx-auto flex flex-col items-center text-center gap-6 relative z-10">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low border border-secondary/30 text-xs font-mono text-secondary shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-            <span>PROTOCOL V2.4 • DETERMINISTIC MULTI-MODEL SYNTHESIS</span>
-          </div>
+      {/* Hero Container */}
+      <div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-12 sm:py-24 flex flex-col justify-center items-center text-center">
+        {/* Understated Wordmark */}
+        <span className="font-serif text-3xl sm:text-4xl font-normal text-stone-100 tracking-tight mb-8">
+          Synthexis
+        </span>
 
-          {/* Headline */}
-          <h1 className="font-sans text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-on-surface leading-[1.15] max-w-4xl">
-            Don't settle for single-model hallucination.{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[#d7e3ff] to-secondary">
-              Pitted in real-time adversarial debate.
-            </span>
-          </h1>
+        {/* Minimalist Question Header */}
+        <h1 className="text-xl sm:text-2xl font-serif text-stone-300 font-normal mb-8 tracking-wide">
+          What are you curious about?
+        </h1>
 
-          {/* Subtitle */}
-          <p className="font-sans text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
-            Synthexis orchestrates frontier AI models—Claude 3.5 Sonnet, GPT-4o, and Gemini 1.5 Pro—in structured dialectical rounds. We stress-test assumptions, red-team failure modes, and synthesize mathematically validated consensus for mission-critical decisions.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        {/* The Weirdly Simple Input Area */}
+        <div className="w-full bg-[#161a22] border border-white/5 rounded-2xl p-4 shadow-xl text-left focus-within:border-white/10 transition-all max-w-xl">
+          <div className="flex items-start gap-3">
+            {/* Plus Icon to attach media/files */}
             <button
               type="button"
-              onClick={() => onLaunchWorkspace()}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-sans text-sm font-semibold shadow-lg shadow-primary/10 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-stone-400 hover:text-stone-100 transition-colors shrink-0 mt-0.5"
+              title="Add Audio, Video, Image, or Doc Spec"
             >
-              <span className="material-symbols-outlined text-[18px]">terminal</span>
-              <span>Launch Dialectic Workspace</span>
+              <span className="material-symbols-outlined text-[18px]">add</span>
             </button>
 
+            {/* Focused text box */}
+            <div className="flex-1">
+              <textarea
+                ref={textareaRef}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask a question, explore an idea, or give me something difficult to figure out..."
+                rows={2}
+                className="w-full bg-transparent text-stone-100 placeholder-stone-550 text-sm resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
+              />
+            </div>
+
+            {/* Standard enter button */}
             <button
               type="button"
-              onClick={onOpenNotes}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-sans text-sm font-medium border border-outline-variant/40 transition-all"
+              onClick={handleSend}
+              disabled={!inputText.trim()}
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all shrink-0 mt-0.5 ${
+                inputText.trim()
+                  ? 'bg-stone-100 text-stone-950 hover:bg-white cursor-pointer shadow-md'
+                  : 'bg-white/5 text-stone-500 cursor-not-allowed'
+              }`}
+              title="Press Enter or Click to Inquire"
             >
-              <span className="material-symbols-outlined text-[18px] text-tertiary">library_books</span>
-              <span>Explore Research Archives</span>
+              <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
             </button>
           </div>
 
-          {/* Key Metrics Ticker: Real Research Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-3xl pt-8 border-t border-outline-variant/15 mt-4">
-            <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-secondary">100%</span>
-              <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Claims Grounded
-              </span>
+          {attachedFile && (
+            <div className="flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs text-stone-300 w-fit">
+              <span className="material-symbols-outlined text-[16px] text-stone-400">attach_file</span>
+              <span className="font-medium">{attachedFile.name}</span>
+              <span className="text-stone-500">({attachedFile.size})</span>
+              <button
+                type="button"
+                onClick={() => setAttachedFile(null)}
+                className="text-stone-500 hover:text-stone-200 ml-1 font-bold text-sm"
+              >
+                ×
+              </button>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-on-surface">27+</span>
-              <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Primary Sources
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-primary">100%</span>
-              <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Zero-Retention Enclave
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-sans text-2xl font-semibold text-on-surface">3-Way</span>
-              <span className="font-mono text-[11px] text-outline uppercase tracking-wider">
-                Cross-Vendor Quorum
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+          )}
 
-      {/* Interactive Dialectic Simulator Section */}
-      <section className="py-14 sm:py-20 px-4 sm:px-8 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="font-mono text-xs uppercase text-primary tracking-widest font-semibold">
-              Live Architecture Dialectic
-            </span>
-            <h2 className="font-sans text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-              Watch Three Models Reconcile Complex Trade-offs
-            </h2>
-            <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-xl">
-              Select an engineering dilemma below to inspect how the Analyst, Critic, and Synthesizer formulate a bulletproof architecture.
-            </p>
-
-            {/* Scenario Selector Pills */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-3">
-              {demoScenarios.map((demo, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setSelectedDemoIndex(idx)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                    selectedDemoIndex === idx
-                      ? 'bg-surface-container-high text-primary border border-primary/40 shadow-xs'
-                      : 'bg-surface-container-low text-tertiary hover:text-on-surface border border-outline-variant/30'
-                  }`}
-                >
-                  {demo.title}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Interactive Simulation Frame */}
-          <div className="rounded-2xl bg-surface-container-low border border-outline-variant/40 shadow-xl overflow-hidden">
-            {/* Window bar */}
-            <div className="px-5 py-3 bg-surface-container border-b border-outline-variant/20 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-error/70"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-secondary/70"></span>
-                <span className="font-mono text-xs text-outline ml-2 truncate">
-                  scenario: {activeDemo.category}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[11px] text-secondary bg-secondary-container/40 px-2 py-0.5 rounded border border-secondary/30">
-                  {activeDemo.synthesis.verdict}
+          {/* Depth selection (Appears smoothly when typing) */}
+          {isUserTyping && (
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-white/5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 bg-black/25 p-0.5 rounded-lg border border-white/5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setResearchDepth('quick')}
+                    className={`px-3 py-1 rounded-md transition-all font-medium ${
+                      researchDepth === 'quick'
+                        ? 'bg-white/10 text-stone-100'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    Quick
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResearchDepth('standard')}
+                    className={`px-3 py-1 rounded-md transition-all font-medium ${
+                      researchDepth === 'standard'
+                        ? 'bg-white/10 text-stone-100'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    Standard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResearchDepth('deep')}
+                    className={`px-3 py-1 rounded-md transition-all font-medium ${
+                      researchDepth === 'deep'
+                        ? 'bg-white/10 text-stone-100'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    Deep
+                  </button>
+                </div>
+                <span className="text-[10px] text-stone-500 italic">
+                  compared across multiple models
                 </span>
               </div>
             </div>
-
-            {/* Content Body */}
-            <div className="p-6 flex flex-col gap-6">
-              {/* Query Inset */}
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
-                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-on-primary text-[16px]">person</span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-sans text-xs font-semibold text-on-surface">Architect Inquiry</span>
-                  <p className="font-sans text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                    "{activeDemo.query}"
-                  </p>
-                </div>
-              </div>
-
-              {/* 3 Perspectives Column Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Node 1: Analyst */}
-                <div className="p-4 rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col justify-between gap-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-xs font-semibold text-primary">
-                        {activeDemo.analyst.model}
-                      </span>
-                      <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 bg-primary/10 text-primary rounded">
-                        Thesis
-                      </span>
-                    </div>
-                    <span className="font-mono text-[10px] text-tertiary">
-                      {activeDemo.analyst.role}
-                    </span>
-                    <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                      {activeDemo.analyst.point}
-                    </p>
-                  </div>
-                  <div className="pt-2 border-t border-outline-variant/15 flex items-center gap-1.5 font-mono text-[10px] text-secondary">
-                    <span className="material-symbols-outlined text-[13px]">check_circle</span>
-                    <span>{activeDemo.analyst.tag}</span>
-                  </div>
-                </div>
-
-                {/* Node 2: Critic */}
-                <div className="p-4 rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col justify-between gap-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-xs font-semibold text-error">
-                        {activeDemo.critic.model}
-                      </span>
-                      <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 bg-error/10 text-error rounded">
-                        Antithesis
-                      </span>
-                    </div>
-                    <span className="font-mono text-[10px] text-tertiary">
-                      {activeDemo.critic.role}
-                    </span>
-                    <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                      {activeDemo.critic.point}
-                    </p>
-                  </div>
-                  <div className="pt-2 border-t border-outline-variant/15 flex items-center gap-1.5 font-mono text-[10px] text-error">
-                    <span className="material-symbols-outlined text-[13px]">warning</span>
-                    <span>{activeDemo.critic.tag}</span>
-                  </div>
-                </div>
-
-                {/* Node 3: Synthesizer */}
-                <div className="p-4 rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col justify-between gap-3 ring-1 ring-secondary/30">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-xs font-semibold text-secondary">
-                        {activeDemo.synthesis.model}
-                      </span>
-                      <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 bg-secondary/10 text-secondary rounded">
-                        Synthesis
-                      </span>
-                    </div>
-                    <span className="font-mono text-[10px] text-tertiary">
-                      {activeDemo.synthesis.role}
-                    </span>
-                    <p className="font-sans text-xs text-on-surface leading-relaxed">
-                      {activeDemo.synthesis.point}
-                    </p>
-                  </div>
-                  <div className="pt-2 border-t border-outline-variant/15 flex items-center gap-1.5 font-mono text-[10px] text-secondary">
-                    <span className="material-symbols-outlined text-[13px]">verified</span>
-                    <span>Consensus Reconciled</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action */}
-              <div className="flex items-center justify-between pt-2">
-                <span className="font-mono text-xs text-outline">
-                  Synthexis cross-referenced 12 benchmarks in 1.4s
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onLaunchWorkspace(activeDemo.query)}
-                  className="flex items-center gap-1.5 text-xs text-primary hover:text-primary-fixed font-medium transition-colors cursor-pointer"
-                >
-                  <span>Load this scenario in Workspace</span>
-                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
-      </section>
 
-      {/* The Evidence Graph Section — The Core Product Identity */}
-      <section className="py-14 sm:py-20 px-4 sm:px-8 border-t border-outline-variant/15 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="font-mono text-xs uppercase text-secondary tracking-widest font-semibold">
-              The Evidence Trail
-            </span>
-            <h2 className="font-sans text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-              The AI Council is the Mechanism. The Evidence Trail is the Product.
-            </h2>
-            <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-2xl leading-relaxed">
-              Synthexis decomposes questions into falsifiable claims, verifies them against primary technical documents and production benchmarks, detects contradictions, and outputs a verifiable evidence trail.
-            </p>
-          </div>
-
-          {/* Interactive Evidence Graph View */}
-          <EvidenceGraphView sessionTitle={activeDemo.title} />
-        </div>
-      </section>
-
-      {/* 3 Core Pillars Section */}
-      <section className="py-14 sm:py-20 px-4 sm:px-8 border-t border-outline-variant/15 bg-surface-container-lowest/50">
-        <div className="max-w-6xl mx-auto flex flex-col gap-10">
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="font-mono text-xs uppercase text-primary tracking-widest font-semibold">
-              The Architecture
-            </span>
-            <h2 className="font-sans text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-              Engineered for Cognitive Rigor
-            </h2>
-            <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-xl">
-              Why single-agent LLMs fail in mission-critical environments and how Synthexis fixes it.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-[22px]">alt_route</span>
-              </div>
-              <h3 className="font-sans text-base font-semibold text-on-surface">1. Parallel Ingestion</h3>
-              <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                Queries are dispatched simultaneously across disjoint model families (Anthropic, OpenAI, Google) to ensure diverse inductive priors and zero single-vendor bias.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-error/10 border border-error/20 flex items-center justify-center text-error">
-                <span className="material-symbols-outlined text-[22px]">security</span>
-              </div>
-              <h3 className="font-sans text-base font-semibold text-on-surface">2. Adversarial Red-Teaming</h3>
-              <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                Rather than polite agreement, the Critic is strictly prompted to search for edge cases, memory leaks, race conditions, and scenarios where the proposal collapses.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
-                <span className="material-symbols-outlined text-[22px]">verified</span>
-              </div>
-              <h3 className="font-sans text-base font-semibold text-on-surface">3. Mathematical Consensus</h3>
-              <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                The Reviewer adjudicates remaining disputes against calibrated agreement thresholds (75-95%) and outputs an uncompromised, production-ready checklist.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Table */}
-      <section className="py-14 sm:py-20 px-4 sm:px-8 border-t border-outline-variant/15 max-w-5xl mx-auto w-full">
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="font-mono text-xs uppercase text-primary tracking-widest font-semibold">
-              Performance Delta
-            </span>
-            <h2 className="font-sans text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-              Single Model vs. Synthexis Triad
-            </h2>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 bg-surface-container-low">
-            <table className="w-full text-left font-sans text-xs">
-              <thead className="bg-surface-container border-b border-outline-variant/20 font-mono text-[11px] uppercase text-tertiary">
-                <tr>
-                  <th className="p-4">Capability</th>
-                  <th className="p-4 text-outline">Standard LLM (ChatGPT / Claude)</th>
-                  <th className="p-4 text-secondary font-semibold">Synthexis Tri-Stream Engine</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant/15">
-                <tr>
-                  <td className="p-4 font-medium text-on-surface">Hallucination Mitigation</td>
-                  <td className="p-4 text-outline">Prone to convincing, fabricated claims</td>
-                  <td className="p-4 text-secondary font-medium">Cross-verified by 3 independent model architectures</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-medium text-on-surface">Edge Case & Bug Detection</td>
-                  <td className="p-4 text-outline">Low (optimistic default bias)</td>
-                  <td className="p-4 text-secondary font-medium">High (dedicated adversarial Critic red-teams every point)</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-medium text-on-surface">Vendor & Model Lock-In</td>
-                  <td className="p-4 text-outline">Single model dependency</td>
-                  <td className="p-4 text-secondary font-medium">Runs Anthropic + OpenAI + Google simultaneously</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-medium text-on-surface">Deterministic Boundary Limits</td>
-                  <td className="p-4 text-outline">Rarely states when NOT to use</td>
-                  <td className="p-4 text-secondary font-medium">Strict "When NOT to Use" operational boundaries declared</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom CTA Banner */}
-      <section className="py-16 px-4 sm:px-8 border-t border-outline-variant/20 bg-surface-container-low/80">
-        <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-5">
-          <h2 className="font-sans text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-            Ready to stress-test your next architectural decision?
-          </h2>
-          <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-lg">
-            Start a dialectical inquiry in seconds. No complex setup required—powered by server-grounded frontier models.
-          </p>
+        {/* Quiet Footnote Actions */}
+        <div className="flex items-center gap-6 text-xs text-stone-500 mt-6 font-sans">
           <button
             type="button"
-            onClick={() => onLaunchWorkspace()}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-sans text-sm font-semibold shadow-md transition-all cursor-pointer hover:scale-105"
+            onClick={() => {
+              setInputText('Compare pgvector vs. Pinecone index scaling...');
+              if (textareaRef.current) textareaRef.current.focus();
+            }}
+            className="hover:text-stone-300 transition-colors flex items-center gap-1"
           >
-            <span className="material-symbols-outlined text-[18px]">terminal</span>
-            <span>Enter Dialectic Console</span>
+            <span className="material-symbols-outlined text-[14px]">search</span>
+            <span>Research deeply</span>
           </button>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="py-6 px-4 sm:px-8 border-t border-outline-variant/15 text-center font-mono text-[11px] text-outline flex flex-col sm:flex-row items-center justify-between gap-3 max-w-6xl mx-auto w-full">
-        <span>Synthexis Protocol v2.4 • Deterministic Tri-Stream Architecture</span>
-        <div className="flex items-center gap-4">
-          <button type="button" onClick={onOpenNotes} className="hover:text-on-surface transition-colors">
-            Archives
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="hover:text-stone-300 transition-colors flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[14px]">attach_file</span>
+            <span>Attach document</span>
           </button>
-          <button type="button" onClick={onOpenModels} className="hover:text-on-surface transition-colors">
-            Model Matrix
-          </button>
-          <button type="button" onClick={() => onLaunchWorkspace()} className="text-primary hover:underline">
-            Console
+
+          <button
+            type="button"
+            onClick={onOpenNotes}
+            className="hover:text-stone-300 transition-colors flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[14px]">history</span>
+            <span>Recent inquiries</span>
           </button>
         </div>
-      </footer>
+
+        {/* Explaining the mechanism in simple, direct human language */}
+        <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8">
+          <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
+            How it works
+          </span>
+          <p className="text-xs text-stone-400 leading-relaxed mb-6">
+            Synthexis translates complex technical questions into distinct perspectives, cross-checks assumptions across multiple frontier models, and verifies findings using verified documents and public datasets. The machinery stays quiet, giving you clear answers backed by original sources.
+          </p>
+
+          <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
+            Recent topics
+          </span>
+          <div className="flex flex-col gap-4">
+            {realScenarios.map((item, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onLaunchWorkspace(item.prompt, 'standard')}
+                className="p-4 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-left transition-colors group"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-xs font-semibold text-stone-300 group-hover:text-stone-100 transition-colors">
+                    {item.title}
+                  </span>
+                  <span className="text-[10px] text-stone-500 flex items-center gap-1">
+                    Explore <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
+                  </span>
+                </div>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  {item.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

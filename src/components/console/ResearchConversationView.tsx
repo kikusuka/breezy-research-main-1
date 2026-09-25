@@ -423,7 +423,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                   <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-stone-400 text-[18px]">history_edu</span>
                     <span className="text-xs font-semibold text-stone-300">
-                      Explore Research Trail & Node Conversations ({session.steps.length} Steps)
+                      Explore research details ({session.steps.length} steps analyzed)
                     </span>
                   </div>
                   <span className="material-symbols-outlined text-stone-400 text-[18px] transition-transform duration-200" style={{ transform: isTrailExpanded ? 'rotate(180deg)' : 'none' }}>
@@ -433,33 +433,36 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 
                 {isTrailExpanded && (
                   <div className="p-4 border-t border-white/5 flex flex-col gap-4 bg-black/10">
-                    {session.steps.map((step, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#141820] border border-white/5">
-                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                            <span className="text-xs font-semibold text-stone-200">{step.agentName || step.role}</span>
-                            <span className="text-[10px] text-stone-500 uppercase tracking-wider font-mono">({step.role})</span>
+                    {session.steps.map((step, idx) => {
+                      const humanRole = step.role === 'architect' ? 'Initial perspective' : step.role === 'skeptic' ? 'Adversarial check' : 'Final synthesizer';
+                      return (
+                        <div key={idx} className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#141820] border border-white/5">
+                          <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                            <div className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                              <span className="text-xs font-semibold text-stone-200">{step.agentName}</span>
+                              <span className="text-[10px] text-stone-500">({humanRole})</span>
+                            </div>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wide ${
+                              step.status === 'completed'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
+                                : step.status === 'running'
+                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/10 animate-pulse'
+                                : 'bg-white/5 text-stone-400 border border-white/5'
+                            }`}>
+                              {step.status}
+                            </span>
                           </div>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wide ${
-                            step.status === 'completed'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
-                              : step.status === 'running'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/10 animate-pulse'
-                              : 'bg-white/5 text-stone-400 border border-white/5'
-                          }`}>
-                            {step.status}
-                          </span>
+                          {step.content ? (
+                            <div className="text-xs text-stone-300 leading-relaxed font-sans max-h-[300px] overflow-y-auto mt-1 prose prose-xs prose-invert">
+                              <ReactMarkdown>{step.content}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-stone-550 italic mt-1">Analyzing perspective...</span>
+                          )}
                         </div>
-                        {step.content ? (
-                          <div className="text-xs text-stone-300 leading-relaxed font-sans max-h-[300px] overflow-y-auto mt-1 prose prose-xs prose-invert">
-                            <ReactMarkdown>{step.content}</ReactMarkdown>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-stone-500 italic mt-1">Node discussion pending execution...</span>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -502,7 +505,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-stone-200 border border-white/5 transition-colors"
               >
                 <span className="material-symbols-outlined text-[16px] text-stone-400">schema</span>
-                <span>Audit Evidence Graph</span>
+                <span>Research trail</span>
               </button>
             </div>
 
