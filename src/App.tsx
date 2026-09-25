@@ -13,6 +13,7 @@ import { ModelsConsensusView } from './components/console/ModelsConsensusView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
 import { IdeWorkspaceView } from './components/console/IdeWorkspaceView';
+import { GoogleCanvasView } from './components/console/GoogleCanvasView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
 
 import {
@@ -613,6 +614,10 @@ export default function App() {
 
           {activeTab === 'ide' && (
             <IdeWorkspaceView />
+          )}
+
+          {activeTab === 'canvas' && (
+            <GoogleCanvasView />
           )}
 
           {activeTab === 'landing' && (
