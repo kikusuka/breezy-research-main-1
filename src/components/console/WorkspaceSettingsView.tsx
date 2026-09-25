@@ -37,9 +37,11 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
 
   // Integration States (GitHub)
-  const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('synthexis_github_token') || '');
+  const [githubToken, setGithubToken] = useState<string>(
+    () => localStorage.getItem('breezy_github_token') || localStorage.getItem('synthexis_github_token') || ''
+  );
   const [githubAuthMode, setGithubAuthMode] = useState<'none' | 'pat' | 'oauth'>(() => {
-    const token = localStorage.getItem('synthexis_github_token') || '';
+    const token = localStorage.getItem('breezy_github_token') || localStorage.getItem('synthexis_github_token') || '';
     if (!token) return 'none';
     return (localStorage.getItem('breezy_github_auth_mode') as any) || 'pat';
   });

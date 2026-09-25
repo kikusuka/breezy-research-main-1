@@ -275,7 +275,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
                 </div>
                 {contra.reconciledResolution && (
                   <div className="pt-1.5 border-t border-amber-500/10 text-stone-300">
-                    <span className="text-stone-400 font-medium mr-1.5">How this was resolved:</span>
+                    <span className="text-stone-400 font-medium mr-1.5">How the sources relate:</span>
                     <span>{contra.reconciledResolution}</span>
                   </div>
                 )}

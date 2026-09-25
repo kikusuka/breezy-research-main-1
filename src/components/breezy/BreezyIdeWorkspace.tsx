@@ -564,10 +564,10 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
             type="button"
             onClick={() => handleRunBackgroundCloudJob('colab')}
             className="px-2.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-mono text-[11px] border border-amber-500/30 flex items-center gap-1 cursor-pointer transition-all"
-            title="Dispatch job using Google Account session"
+            title="Simulate job lifecycle in execution preview"
           >
-            <span className="material-symbols-outlined text-[14px]">cloud_sync</span>
-            <span>Run Colab (Google Auth)</span>
+            <span className="material-symbols-outlined text-[14px]">science</span>
+            <span>Execution Preview</span>
           </button>
 
           {selectedRepo && (

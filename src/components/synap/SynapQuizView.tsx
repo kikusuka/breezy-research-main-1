@@ -92,9 +92,9 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00ab78]/20 text-[#68fcbf] text-xs font-semibold border border-[#45dfa4]/20">
               <span className="material-symbols-outlined text-[15px]">
-                trending_up
+                check_circle
               </span>
-              <span>+3.2% if answered correctly</span>
+              <span>Logged to Review History</span>
             </div>
           </div>
         </div>
@@ -262,11 +262,11 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#1f1f27] text-[#68fcbf] font-mono text-xs border border-white/5">
-              <span className="material-symbols-outlined text-[14px] text-[#45dfa4]">
-                bolt
+            <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#1f1f27] font-mono text-xs border border-white/5 ${isCorrect ? 'text-[#68fcbf]' : 'text-[#ffb4ab]'}`}>
+              <span className="material-symbols-outlined text-[14px]">
+                {isCorrect ? 'check_circle' : 'flag'}
               </span>
-              <span>NMDA Receptors readiness: 55% → 68%</span>
+              <span>{isCorrect ? 'Correct • Added to review history' : 'Incorrect • Flagged for review'}</span>
             </div>
           </div>
 

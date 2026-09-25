@@ -124,14 +124,14 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
         <div className="flex flex-col gap-1 max-w-3xl">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-primary-container/20 text-primary font-mono text-[10px] uppercase tracking-wider font-semibold">
-              Architecture Dialectic
+              Deep Research
             </span>
             <span className="font-mono text-[11px] text-outline">
-              Initiated {new Date(session.createdAt || Date.now()).toLocaleTimeString()} UTC
+              Initiated {new Date(session.createdAt || Date.now()).toLocaleTimeString()}
             </span>
           </div>
           <h1 className="font-sans text-xl sm:text-2xl text-on-surface tracking-tight font-semibold">
-            {session.prompt || 'New Dialectic Inquiry Session'}
+            {session.prompt || 'New Research Inquiry'}
           </h1>
         </div>
 
@@ -269,7 +269,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 {subView === 'perspectives' ? 'device_hub' : 'schema'}
               </span>
               <span className="font-mono text-[11px] uppercase text-outline tracking-wider font-semibold">
-                {subView === 'perspectives' ? 'Independent Dialectic Feeds' : 'Evidence Trail & Contradiction Graph'}
+                {subView === 'perspectives' ? 'Investigated Perspectives & Angles' : 'Evidence Trail & Contradiction Graph'}
               </span>
             </div>
 
@@ -305,24 +305,21 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
             <EvidenceGraphView sessionTitle={session.prompt} />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Card 1: Claude 3.5 Sonnet / Analyst */}
+            {/* Card 1: Lead Perspective */}
             <div className="rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 flex flex-col justify-between shadow-xs hover:border-outline-variant/60 transition-all">
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-primary-container/20 border border-primary/30 flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-primary text-[18px]">speed</span>
+                      <span className="material-symbols-outlined text-primary text-[18px]">explore</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Claude 3.5 Sonnet</span>
+                      <span className="font-sans text-sm font-semibold text-on-surface">Source Extraction & Thesis</span>
                       <span className="font-mono text-[10px] text-primary uppercase tracking-wider font-medium">
-                        Lead Analyst • Ingestion (Thesis)
+                        Search Findings & Core Claims
                       </span>
                     </div>
                   </div>
-                  <span className="font-mono text-[11px] text-outline bg-surface-container px-2 py-0.5 rounded border border-outline-variant/30">
-                    4.1ms
-                  </span>
                 </div>
 
                 <div className="text-xs font-sans text-on-surface-variant leading-relaxed min-h-[60px]">
@@ -332,7 +329,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                     </div>
                   ) : isDeliberating && activeRound === 1 ? (
                     <div className="font-mono text-[11px] text-primary">
-                      {streamingRoundText || 'Generating first-principles architecture proposal...'}
+                      {streamingRoundText || 'Researching primary sources and extracting core claims...'}
                     </div>
                   ) : (
                     <p className="text-outline text-xs italic py-2">
@@ -343,9 +340,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               </div>
 
               <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-outline">Stage 1</span>
+                <span className="font-mono text-[11px] text-outline">Phase 1</span>
                 <span className="font-mono text-[10px] text-primary uppercase font-semibold px-2 py-0.5 rounded bg-primary-container/20 border border-primary/30">
-                  Initial Hypothesis
+                  Initial Evidence
                 </span>
               </div>
             </div>
@@ -356,12 +353,12 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-error-container/40 border border-error/30 flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-error text-[18px]">security</span>
+                      <span className="material-symbols-outlined text-error text-[18px]">rule</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Adversarial Critic</span>
+                      <span className="font-sans text-sm font-semibold text-on-surface">Counter-Analysis</span>
                       <span className="font-mono text-[10px] text-error uppercase tracking-wider font-medium">
-                        Counter-Arguments & Limitations
+                        Limitations & Contrasting Views
                       </span>
                     </div>
                   </div>
@@ -374,7 +371,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                     </div>
                   ) : isDeliberating && activeRound === 2 ? (
                     <div className="font-mono text-[11px] text-error">
-                      {streamingRoundText || 'Stress-testing claims and inspecting failure modes...'}
+                      {streamingRoundText || 'Checking counter-perspectives and inspecting edge cases...'}
                     </div>
                   ) : (
                     <p className="text-outline text-xs italic py-2">
@@ -385,9 +382,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               </div>
 
               <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-outline">Stage 2</span>
+                <span className="font-mono text-[11px] text-outline">Phase 2</span>
                 <span className="font-mono text-[10px] text-error uppercase font-semibold px-2 py-0.5 rounded bg-error-container/30 border border-error/30">
-                  Critical Audit
+                  Critical Verification
                 </span>
               </div>
             </div>
@@ -401,9 +398,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                       <span className="material-symbols-outlined text-secondary text-[18px]">account_tree</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Synthesis Model</span>
+                      <span className="font-sans text-sm font-semibold text-on-surface">Integrated Synthesis</span>
                       <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-medium">
-                        Reconciliation & Tradeoffs
+                        Reconciliation & Balanced Consensus
                       </span>
                     </div>
                   </div>
@@ -423,9 +420,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               </div>
 
               <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-outline">Stage 3</span>
+                <span className="font-mono text-[11px] text-outline">Phase 3</span>
                 <span className="font-mono text-[10px] text-secondary uppercase font-semibold px-2 py-0.5 rounded bg-secondary-container/30 border border-secondary/30">
-                  Consolidated View
+                  Final Synthesis
                 </span>
               </div>
             </div>
@@ -505,13 +502,11 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                  <span className="text-tertiary">Dialectic Engine:</span>
-                  <span className="text-on-surface font-medium">Trio Active (Claude + GPT-4o + Gemini)</span>
+                  <span className="text-tertiary">Pipeline:</span>
+                  <span className="text-on-surface font-medium">Multi-Source Verification Active</span>
                 </div>
-                <span className="hidden md:inline text-outline">•</span>
-                <span className="hidden md:inline">Tokens: 124,580</span>
               </div>
-              <span className="text-primary hidden sm:inline">Target Schema: Ledger_V3_Parquet</span>
+              <span className="text-outline hidden sm:inline">Search-grounded</span>
             </div>
 
             <textarea
@@ -520,7 +515,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isDeliberating}
-              placeholder={isDeliberating ? 'Multi-model dialectic in progress...' : 'Interrogate the consensus, pose an edge case, or propose a scenario tweak...'}
+              placeholder={isDeliberating ? 'Research synthesis in progress...' : 'Ask a research question, pose an edge case, or inspect tradeoffs...'}
               rows={1}
               className="w-full bg-transparent text-on-surface placeholder:text-outline resize-none outline-none font-sans text-sm py-1.5 leading-relaxed max-h-36 overflow-y-auto"
             />
@@ -554,7 +549,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 <div className="hidden sm:flex items-center gap-1 font-mono text-[10px] text-outline">
                   <span>Press</span>
                   <kbd className="px-1 rounded bg-surface-container text-on-surface">Enter</kbd>
-                  <span>to deliberate</span>
+                  <span>to submit inquiry</span>
                 </div>
               </div>
 

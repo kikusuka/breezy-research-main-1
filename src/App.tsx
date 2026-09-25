@@ -39,11 +39,11 @@ import {
 import { exportConsensusAsMarkdown } from './utils/exportTranscript';
 
 // Storage key constants
-const STORAGE_KEYS = 'synthexis_byok_keys';
-const STORAGE_PROTOCOL = 'synthexis_protocol_mode';
-const STORAGE_TONE = 'synthexis_debate_tone';
-const STORAGE_USER = 'synthexis_user';
-const STORAGE_CONSENSUS_MODE = 'synthexis_consensus_mode';
+const STORAGE_KEYS = 'breezy_byok_keys';
+const STORAGE_PROTOCOL = 'breezy_protocol_mode';
+const STORAGE_TONE = 'breezy_research_tone';
+const STORAGE_USER = 'breezy_user';
+const STORAGE_CONSENSUS_MODE = 'breezy_synthesis_mode';
 
 export default function App() {
   // Navigation tab state: chat | notes | models | settings | landing
@@ -155,7 +155,8 @@ export default function App() {
   // Consensus mode toggle
   const [consensusMode, setConsensusMode] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(STORAGE_CONSENSUS_MODE) !== 'false';
+      const stored = localStorage.getItem(STORAGE_CONSENSUS_MODE) ?? localStorage.getItem('synthexis_consensus_mode');
+      return stored !== 'false';
     } catch {
       return true;
     }
@@ -176,7 +177,7 @@ export default function App() {
   // BYOK Keys
   const [keys, setKeys] = useState<ProviderKeyConfig>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS);
+      const saved = localStorage.getItem(STORAGE_KEYS) || localStorage.getItem('synthexis_byok_keys');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -213,7 +214,7 @@ export default function App() {
   // Protocol & Seat Config
   const [protocol, setProtocol] = useState<'trio' | 'quad' | 'duel' | 'solo'>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_PROTOCOL);
+      const saved = localStorage.getItem(STORAGE_PROTOCOL) || localStorage.getItem('synthexis_protocol_mode');
       return (saved as any) || 'trio';
     } catch {
       return 'trio';
@@ -222,7 +223,7 @@ export default function App() {
 
   const [tone, setTone] = useState<DebateTone>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_TONE);
+      const saved = localStorage.getItem(STORAGE_TONE) || localStorage.getItem('synthexis_debate_tone');
       return (saved as DebateTone) || 'balanced';
     } catch {
       return 'balanced';

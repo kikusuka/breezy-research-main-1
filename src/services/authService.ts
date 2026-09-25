@@ -160,7 +160,7 @@ export const authService = {
     try {
       const githubProvider = new GithubAuthProvider();
       githubProvider.addScope('repo');
-      githubProvider.addScope('read:org');
+      githubProvider.addScope('read:user');
       
       const result = await signInWithPopup(auth, githubProvider);
       const user = result.user;
@@ -168,7 +168,7 @@ export const authService = {
       const token = credential?.accessToken || null;
       
       if (token) {
-        localStorage.setItem('synthexis_github_token', token);
+        localStorage.setItem('breezy_github_token', token);
       }
 
       return {

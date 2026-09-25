@@ -1,7 +1,7 @@
 /**
- * Multi-Provider Resilient AI Service with Failover & Backup Routing
+ * Multi-Provider AI Service with Transparent Failover & Backup Routing
  * Supports Google Gemini, Groq, SambaNova, OpenRouter, and OpenAI-compatible APIs.
- * Ensures zero downtime and permanent resilience across providers.
+ * Honest error handling: Never generates fake "Verified Resilient Synthesis" answers.
  */
 
 import { GoogleGenAI } from '@google/genai';
@@ -13,7 +13,7 @@ export const aiProviderService = {
    */
   getStoredKeys(): ProviderKeyConfig {
     try {
-      const raw = localStorage.getItem('synthexis_provider_keys');
+      const raw = localStorage.getItem('breezy_provider_keys') || localStorage.getItem('synthexis_provider_keys');
       if (raw) {
         return JSON.parse(raw);
       }
@@ -26,13 +26,14 @@ export const aiProviderService = {
    */
   saveStoredKeys(config: ProviderKeyConfig) {
     try {
+      localStorage.setItem('breezy_provider_keys', JSON.stringify(config));
       localStorage.setItem('synthexis_provider_keys', JSON.stringify(config));
     } catch {}
   },
 
   /**
-   * Generate content with automatic failover across available providers.
-   * Order of resilience: Gemini -> Groq -> OpenRouter -> Custom OpenAI compatible endpoint -> Fallback Mock/Static Generator.
+   * Generate content with genuine failover across available configured providers.
+   * If all legitimate providers fail, returns a clear, honest error instead of fabricated output.
    */
   async generateWithFailover(
     prompt: string,
@@ -40,6 +41,7 @@ export const aiProviderService = {
     temperature: number = 0.7
   ): Promise<{ text: string; providerUsed: string; modelUsed: string }> {
     const keys = this.getStoredKeys();
+    const errors: string[] = [];
 
     // 1. Try Google Gemini first
     try {
@@ -61,11 +63,12 @@ export const aiProviderService = {
           modelUsed: 'gemini-3.8-flash',
         };
       }
-    } catch (err) {
-      console.warn('Gemini provider failed or rate limited, falling back to Groq/OpenRouter...', err);
+    } catch (err: any) {
+      errors.push(`Gemini: ${err.message || 'Request failed'}`);
+      console.warn('Gemini provider failed or rate limited, checking failover providers...', err);
     }
 
-    // 2. Try Groq Failover (OpenAI Compatible)
+    // 2. Try Groq Failover if configured
     if (keys.groq) {
       try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -93,13 +96,16 @@ export const aiProviderService = {
               modelUsed: 'llama3-70b-8192',
             };
           }
+        } else {
+          errors.push(`Groq: HTTP ${res.status}`);
         }
-      } catch (err) {
-        console.warn('Groq failover failed, trying OpenRouter...', err);
+      } catch (err: any) {
+        errors.push(`Groq: ${err.message}`);
+        console.warn('Groq failover failed...', err);
       }
     }
 
-    // 3. Try OpenRouter Failover
+    // 3. Try OpenRouter Failover if configured
     if (keys.openrouter) {
       try {
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -108,7 +114,7 @@ export const aiProviderService = {
             Authorization: `Bearer ${keys.openrouter}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': window.location.origin,
-            'X-Title': 'Synthexis Consensus Engine',
+            'X-Title': 'Breezy Research',
           },
           body: JSON.stringify({
             model: 'anthropic/claude-3.5-sonnet',
@@ -129,17 +135,17 @@ export const aiProviderService = {
               modelUsed: 'anthropic/claude-3.5-sonnet',
             };
           }
+        } else {
+          errors.push(`OpenRouter: HTTP ${res.status}`);
         }
-      } catch (err) {
-        console.warn('OpenRouter failover failed, trying custom OpenAI endpoint...', err);
+      } catch (err: any) {
+        errors.push(`OpenRouter: ${err.message}`);
+        console.warn('OpenRouter failover failed...', err);
       }
     }
 
-    // 4. Ultimate Resilient Fallback (Guarantees zero interruption even if offline or all API keys are unconfigured)
-    return {
-      text: `### Verified Resilient Synthesis\n\n- **Inquiry Analyzed**: "${prompt.slice(0, 100)}..."\n- **Consensus Assessment**: Multi-node verification completed successfully.\n- **Resilience Notice**: Executed via local offline consensus fallback because primary remote endpoints were unreached. All transactional invariants remain fully secure.`,
-      providerUsed: 'Synthexis Local Enclave Fallback',
-      modelUsed: 'resilient-consensus-v2',
-    };
+    // 4. Honest Failure: Do NOT fabricate a response
+    const summary = errors.length > 0 ? errors.join('; ') : 'No valid API keys configured';
+    throw new Error(`AI providers unavailable (${summary}). Please configure an active API key in Settings.`);
   }
 };

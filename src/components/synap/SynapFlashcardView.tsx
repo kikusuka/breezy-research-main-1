@@ -149,10 +149,10 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
 
               {currentCard.vulnerability === 'critical' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#93000a]/40 text-[#ffb4ab] font-mono text-xs border border-[#ffb4ab]/20 shadow-[0_0_12px_rgba(147,0,10,0.25)] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ffb4ab] animate-pulse"></span>
-                  <span>High Vulnerability</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]"></span>
+                  <span>Needs Review</span>
                   <span className="text-[#cac4d4] font-mono text-[10px] bg-[#0d0d15]/60 px-1.5 py-0.5 rounded">
-                    {currentCard.riskImpact || '-8.5% Risk'}
+                    {currentCard.riskImpact || 'Priority'}
                   </span>
                 </span>
               )}

@@ -1,20 +1,19 @@
 import { DebateSession, DebateStep, DebateTone } from '../types';
 
-// Storage key constants - using synthexis_ prefix for consistency
-export const STORAGE_SESSIONS_KEY = 'synthexis_debate_sessions_v1';
-export const STORAGE_ACTIVE_ID_KEY = 'synthexis_active_session_id_v1';
+// Storage key constants
+export const STORAGE_SESSIONS_KEY = 'breezy_research_sessions_v1';
+export const STORAGE_ACTIVE_ID_KEY = 'breezy_active_session_id_v1';
 
 export const SEED_SAMPLE_SESSIONS: DebateSession[] = [];
 
 export const SEED_SAMPLE_SESSION: DebateSession | null = null;
 
 /**
- * Load all saved debate sessions from LocalStorage.
- * Initializes with seed sessions if empty so users can immediately browse transcripts.
+ * Load all saved research sessions from LocalStorage.
  */
 export function loadSessions(): DebateSession[] {
   try {
-    const raw = localStorage.getItem(STORAGE_SESSIONS_KEY);
+    const raw = localStorage.getItem(STORAGE_SESSIONS_KEY) || localStorage.getItem('synthexis_debate_sessions_v1');
     if (!raw) {
       // Seed default sessions
       saveSessions(SEED_SAMPLE_SESSIONS);
@@ -28,7 +27,7 @@ export function loadSessions(): DebateSession[] {
     saveSessions(SEED_SAMPLE_SESSIONS);
     return SEED_SAMPLE_SESSIONS;
   } catch (err) {
-    console.error('Failed to read debate sessions from localStorage:', err);
+    console.error('Failed to read research sessions from localStorage:', err);
     return SEED_SAMPLE_SESSIONS;
   }
 }
@@ -41,7 +40,7 @@ export function saveSessions(sessions: DebateSession[]): void {
     const trimmed = sessions.slice(0, 40);
     localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(trimmed));
   } catch (err) {
-    console.error('Failed to save debate sessions to localStorage:', err);
+    console.error('Failed to save research sessions to localStorage:', err);
   }
 }
 
@@ -50,7 +49,7 @@ export function saveSessions(sessions: DebateSession[]): void {
  */
 export function loadActiveSessionId(): string | null {
   try {
-    return localStorage.getItem(STORAGE_ACTIVE_ID_KEY);
+    return localStorage.getItem(STORAGE_ACTIVE_ID_KEY) || localStorage.getItem('synthexis_active_session_id_v1');
   } catch {
     return null;
   }

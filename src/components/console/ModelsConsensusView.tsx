@@ -123,21 +123,21 @@ export const ModelsConsensusView: React.FC<ModelsConsensusViewProps> = ({ onOpen
           </div>
         </div>
 
-        {/* Section 1: Active Dialectic Triad Roles */}
+        {/* Section 1: Active Multi-Model Research Roles */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[18px]">account_tree</span>
               <h2 className="font-sans text-base text-on-surface font-semibold">
-                Active Dialectic Triad Roles
+                Active Multi-Model Research Roles
               </h2>
               <span className="font-mono text-[10px] text-tertiary bg-surface-container-high px-2 py-0.5 rounded border border-outline-variant/30">
-                P2P Cluster Pipeline
+                Multi-Family Pipeline
               </span>
             </div>
             <div className="flex items-center gap-1 font-mono text-[11px] text-outline">
-              <span>Routing Total:</span>
-              <span className="text-secondary font-medium">100% Allocated</span>
+              <span>Coverage:</span>
+              <span className="text-secondary font-medium">3 Model Families</span>
             </div>
           </div>
 
@@ -318,19 +318,19 @@ export const ModelsConsensusView: React.FC<ModelsConsensusViewProps> = ({ onOpen
           </div>
         </div>
 
-        {/* Section 2: Consensus & Arbitration Rules + Benchmark Matrix */}
+        {/* Section 2: Synthesis & Reconciliation Parameters + Provider Matrix */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Consensus Rules */}
+          {/* Synthesis Rules */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[18px]">tune</span>
                 <h2 className="font-sans text-base text-on-surface font-semibold">
-                  Consensus & Arbitration Rules
+                  Synthesis & Reconciliation Parameters
                 </h2>
               </div>
               <span className="font-mono text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-2 py-0.5 rounded">
-                Active Matrix
+                Active Parameters
               </span>
             </div>
 

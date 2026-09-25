@@ -14,9 +14,9 @@ const STORAGE_KEY_ACTIVE_NB = 'synap:active_notebook_id';
 export const initialNotebooks: SynapNotebook[] = [
   {
     id: 'bio-301',
-    title: 'Cognitive Neuroscience & Synaptic Plasticity',
+    title: '[Sample] Cognitive Neuroscience & Synaptic Plasticity',
     courseCode: 'Bio 301',
-    track: 'Finals Track',
+    track: 'Sample Course',
     examDate: 'May 18',
     daysLeft: 4,
     readiness: 81,
@@ -80,7 +80,7 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
       },
       {
         id: 's-4',
-        title: 'Elena_Personal_Notes_Hippocampal_Circuitry.txt',
+        title: '[Sample] Field_Notes_Hippocampal_Circuitry.txt',
         type: 'text',
         wordCount: 'Raw text',
         text: `Hippocampus tri-synaptic loop: Perforant path -> Dentate Gyrus (granule cells) -> Mossy fibers -> CA3 (pyramidal cells) -> Schaffer collaterals -> CA1 pyramidal cells -> Subiculum -> Entorhinal Cortex.`,
@@ -99,7 +99,7 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
         id: 'msg-2',
         role: 'assistant',
         content:
-          "Great question Elena — this exact concept showed up in 3 quiz misses this week, so let's lock it down together.\n\nHere is the molecular key directly from Kandel Ch. 12 (p. 254):",
+          "Great question — this exact concept showed up in 3 quiz misses this week, so let's lock it down together.\n\nHere is the molecular key directly from Kandel Ch. 12 (p. 254):",
         timestamp: '11:43 PM',
         citations: ['Kandel Ch. 12, Fig 12-4: Mg²⁺ Unblock Mechanism (p. 254)'],
         steps: [
@@ -132,7 +132,7 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
         id: 'msg-4',
         role: 'assistant',
         content:
-          '💡 **Exactly right!**\n\nYou just converted a persistent weak spot into an enduring mental model. Because you grasped the physical mechanism, I have updated your NMDA Receptor Readiness score from 55% to 78%.',
+          '💡 **Exactly right!**\n\nYou just converted a persistent weak spot into an enduring mental model. This concept has been logged into your mastery review history.',
         timestamp: 'Just now',
         masteryUpdate: {
           topic: 'NMDA Receptors',
@@ -151,7 +151,7 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
         answer:
           '1. Molecular Blockade: At resting membrane potential (-70 mV), extracellular Mg²⁺ ions are drawn electrostatically into the pore, physically obstructing ionic conductance.\n2. Electrostatic Expulsion: Depolarization to ~ -30 mV expels the divalent Mg²⁺ cation, allowing Ca²⁺ and Na⁺ to influx.',
         vulnerability: 'critical',
-        riskImpact: '-8.5% Risk',
+        riskImpact: 'Needs Review',
         reference: 'Kandel Principles of Neural Science, Ch. 12, p. 254',
         history: [
           { timestamp: '2026-05-13T10:00:00Z', correct: false },
@@ -168,7 +168,7 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
         answer:
           'Postsynaptic Ca²⁺ influx stimulates 2-AG synthesis on demand. 2-AG diffuses backwards across the synaptic cleft to bind presynaptic CB1 receptors (Gi-coupled), inhibiting presynaptic voltage-gated Ca²⁺ channels and reducing glutamate release.',
         vulnerability: 'critical',
-        riskImpact: '-6.0% Risk',
+        riskImpact: 'Needs Review',
         reference: 'Squire Neuro Ch. 7 & Recitation 4',
         history: [
           { timestamp: '2026-05-12T10:00:00Z', correct: false },
@@ -185,7 +185,7 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
         answer:
           'Once Ca²⁺/Calmodulin activates CaMKII, adjacent subunits phosphorylate Thr286. This locks the enzyme in an autonomous active state even after Ca²⁺ drops, enabling persistent AMPA receptor phosphorylation and insertion.',
         vulnerability: 'critical',
-        riskImpact: '-5.5% Risk',
+        riskImpact: 'High Priority',
         reference: 'Molecular Memory Module 3',
         history: [
           { timestamp: '2026-05-12T10:00:00Z', correct: false },
@@ -214,9 +214,9 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
   },
   {
     id: 'cs-442',
-    title: 'Distributed Systems & Consensus',
+    title: '[Sample] Distributed Systems & Consensus',
     courseCode: 'CS 442',
-    track: 'Core Distributed',
+    track: 'Sample Course',
     examDate: 'May 24',
     daysLeft: 10,
     readiness: 64,
@@ -245,9 +245,9 @@ Retrograde messenger: Nitric Oxide (NO) and endocannabinoids (2-AG) act on presy
   },
   {
     id: 'math-220',
-    title: 'Discrete Mathematics & Graph Theory',
+    title: '[Sample] Discrete Mathematics & Graph Theory',
     courseCode: 'Math 220',
-    track: 'Pure Math',
+    track: 'Sample Course',
     examDate: 'June 2',
     daysLeft: 19,
     readiness: 92,

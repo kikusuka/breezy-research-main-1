@@ -275,11 +275,11 @@ export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () =>
             <div className="flex items-center gap-2 mb-1">
               <span className="material-symbols-outlined text-sky-400 text-[20px]">space_dashboard</span>
               <h1 className="font-sans text-xl sm:text-2xl text-white font-bold tracking-tight">
-                Breezy Research & Ideation Canvas
+                Canvas
               </h1>
             </div>
             <p className="font-sans text-xs sm:text-sm text-slate-400">
-              Interactive workspace for organizing research findings, architecture patterns, and project notes.
+              Interactive workspace for organizing projects, notes, research findings, code snippets, and tasks.
             </p>
           </div>
 
