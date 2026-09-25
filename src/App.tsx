@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar, ConsoleTab } from './components/console/Sidebar';
 import { TopBar } from './components/console/TopBar';
+import { ResearchConversationView } from './components/console/ResearchConversationView';
 import { ChatDialecticView } from './components/console/ChatDialecticView';
 import { ResearchNotesView } from './components/console/ResearchNotesView';
 import { ModelsConsensusView } from './components/console/ModelsConsensusView';
@@ -233,7 +234,7 @@ export default function App() {
     setStreamingText('');
   };
 
-  const startDebate = async (promptText: string) => {
+  const startDebate = async (promptText: string, depth: 'quick' | 'standard' | 'deep' = 'standard') => {
     if (!promptText.trim() || isDeliberating) return;
     const trimmedPrompt = promptText.trim();
 
@@ -241,6 +242,8 @@ export default function App() {
     setActiveRound(1);
     setStreamingText('');
     setStreamingRole('architect');
+
+    const chosenProtocol = depth === 'quick' ? 'duel' : (depth === 'deep' ? 'quad' : 'trio');
 
     const initialSteps: DebateStep[] = [
       {
@@ -285,7 +288,7 @@ export default function App() {
       },
     ];
 
-    const newSession = createNewSession(trimmedPrompt, protocol, initialSteps, tone);
+    const newSession = createNewSession(trimmedPrompt, chosenProtocol, initialSteps, tone);
     activeSessionIdRef.current = newSession.id;
     setActiveSessionId(newSession.id);
     saveActiveSessionId(newSession.id);
@@ -304,8 +307,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: trimmedPrompt,
-          protocol,
+          protocol: chosenProtocol,
           tone,
+          enableSearchGrounding: depth === 'deep' || Boolean(keys.tavily || keys.serper || keys.brave || true),
+          searchEngine: keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'google')),
           keys,
         }),
         signal: controller.signal,
@@ -396,6 +401,20 @@ export default function App() {
                 saveSessions(next);
                 return next;
               });
+            } else if (data.type === 'evidence_graph') {
+              setSessions((prev) => {
+                const currentId = activeSessionIdRef.current;
+                const next: DebateSession[] = prev.map((s) => {
+                  if (s.id !== currentId) return s;
+                  return {
+                    ...s,
+                    evidenceGraph: data.evidenceGraph || s.evidenceGraph,
+                    researchMetrics: data.researchMetrics || s.researchMetrics,
+                  };
+                });
+                saveSessions(next);
+                return next;
+              });
             } else if (data.type === 'complete') {
               setSessions((prev) => {
                 const currentId = activeSessionIdRef.current;
@@ -405,6 +424,8 @@ export default function App() {
                     ...s,
                     status: 'completed' as const,
                     finalOutput: data.finalOutput || s.finalOutput,
+                    evidenceGraph: data.evidenceGraph || s.evidenceGraph,
+                    researchMetrics: data.researchMetrics || s.researchMetrics,
                     metrics: data.metrics || s.metrics,
                   };
                 });
@@ -462,16 +483,15 @@ export default function App() {
         <TopBar
           activeTab={activeTab}
           onSelectTab={setActiveTab}
-          sessionTitle={currentSession?.prompt}
-          latencyMs={24}
+          onNewResearch={handleNewDebate}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
         {/* Content Body Router */}
-        <main className="relative pt-14 bg-surface min-h-screen flex-1 flex flex-col">
+        <main className="relative pt-14 bg-[#10141a] min-h-screen flex-1 flex flex-col">
           {activeTab === 'chat' && (
-            <ChatDialecticView
+            <ResearchConversationView
               session={currentSession}
               isDeliberating={isDeliberating}
               activeRound={activeRound}
@@ -488,7 +508,6 @@ export default function App() {
                 });
               }}
               onExportMarkdown={handleExportMarkdown}
-              onOpenModelsTab={() => setActiveTab('models')}
               keys={keys}
             />
           )}

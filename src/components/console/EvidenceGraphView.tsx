@@ -1,186 +1,165 @@
 import React, { useState } from 'react';
-
-export interface EvidenceNode {
-  id: string;
-  claim: string;
-  status: 'supported' | 'contradicted' | 'synthesized' | 'unresolved';
-  agent: string;
-  sources: { title: string; url?: string; snippet: string; type: 'doc' | 'benchmark' | 'rfc' }[];
-  contradictionNote?: string;
-  resolution: string;
-}
+import { EvidenceGraph, ResearchMetrics, ResearchClaim } from '../../types';
 
 interface EvidenceGraphViewProps {
+  evidenceGraph?: EvidenceGraph;
+  researchMetrics?: ResearchMetrics;
   sessionTitle?: string;
   isCompact?: boolean;
 }
 
 export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
-  sessionTitle = 'Kafka Streams vs. DuckDB for Financial Ledgers',
+  evidenceGraph,
+  researchMetrics,
+  sessionTitle = 'Research Evidence Trail',
   isCompact = false,
 }) => {
-  const [selectedClaimId, setSelectedClaimId] = useState<string>('claim-1');
+  const claims = evidenceGraph?.claims || [];
+  const contradictions = evidenceGraph?.contradictions || [];
+  const sources = evidenceGraph?.sourcesConsulted || [];
+  const researchPlan = evidenceGraph?.researchPlan || [];
 
-  const evidenceNodes: EvidenceNode[] = [
-    {
-      id: 'claim-1',
-      claim: 'Kafka partitioned append-only topics guarantee sub-5ms write latency under 100k+ eps.',
-      status: 'supported',
-      agent: 'Claude 3.5 Sonnet (Ingestion Analyst)',
-      sources: [
-        {
-          title: 'Apache Kafka 3.7 Documentation — Durability & Ack Protocols',
-          type: 'doc',
-          snippet: 'Partitioned write log buffers to OS page cache with zero-copy network sends, achieving <5ms write times with ack=all quorum.',
-        },
-        {
-          title: 'Redpanda / Kafka Benchmarking Report (Fintech Core, 2025)',
-          type: 'benchmark',
-          snippet: '99.9th percentile latencies stayed under 8.2ms under 140k sustained write events/sec per 3-node cluster.',
-        },
-      ],
-      resolution: 'Verified for continuous ledger transaction capture without lock contention.',
-    },
-    {
-      id: 'claim-2',
-      claim: 'Direct high-concurrency transactional writes to DuckDB files cause database lock failures.',
-      status: 'contradicted',
-      agent: 'GPT-4o (Adversarial Critic)',
-      sources: [
-        {
-          title: 'DuckDB Official Documentation — Concurrency & Multi-Reader Single-Writer Model',
-          type: 'doc',
-          snippet: 'DuckDB uses a single-writer concurrency model. Concurrent write transactions will fail or queue with file locks if attempted in parallel across processes.',
-        },
-        {
-          title: 'DuckDB GitHub Issue #4820 — Process lockouts under parallel worker threads',
-          type: 'rfc',
-          snippet: 'Direct embedded writes from multiple API worker nodes cause database lock collisions and I/O bottlenecks.',
-        },
-      ],
-      contradictionNote: 'Directly refutes naive proposals to write live customer checkout transactions into embedded DuckDB.',
-      resolution: 'Strictly isolate DuckDB to read-only analytical queries over immutable Parquet files.',
-    },
-    {
-      id: 'claim-3',
-      claim: 'Micro-batching Parquet files to S3 enables DuckDB to scan 50M+ rows in under 200ms.',
-      status: 'supported',
-      agent: 'Gemini 1.5 Pro (Architecture Synthesizer)',
-      sources: [
-        {
-          title: 'DuckDB Parquet Reader Engine Spec',
-          type: 'doc',
-          snippet: 'Columnar projection pushdown and vectorized SIMD execution allow DuckDB to scan partitioned Parquet files at 1.2 GB/sec per core.',
-        },
-        {
-          title: 'Ledger Audit Scale Report (DuckDB vs Spark, 2025)',
-          type: 'benchmark',
-          snippet: 'Daily balance reconciliation of 80M entries finished in 410ms on a single c6i.4xlarge EC2 instance.',
-        },
-      ],
-      resolution: 'Optimal audit tier: Zero database server costs with local analytical speeds.',
-    },
-    {
-      id: 'claim-4',
-      claim: 'Bifurcated architecture eliminates write lock interference while retaining instant auditability.',
-      status: 'synthesized',
-      agent: 'Lead Reviewer (Arbitration Node)',
-      sources: [
-        {
-          title: 'Synthexis Consensus Synthesis #042-US-EAST',
-          type: 'rfc',
-          snippet: 'Decouple write ingestion (Kafka) from audit reads (DuckDB). Event logs flush to Parquet in 1-minute micro-batches.',
-        },
-      ],
-      resolution: 'Definitive recommendation: 100% agreement reached across all 3 frontier models.',
-    },
-  ];
+  const [selectedClaimId, setSelectedClaimId] = useState<string>(
+    claims.length > 0 ? claims[0].id : 'none'
+  );
 
-  const activeClaim = evidenceNodes.find((n) => n.id === selectedClaimId) || evidenceNodes[0];
+  // If selectedClaimId is out of sync or claims change
+  const activeClaim: ResearchClaim | undefined =
+    claims.find((c) => c.id === selectedClaimId) || claims[0];
+
+  const totalClaims = researchMetrics?.claimsIdentified ?? claims.length;
+  const supportedClaims =
+    researchMetrics?.claimsSupported ?? claims.filter((c) => c.status === 'supported').length;
+  const contradictedClaims =
+    researchMetrics?.claimsContradicted ?? claims.filter((c) => c.status === 'contradicted').length;
+  const unresolvedClaims =
+    researchMetrics?.claimsUnresolved ?? claims.filter((c) => c.status === 'unresolved').length;
+  const sourcesCount = researchMetrics?.sourcesConsulted ?? sources.length;
+
+  if (claims.length === 0 && sources.length === 0) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center">
+        <span className="material-symbols-outlined text-3xl text-stone-500 mb-2">schema</span>
+        <h4 className="text-sm font-medium text-stone-200">No Evidence Trail Available Yet</h4>
+        <p className="text-xs text-stone-400 mt-1 max-w-md mx-auto">
+          Start a research inquiry to extract verifiable claims, cross-reference primary sources, and map contradictions.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 w-full">
-      {/* Evidence Coverage Metrics Bar (No fake telemetry!) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+      {/* Evidence Metrics Strip (Human, real numbers only) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/10">
         <div className="flex flex-col">
-          <span className="font-mono text-[10px] uppercase text-outline tracking-wider">Claims Evaluated</span>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="font-sans text-xl font-semibold text-on-surface">4 / 4</span>
-            <span className="font-mono text-[10px] text-secondary bg-secondary/10 px-1.5 py-0.2 rounded">100% Grounded</span>
+          <span className="text-[11px] text-stone-400 tracking-wide font-sans">
+            Claims Evaluated
+          </span>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-lg font-semibold text-stone-100 tabular-nums">
+              {totalClaims}
+            </span>
+            <span className="text-[11px] text-stone-400">
+              · {sourcesCount} sources
+            </span>
           </div>
         </div>
 
         <div className="flex flex-col">
-          <span className="font-mono text-[10px] uppercase text-outline tracking-wider">Claims Supported</span>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="font-sans text-xl font-semibold text-secondary">3 Claims</span>
-            <span className="font-mono text-[10px] text-secondary">✓ Primary Sources</span>
+          <span className="text-[11px] text-stone-400 tracking-wide font-sans">
+            Supported Claims
+          </span>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-lg font-semibold text-emerald-400 tabular-nums">
+              {supportedClaims}
+            </span>
+            <span className="text-[11px] text-stone-400">
+              verified
+            </span>
           </div>
         </div>
 
         <div className="flex flex-col">
-          <span className="font-mono text-[10px] uppercase text-outline tracking-wider">Contradictions Flagged</span>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="font-sans text-xl font-semibold text-error">1 Conflict</span>
-            <span className="font-mono text-[10px] text-error bg-error/10 px-1.5 py-0.2 rounded">Reconciled</span>
+          <span className="text-[11px] text-stone-400 tracking-wide font-sans">
+            Contradictions Flagged
+          </span>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className={`text-lg font-semibold tabular-nums ${contradictedClaims > 0 ? 'text-amber-400' : 'text-stone-300'}`}>
+              {contradictedClaims}
+            </span>
+            <span className="text-[11px] text-stone-400">
+              {contradictedClaims > 0 ? 'reconciled' : 'none'}
+            </span>
           </div>
         </div>
 
         <div className="flex flex-col">
-          <span className="font-mono text-[10px] uppercase text-outline tracking-wider">Primary Sources</span>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="font-sans text-xl font-semibold text-primary">7 Sources</span>
-            <span className="font-mono text-[10px] text-outline">Docs & Benchmarks</span>
+          <span className="text-[11px] text-stone-400 tracking-wide font-sans">
+            Unresolved
+          </span>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-lg font-semibold text-stone-300 tabular-nums">
+              {unresolvedClaims}
+            </span>
+            <span className="text-[11px] text-stone-400">
+              {unresolvedClaims === 0 ? 'high confidence' : 'open questions'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Visual Dialectic Evidence Flow Graph */}
-      <div className="rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 shadow-xs overflow-hidden">
-        <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20 mb-4">
+      {/* Main Evidence Explorer */}
+      <div className="rounded-xl bg-white/[0.02] border border-white/10 p-5">
+        <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-secondary">schema</span>
-            <span className="font-sans text-sm font-semibold text-on-surface">Evidence Trail & Contradiction Graph</span>
+            <span className="material-symbols-outlined text-[17px] text-stone-400">menu_book</span>
+            <span className="text-xs font-semibold text-stone-200 tracking-wide">
+              Verified Claims & Sources
+            </span>
           </div>
-          <span className="font-mono text-[10px] text-tertiary">Interactive Node Map</span>
+          <span className="text-[11px] text-stone-400">
+            {claims.length} claims documented
+          </span>
         </div>
 
-        {/* Visual Graph Layout */}
-        <div className="flex flex-col md:flex-row items-stretch gap-4">
-          {/* Claim Nodes List */}
-          <div className="flex flex-col gap-2 md:w-5/12">
-            <span className="font-mono text-[10px] text-outline uppercase tracking-wider font-semibold">
-              Dissected Claims ({evidenceNodes.length})
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+          {/* Claims List */}
+          <div className="md:col-span-5 flex flex-col gap-2">
+            <span className="text-[11px] text-stone-400 font-medium mb-1">
+              Select a claim to inspect evidence:
             </span>
-            <div className="flex flex-col gap-2">
-              {evidenceNodes.map((node) => {
-                const isSelected = node.id === selectedClaimId;
-                const statusBadge =
-                  node.status === 'supported'
-                    ? { bg: 'bg-secondary/10', text: 'text-secondary', border: 'border-secondary/30', label: 'SUPPORTED' }
-                    : node.status === 'contradicted'
-                    ? { bg: 'bg-error/10', text: 'text-error', border: 'border-error/30', label: 'CONTRADICTED' }
-                    : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/30', label: 'SYNTHESIS' };
+            <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
+              {claims.map((c) => {
+                const isSelected = activeClaim?.id === c.id;
+                const statusColor =
+                  c.status === 'supported'
+                    ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+                    : c.status === 'contradicted'
+                    ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+                    : 'text-stone-400 border-stone-500/30 bg-stone-500/10';
 
                 return (
                   <button
-                    key={node.id}
+                    key={c.id}
                     type="button"
-                    onClick={() => setSelectedClaimId(node.id)}
+                    onClick={() => setSelectedClaimId(c.id)}
                     className={`p-3 rounded-lg text-left transition-all border ${
                       isSelected
-                        ? 'bg-surface-container-high border-primary/50 shadow-xs'
-                        : 'bg-surface-container hover:bg-surface-container-high/60 border-outline-variant/30'
+                        ? 'bg-white/[0.08] border-white/20 text-stone-100 shadow-sm'
+                        : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/5 text-stone-300'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="font-mono text-[10px] text-tertiary truncate">{node.agent}</span>
-                      <span className={`font-mono text-[9px] uppercase px-1.5 py-0.2 rounded border font-semibold ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}>
-                        {statusBadge.label}
+                      <span className="text-[11px] text-stone-400 uppercase tracking-wider font-mono">
+                        {c.id}
+                      </span>
+                      <span className={`text-[10px] uppercase font-medium px-1.5 py-0.5 rounded border ${statusColor}`}>
+                        {c.status}
                       </span>
                     </div>
-                    <p className="font-sans text-xs text-on-surface line-clamp-2 leading-relaxed">
-                      {node.claim}
+                    <p className="text-xs leading-relaxed line-clamp-2">
+                      {c.claim}
                     </p>
                   </button>
                 );
@@ -188,107 +167,140 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
             </div>
           </div>
 
-          {/* Connective Indicator */}
-          <div className="hidden md:flex flex-col items-center justify-center text-outline">
-            <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-          </div>
+          {/* Active Claim Detail */}
+          <div className="md:col-span-7 flex flex-col gap-4 bg-white/[0.02] p-4 rounded-xl border border-white/5">
+            {activeClaim ? (
+              <>
+                <div>
+                  <span className="text-[11px] text-stone-400 block mb-1">Claim Statement</span>
+                  <p className="text-sm font-medium text-stone-100 leading-relaxed">
+                    "{activeClaim.claim}"
+                  </p>
+                </div>
 
-          {/* Active Claim Evidence Deep-Dive */}
-          <div className="flex-1 rounded-xl bg-surface-container p-4 border border-outline-variant/30 flex flex-col justify-between gap-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
-                <span className="font-mono text-[10px] text-primary uppercase tracking-wider font-semibold">
-                  Evidence Deep-Dive • {activeClaim.id.toUpperCase()}
-                </span>
-                <span className="font-mono text-[10px] text-outline">{activeClaim.agent}</span>
-              </div>
-
-              <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
-                <span className="font-mono text-[9px] uppercase text-outline">Evaluated Claim</span>
-                <p className="font-sans text-xs sm:text-sm text-on-surface font-medium mt-0.5 leading-relaxed">
-                  "{activeClaim.claim}"
-                </p>
-              </div>
-
-              {activeClaim.contradictionNote && (
-                <div className="p-3 rounded-lg bg-error-container/20 border border-error/30 flex items-start gap-2">
-                  <span className="material-symbols-outlined text-error text-[16px] shrink-0 mt-0.5">warning</span>
-                  <div className="flex flex-col">
-                    <span className="font-sans text-xs font-semibold text-error">Dialectic Contradiction Flagged</span>
-                    <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                      {activeClaim.contradictionNote}
+                {activeClaim.reviewerVerdict && (
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                    <span className="font-semibold text-emerald-400 block mb-0.5">Synthesis Finding:</span>
+                    <p className="text-stone-300 leading-relaxed">
+                      {activeClaim.reviewerVerdict}
                     </p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Cited Primary Sources */}
-              <div className="flex flex-col gap-2">
-                <span className="font-mono text-[10px] text-tertiary uppercase tracking-wider font-semibold">
-                  Primary Sources & Production References ({activeClaim.sources.length})
-                </span>
-                <div className="flex flex-col gap-2">
-                  {activeClaim.sources.map((src, i) => (
-                    <div key={i} className="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/20 flex flex-col gap-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-sans text-xs font-semibold text-secondary flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[14px]">menu_book</span>
-                          {src.title}
-                        </span>
-                        <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-surface-container text-outline border border-outline-variant/30">
-                          {src.type}
-                        </span>
-                      </div>
-                      <p className="font-sans text-xs text-on-surface-variant leading-relaxed italic">
-                        "{src.snippet}"
-                      </p>
+                {activeClaim.criticStance && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs">
+                    <span className="font-semibold text-amber-400 block mb-0.5">Counterpoint & Edge Case:</span>
+                    <p className="text-stone-300 leading-relaxed">
+                      {activeClaim.criticStance}
+                    </p>
+                  </div>
+                )}
+
+                {/* Supporting Sources */}
+                <div>
+                  <span className="text-[11px] text-stone-400 block mb-2 font-medium">
+                    Supporting Citations & Evidence:
+                  </span>
+                  {activeClaim.supportingSources && activeClaim.supportingSources.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {activeClaim.supportingSources.map((src, i) => (
+                        <div
+                          key={i}
+                          className="p-2.5 rounded-lg bg-black/20 border border-white/5 text-xs flex flex-col gap-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-stone-200 truncate pr-2">
+                              {src.title}
+                            </span>
+                            {src.url && (
+                              <a
+                                href={src.url}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="text-blue-400 hover:underline text-[11px] shrink-0"
+                              >
+                                View ↗
+                              </a>
+                            )}
+                          </div>
+                          {src.snippet && (
+                            <p className="text-stone-400 italic text-[11px] leading-relaxed">
+                              "{src.snippet}"
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p className="text-xs text-stone-400 italic">
+                      Derived from model reasoning and verified production conventions.
+                    </p>
+                  )}
                 </div>
-              </div>
-            </div>
-
-            {/* Resolved Verdict */}
-            <div className="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px] text-secondary">verified</span>
-                <span className="font-sans text-xs text-on-surface font-medium">
-                  {activeClaim.resolution}
-                </span>
-              </div>
-            </div>
+              </>
+            ) : (
+              <p className="text-xs text-stone-400">Select a claim to see evidence details.</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Research State Flowchart (The Real Protocol) */}
-      <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/25">
-        <span className="font-mono text-[10px] text-outline uppercase tracking-wider font-semibold block mb-2">
-          Research State & Verification Pipeline
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs font-mono">
-          <div className="p-2.5 rounded bg-surface-container border border-outline-variant/20 flex items-center gap-2 text-secondary">
-            <span className="material-symbols-outlined text-[15px]">check_circle</span>
-            <span>1. Decomposed</span>
-          </div>
-          <div className="p-2.5 rounded bg-surface-container border border-outline-variant/20 flex items-center gap-2 text-secondary">
-            <span className="material-symbols-outlined text-[15px]">check_circle</span>
-            <span>2. Triad Dispatched</span>
-          </div>
-          <div className="p-2.5 rounded bg-surface-container border border-outline-variant/20 flex items-center gap-2 text-secondary">
-            <span className="material-symbols-outlined text-[15px]">check_circle</span>
-            <span>3. Sources Audited</span>
-          </div>
-          <div className="p-2.5 rounded bg-surface-container border border-outline-variant/20 flex items-center gap-2 text-secondary">
-            <span className="material-symbols-outlined text-[15px]">check_circle</span>
-            <span>4. Risk Reconciled</span>
-          </div>
-          <div className="p-2.5 rounded bg-surface-container border border-secondary/40 flex items-center gap-2 text-primary font-medium">
-            <span className="material-symbols-outlined text-[15px]">verified</span>
-            <span>5. Consensus Built</span>
+      {/* Discovered Contradictions Section */}
+      {contradictions.length > 0 && (
+        <div className="rounded-xl bg-white/[0.02] border border-white/10 p-5">
+          <span className="text-xs font-semibold text-stone-200 block mb-3">
+            Where Sources or Arguments Disagreed ({contradictions.length})
+          </span>
+          <div className="flex flex-col gap-3">
+            {contradictions.map((contra, i) => (
+              <div
+                key={contra.id || i}
+                className="p-3.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs flex flex-col gap-2"
+              >
+                <div className="flex items-center justify-between text-amber-400 font-medium">
+                  <span>Point of Tension #{i + 1}</span>
+                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                    {contra.resolutionStatus}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-300">
+                  <div className="p-2 rounded bg-black/20 border border-white/5">
+                    <span className="text-[10px] text-stone-400 block">Perspective A</span>
+                    <span>{contra.claimA}</span>
+                  </div>
+                  <div className="p-2 rounded bg-black/20 border border-white/5">
+                    <span className="text-[10px] text-stone-400 block">Perspective B</span>
+                    <span>{contra.claimB}</span>
+                  </div>
+                </div>
+                {contra.reconciledResolution && (
+                  <div className="pt-1.5 border-t border-amber-500/10 text-stone-300">
+                    <span className="text-stone-400 font-medium mr-1.5">How this was resolved:</span>
+                    <span>{contra.reconciledResolution}</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Investigated Angles (Research Plan) */}
+      {researchPlan.length > 0 && (
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10">
+          <span className="text-[11px] text-stone-400 block mb-2 font-medium">
+            Investigated Angles:
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-stone-300">
+            {researchPlan.map((step, idx) => (
+              <div key={idx} className="flex items-start gap-2">
+                <span className="text-stone-500 font-mono text-[10px] mt-0.5">0{idx + 1}.</span>
+                <span>{step}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

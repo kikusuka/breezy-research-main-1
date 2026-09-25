@@ -4,8 +4,7 @@ import { ConsoleTab } from './Sidebar';
 interface TopBarProps {
   activeTab: ConsoleTab;
   onSelectTab: (tab: ConsoleTab) => void;
-  sessionTitle?: string;
-  latencyMs?: number;
+  onNewResearch?: () => void;
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
 }
@@ -13,125 +12,102 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({
   activeTab,
   onSelectTab,
-  sessionTitle,
-  latencyMs = 24,
+  onNewResearch,
   onOpenSearch,
   onToggleMobileMenu,
 }) => {
-  const getBreadcrumbTab = () => {
-    switch (activeTab) {
-      case 'chat':
-        return 'chat-session';
-      case 'notes':
-        return 'consensus-vault';
-      case 'models':
-        return 'model-matrix';
-      case 'settings':
-        return 'workspace-settings';
-      case 'landing':
-        return 'overview';
-      default:
-        return 'workspace';
-    }
-  };
-
   return (
-    <header className="fixed top-0 left-0 lg:left-64 right-0 h-14 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/20 z-40 flex items-center justify-between px-4 sm:px-6">
-      {/* Left: Mobile hamburger & Breadcrumbs */}
+    <header className="fixed top-0 left-0 right-0 h-14 bg-[#10141a]/90 backdrop-blur-md border-b border-white/10 z-40 flex items-center justify-between px-4 sm:px-6">
+      {/* Zone 1: Brand Mark */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onToggleMobileMenu}
-          className="p-1 text-on-surface-variant hover:text-on-surface lg:hidden rounded hover:bg-surface-container"
+          className="p-1.5 text-stone-400 hover:text-stone-100 lg:hidden rounded-lg hover:bg-white/5"
           aria-label="Toggle Navigation"
         >
           <span className="material-symbols-outlined text-[20px]">menu</span>
         </button>
 
-        <div className="flex items-center gap-1.5 font-mono text-xs text-outline select-none">
-          <span
-            className="text-tertiary cursor-pointer hover:text-on-surface transition-colors"
-            onClick={() => onSelectTab('landing')}
-          >
-            synthexis
+        <button
+          type="button"
+          onClick={() => onSelectTab('chat')}
+          className="text-left group cursor-pointer"
+        >
+          <span className="text-base font-serif font-medium tracking-tight text-stone-100 group-hover:text-stone-300 transition-colors">
+            Synthexis
           </span>
-          <span className="text-outline-variant">/</span>
-          <span className="text-on-surface-variant">workspace</span>
-          <span className="text-outline-variant">/</span>
-          <span className="text-primary font-medium truncate max-w-[120px] sm:max-w-[220px]">
-            {sessionTitle ? sessionTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 24) : getBreadcrumbTab()}
-          </span>
-        </div>
-
-        <div className="hidden xl:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low border border-outline-variant/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-          <span className="font-mono text-[10px] text-tertiary">Synthexis Tri-Stream Active</span>
-        </div>
+        </button>
       </div>
 
-      {/* Right Controls */}
+      {/* Zone 2: Navigation Links (Clean Text, No Badges) */}
+      <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-stone-400">
+        <button
+          type="button"
+          onClick={() => onSelectTab('chat')}
+          className={`transition-colors hover:text-stone-100 ${
+            activeTab === 'chat' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          }`}
+        >
+          Research
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelectTab('notes')}
+          className={`transition-colors hover:text-stone-100 ${
+            activeTab === 'notes' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          }`}
+        >
+          Notes & Archive
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelectTab('models')}
+          className={`transition-colors hover:text-stone-100 ${
+            activeTab === 'models' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          }`}
+        >
+          Models & Calibration
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelectTab('settings')}
+          className={`transition-colors hover:text-stone-100 ${
+            activeTab === 'settings' ? 'text-stone-100 font-semibold border-b border-stone-100 pb-0.5' : ''
+          }`}
+        >
+          Settings
+        </button>
+      </nav>
+
+      {/* Zone 3: Primary Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Search / Command trigger */}
+        {/* Search trigger */}
         <button
           type="button"
           onClick={onOpenSearch}
-          className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-surface-container-low border border-outline-variant/40 hover:border-primary/40 transition-colors text-outline hover:text-on-surface"
-          title="Search telemetry & notes (⌘K)"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-stone-400 hover:text-stone-200 transition-colors text-xs"
+          title="Search research and notes (⌘K)"
         >
           <span className="material-symbols-outlined text-[15px]">search</span>
-          <span className="hidden md:inline font-sans text-xs">Search index, telemetry...</span>
-          <div className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-surface-container border border-outline-variant/60 font-mono text-[9px] text-tertiary">
-            <span>⌘</span>
-            <span>K</span>
-          </div>
+          <span className="hidden sm:inline">Search</span>
+          <kbd className="hidden sm:inline font-mono text-[10px] text-stone-500 bg-white/5 px-1 py-0.5 rounded">
+            ⌘K
+          </kbd>
         </button>
 
-        {/* Landing Page Toggle Pill */}
-        {activeTab === 'landing' ? (
-          <button
-            type="button"
-            onClick={() => onSelectTab('chat')}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-on-primary font-sans text-xs font-semibold shadow-xs hover:bg-primary-container transition-all"
-          >
-            <span className="material-symbols-outlined text-[15px]">terminal</span>
-            <span>Open Console</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onSelectTab('landing')}
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-tertiary hover:text-on-surface font-sans text-xs border border-outline-variant/30 transition-colors"
-            title="Read Product Overview Landing Page"
-          >
-            <span className="material-symbols-outlined text-[14px] text-primary">public</span>
-            <span>About</span>
-          </button>
-        )}
-
-        {/* Latency badge */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface-container-low border border-outline-variant/30 font-mono text-xs text-on-surface-variant">
-          <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-          <span>{latencyMs}ms</span>
-        </div>
-
-        {/* Notification Bell */}
+        {/* New Research Action */}
         <button
           type="button"
-          aria-label="Notifications"
-          className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative"
+          onClick={() => {
+            onNewResearch?.();
+            onSelectTab('chat');
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-semibold shadow-sm transition-all"
         >
-          <span className="material-symbols-outlined text-[18px]">notifications</span>
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary"></span>
+          <span className="material-symbols-outlined text-[16px]">add</span>
+          <span className="hidden sm:inline">New Research</span>
         </button>
-
-        {/* User avatar */}
-        <div
-          onClick={() => onSelectTab('settings')}
-          className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
-          title="Account Settings"
-        >
-          <span className="material-symbols-outlined text-on-primary text-[16px]">person</span>
-        </div>
       </div>
     </header>
   );

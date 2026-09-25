@@ -20,34 +20,32 @@ export const ModelsConsensusView: React.FC<ModelsConsensusViewProps> = ({ onOpen
     setIsBenchmarking(true);
     setTimeout(() => {
       setIsBenchmarking(false);
-      showToast('Triad re-benchmarked: 16.2ms avg latency, 94.8% convergence');
+      showToast('Model response parameters and provider endpoints verified.');
     }, 1200);
   };
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] bg-[#10141a] text-stone-200">
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-surface-container-highest text-on-surface px-4 py-2.5 rounded-lg shadow-xl border border-outline-variant/40 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-secondary text-[18px]">task_alt</span>
-          <span className="font-mono text-xs">{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#181c22] text-stone-100 px-4 py-2.5 rounded-lg shadow-xl border border-white/10 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+          <span className="text-xs font-sans">{toastMessage}</span>
         </div>
       )}
 
-      {/* Sub-header Breadcrumb & Operational Controls */}
-      <div className="px-4 sm:px-8 py-3 bg-surface-container-lowest/60 border-b border-outline-variant/20 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-tertiary">synthexis</span>
-          <span className="text-outline-variant">/</span>
-          <span className="text-tertiary">workspace</span>
-          <span className="text-outline-variant">/</span>
-          <span className="text-primary font-medium tracking-tight">model-matrix</span>
-          <span className="ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container border border-secondary/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-            <span className="font-mono text-[10px] text-secondary">
-              {deepSeekPromoted ? '4 Nodes Active (Quad)' : '4 Nodes Configured • 3 Active'}
-            </span>
+      {/* Header Context */}
+      <div className="px-4 sm:px-8 py-6 border-b border-white/10 bg-[#12151c]/60 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1 max-w-2xl">
+          <span className="text-xs uppercase tracking-widest text-stone-400 font-sans">
+            Research Configuration
           </span>
+          <h1 className="text-2xl font-serif font-medium text-stone-100 tracking-tight">
+            Models & Research Calibration
+          </h1>
+          <p className="text-xs sm:text-sm text-stone-400 leading-relaxed">
+            Synthexis pairs diverse model families to provide distinct perspectives: initial architecture, adversarial critique, and grounded synthesis.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -55,98 +53,72 @@ export const ModelsConsensusView: React.FC<ModelsConsensusViewProps> = ({ onOpen
             type="button"
             onClick={handleRebenchmark}
             disabled={isBenchmarking}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-medium border border-outline-variant/40 transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-stone-300 text-xs font-medium border border-white/10 transition-colors"
           >
-            <span className={`material-symbols-outlined text-[15px] text-tertiary ${isBenchmarking ? 'animate-spin' : ''}`}>
+            <span className={`material-symbols-outlined text-[15px] ${isBenchmarking ? 'animate-spin' : ''}`}>
               sync
             </span>
-            <span>{isBenchmarking ? 'Benchmarking...' : 'Re-benchmark Triad'}</span>
+            <span>{isBenchmarking ? 'Testing...' : 'Test Providers'}</span>
           </button>
           <button
             type="button"
             onClick={onOpenSettings}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 text-stone-950 text-xs font-semibold hover:bg-white transition-colors"
           >
-            <span className="material-symbols-outlined text-[15px]">add</span>
-            <span>Add Model Node</span>
+            <span className="material-symbols-outlined text-[15px]">key</span>
+            <span>Configure Keys</span>
           </button>
         </div>
       </div>
 
       <div className="p-4 sm:p-8 flex flex-col gap-6 max-w-7xl">
-        {/* Page Header Context */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h1 className="font-sans text-xl sm:text-2xl text-on-surface tracking-tight font-semibold">
-              Models & Consensus Arbitration
-            </h1>
-            <span className="font-mono text-[11px] text-tertiary bg-surface-container-high px-2 py-0.5 rounded border border-outline-variant/30">
-              TRIAD-P2P
-            </span>
-          </div>
-          <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-3xl leading-relaxed">
-            Configure model roles in the dialectic triad, benchmark consensus convergence, and manage node routing weights across adversarial synthesis rounds.
-          </p>
-        </div>
-
-        {/* KPI Stats Ribbon */}
+        {/* Real Capability & Stance Indicators */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between shadow-xs">
+          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between">
             <div className="flex flex-col gap-1">
-              <span className="font-mono text-[10px] uppercase text-outline tracking-wider font-semibold">
-                Consensus Rate
+              <span className="text-[11px] text-stone-400 font-medium">
+                Research Depth
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-2xl font-semibold text-on-surface">94.2%</span>
-                <span className="font-mono text-xs text-secondary flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[13px]">trending_up</span>+1.4%
-                </span>
+                <span className="text-xl font-semibold text-stone-100">Multi-Model</span>
+                <span className="text-xs text-emerald-400">3 Families</span>
               </div>
-              <span className="font-mono text-[11px] text-tertiary">Optimal semantic alignment</span>
+              <span className="text-[11px] text-stone-400">Claude · GPT-4o · Gemini</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary border border-outline-variant/30">
-              <span className="material-symbols-outlined text-[20px]">verified</span>
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300 border border-white/10">
+              <span className="material-symbols-outlined text-[20px]">psychology</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between shadow-xs">
+          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between">
             <div className="flex flex-col gap-1">
-              <span className="font-mono text-[10px] uppercase text-outline tracking-wider font-semibold">
-                Average Triad Latency
+              <span className="text-[11px] text-stone-400 font-medium">
+                Search & Grounding
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-2xl font-semibold text-on-surface">
-                  16.4<span className="text-sm text-tertiary ml-0.5">ms</span>
-                </span>
-                <span className="font-mono text-[11px] text-secondary font-medium">P95: 28ms</span>
+                <span className="text-xl font-semibold text-stone-100">Active</span>
+                <span className="text-xs text-blue-400">Live Web</span>
               </div>
-              <span className="font-mono text-[11px] text-tertiary">Parallel dispatch verified</span>
+              <span className="text-[11px] text-stone-400">Primary docs & benchmarks checked</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary border border-outline-variant/30">
-              <span className="material-symbols-outlined text-[20px]">speed</span>
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300 border border-white/10">
+              <span className="material-symbols-outlined text-[20px]">travel_explore</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between shadow-xs">
+          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between">
             <div className="flex flex-col gap-1">
-              <span className="font-mono text-[10px] uppercase text-outline tracking-wider font-semibold">
-                Triad Operational Status
+              <span className="text-[11px] text-stone-400 font-medium">
+                Data Storage
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-2xl font-semibold text-on-surface">
-                  {deepSeekPromoted ? '4 Active' : '3 Active'}
-                </span>
-                <span className="font-mono text-[11px] text-tertiary">
-                  {deepSeekPromoted ? '0 Standby' : '1 Standby'}
-                </span>
+                <span className="text-xl font-semibold text-stone-100">Zero Retention</span>
+                <span className="text-xs text-emerald-400">Browser Only</span>
               </div>
-              <span className="font-mono text-[11px] text-secondary flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-                All nodes healthy
-              </span>
+              <span className="text-[11px] text-stone-400">No session retention on servers</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary border border-outline-variant/30">
-              <span className="material-symbols-outlined text-[20px]">hub</span>
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300 border border-white/10">
+              <span className="material-symbols-outlined text-[20px]">shield</span>
             </div>
           </div>
         </div>
@@ -417,56 +389,47 @@ export const ModelsConsensusView: React.FC<ModelsConsensusViewProps> = ({ onOpen
             </div>
           </div>
 
-          {/* Node Benchmark Matrix */}
+          {/* Consensus Verification Logic */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[18px]">analytics</span>
-                <h2 className="font-sans text-base text-on-surface font-semibold">Node Benchmark Matrix</h2>
+                <span className="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+                <h2 className="font-sans text-base text-on-surface font-semibold">Consensus & Verification Method</h2>
               </div>
-              <span className="font-mono text-[10px] text-outline">1,000 Rounds Tracked</span>
+              <span className="font-mono text-[10px] text-outline">Real-Time Calculus</span>
             </div>
 
             <div className="p-5 rounded-xl bg-surface-container-low border border-outline-variant/40 flex flex-col justify-between gap-4 shadow-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-secondary">
-                    <span className="material-symbols-outlined text-[22px]">insights</span>
+                    <span className="material-symbols-outlined text-[22px]">calculate</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="font-sans text-xs font-medium text-on-surface">
-                      All Triad Nodes Benchmarked
+                      How Alignment Is Calculated
                     </span>
-                    <span className="font-mono text-[11px] text-secondary flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>Convergence stability at 96.4%
+                    <span className="font-sans text-[11px] text-stone-400">
+                      Formulated dynamically from the active session's claims and contradictions.
                     </span>
                   </div>
                 </div>
-                <div className="font-mono text-xs text-tertiary text-right">
-                  <span className="text-on-surface font-semibold">±1.8ms</span>
-                  <span className="block text-[9px] text-outline uppercase">Jitter</span>
-                </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-between font-mono text-[11px]">
-                <span className="text-outline">
-                  Top Alignment: <span className="text-on-surface font-medium">Gemini 1.5 Pro (98.2%)</span>
-                </span>
-                <span className="text-outline">
-                  Avg Token Cost: <span className="text-tertiary font-medium">$0.0038/1k</span>
-                </span>
+              <div className="p-4 rounded-lg bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-2 font-sans text-xs text-stone-300 leading-relaxed">
+                <p>
+                  Rather than presenting synthetic benchmarks, Synthexis derives real alignment indicators using multi-turn claim peer evaluation:
+                </p>
+                <ul className="list-disc pl-4 space-y-1 text-[11px] text-stone-400">
+                  <li><strong>Identified Claims:</strong> Statements extracted from the analyst's primary thesis proposal.</li>
+                  <li><strong>Supported Claims:</strong> Verified points that survived scrutiny from peer critic models.</li>
+                  <li><strong>Contradictions Flagged:</strong> Direct clashes resolved by the arbiter synthesis step.</li>
+                </ul>
               </div>
 
-              <button
-                type="button"
-                onClick={handleRebenchmark}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-sans text-xs font-medium border border-outline-variant/40 transition-colors shadow-xs group"
-              >
-                <span className="material-symbols-outlined text-[16px] text-primary group-hover:scale-105 transition-transform">
-                  open_in_new
-                </span>
-                <span>Inspect Detailed Telemetry & Benchmarks</span>
-              </button>
+              <div className="text-[11px] text-stone-450 italic">
+                All metrics on your research dashboard are calculated mathematically from original session findings.
+              </div>
             </div>
           </div>
         </div>
