@@ -9,6 +9,32 @@ import { callAgentWithStream, sanitizeGeminiModel } from './providers';
 import { performSearchGrounding } from './search';
 import { summarizeStage, generateRealEvidenceGraph } from './evidence';
 
+// In-memory rate limiting map for server-provided key usage (resets per instance/isolate)
+const requestRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkServerRateLimit(clientIdentifier: string, maxRequests = 20, windowMs = 60000): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = requestRateLimitMap.get(clientIdentifier);
+  if (!record || now > record.resetAt) {
+    requestRateLimitMap.set(clientIdentifier, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: maxRequests - 1 };
+  }
+  if (record.count >= maxRequests) {
+    return { allowed: false, remaining: 0 };
+  }
+  record.count += 1;
+  return { allowed: true, remaining: maxRequests - record.count };
+}
+
+function getClientIdentifier(req: Request): string {
+  return (
+    req.headers.get('cf-connecting-ip') ||
+    req.headers.get('x-real-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'anonymous-client'
+  );
+}
+
 export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<string, string> {
   const requestOrigin = req.headers.get('Origin');
   const allowedOriginsConfig = env.ALLOWED_ORIGINS?.trim();
@@ -77,7 +103,7 @@ export async function handleBackendRequest(
       version: '2.5.0-universal',
       serverGeminiConfigured: hasServerGemini,
       defaultModel: 'gemini-3.8-flash',
-      providers: ['gemini', 'groq', 'sambanova', 'openrouter'],
+      providers: ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'],
       timestamp: Date.now(),
     };
     return createJsonResponse(healthData, 200, req, env);
@@ -122,6 +148,32 @@ export async function handleBackendRequest(
           provider,
           latencyMs: Date.now() - startTime,
           message: 'Google Gemini key verified successfully.',
+        }, 200, req, env);
+      }
+
+      if (provider === 'anthropic') {
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': trimmedKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 5,
+            messages: [{ role: 'user', content: 'Ping' }],
+          }),
+        });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          return createJsonResponse({ valid: false, error: `Anthropic verification failed (${resp.status}): ${errText}` }, 400, req, env);
+        }
+        return createJsonResponse({
+          valid: true,
+          provider,
+          latencyMs: Date.now() - startTime,
+          message: 'Anthropic Claude API key verified successfully.',
         }, 200, req, env);
       }
 

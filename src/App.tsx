@@ -420,7 +420,7 @@ export default function App() {
           prompt: trimmedPrompt,
           protocol: chosenProtocol,
           tone,
-          enableSearchGrounding: depth !== 'solo' || true,
+          enableSearchGrounding: depth !== 'solo',
           searchEngine: searchEngineValue,
           keys,
         },
@@ -535,6 +535,27 @@ export default function App() {
                     evidenceGraph: data.evidenceGraph || s.evidenceGraph,
                     researchMetrics: data.researchMetrics || s.researchMetrics,
                     metrics: data.metrics || s.metrics,
+                  };
+                });
+                saveSessions(next);
+                return next;
+              });
+              setIsDeliberating(false);
+            } else if (data.type === 'error') {
+              const errorMessage = data.message || data.error || 'Research failed on server.';
+              setResearchEvents((prev) => [...prev, `Error: ${errorMessage}`]);
+              setSessions((prev) => {
+                const currentId = activeSessionIdRef.current;
+                const next: DebateSession[] = prev.map((s) => {
+                  if (s.id !== currentId) return s;
+                  const updatedSteps = s.steps.map((step) =>
+                    step.status === 'running' ? { ...step, status: 'error' as const } : step
+                  );
+                  return {
+                    ...s,
+                    status: 'error' as const,
+                    error: errorMessage,
+                    steps: updatedSteps,
                   };
                 });
                 saveSessions(next);

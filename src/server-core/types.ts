@@ -5,6 +5,7 @@
 
 export interface BackendEnv {
   GEMINI_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
   GROQ_API_KEY?: string;
   SAMBANOVA_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
@@ -34,7 +35,7 @@ export interface SearchGroundingResult {
 }
 
 export interface CallAgentParams {
-  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter';
+  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic';
   model?: string;
   apiKey?: string;
   systemInstruction: string;

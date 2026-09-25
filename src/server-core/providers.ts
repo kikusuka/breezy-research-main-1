@@ -200,6 +200,80 @@ export async function streamOpenAICompatible(opts: {
 }
 
 /**
+ * Stream responses from Anthropic Messages REST API
+ */
+export async function streamAnthropicREST(opts: {
+  apiKey: string;
+  model: string;
+  systemInstruction: string;
+  userPrompt: string;
+  temperature?: number;
+  onChunk: (chunk: string) => void;
+}): Promise<string> {
+  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk } = opts;
+  const targetModel = model?.trim() || 'claude-3-5-sonnet-20241022';
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: targetModel,
+      max_tokens: 4096,
+      system: systemInstruction || undefined,
+      messages: [{ role: 'user', content: userPrompt }],
+      stream: true,
+      temperature,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Anthropic API error (${res.status}): ${errorBody}`);
+  }
+
+  if (!res.body) {
+    throw new Error('No response body received from Anthropic.');
+  }
+
+  let fullContent = '';
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith('data: ')) continue;
+      const dataStr = trimmed.slice(6).trim();
+      if (dataStr === '[DONE]') continue;
+
+      try {
+        const json = JSON.parse(dataStr);
+        if (json.type === 'content_block_delta' && json.delta?.text) {
+          fullContent += json.delta.text;
+          onChunk(json.delta.text);
+        }
+      } catch {
+        // ignore incomplete json chunk in stream
+      }
+    }
+  }
+
+  return fullContent;
+}
+
+/**
  * Universal agent caller with graceful model cascades
  */
 export async function callAgentWithStream(params: CallAgentParams): Promise<string> {
@@ -292,7 +366,24 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     throw new Error(errorMsg);
   }
 
-  // 2. Groq
+  // 2. Anthropic (Claude)
+  if (provider === 'anthropic') {
+    const keyToUse = apiKey?.trim() || env.ANTHROPIC_API_KEY || '';
+    if (!keyToUse) {
+      throw new Error('Anthropic API Key is required for Claude models. Add your key in Settings.');
+    }
+    const targetModel = model?.trim() || 'claude-3-5-sonnet-20241022';
+    return await streamAnthropicREST({
+      apiKey: keyToUse,
+      model: targetModel,
+      systemInstruction,
+      userPrompt,
+      temperature,
+      onChunk,
+    });
+  }
+
+  // 3. Groq
   if (provider === 'groq') {
     const keyToUse = apiKey?.trim() || env.GROQ_API_KEY || '';
     if (!keyToUse) {
@@ -310,7 +401,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     });
   }
 
-  // 3. SambaNova
+  // 4. SambaNova
   if (provider === 'sambanova') {
     const keyToUse = apiKey?.trim() || env.SAMBANOVA_API_KEY || '';
     if (!keyToUse) {
@@ -328,7 +419,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     });
   }
 
-  // 4. OpenRouter
+  // 5. OpenRouter
   if (provider === 'openrouter') {
     const keyToUse = apiKey?.trim() || env.OPENROUTER_API_KEY || '';
     if (!keyToUse) {
