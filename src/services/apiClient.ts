@@ -367,7 +367,7 @@ class ApiClient {
   /**
    * Verify provider key
    */
-  public async verifyKey(provider: string, apiKey: string): Promise<{ valid: boolean; message?: string; error?: string }> {
+  public async verifyKey(provider: string, apiKey: string): Promise<{ valid: boolean; latencyMs?: number; message?: string; error?: string }> {
     const res = await this.fetchWithFailover('/api/vault/verify-key', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -375,6 +375,10 @@ class ApiClient {
     });
 
     return await res.json();
+  }
+
+  public async verifyVaultKey(provider: string, apiKey: string): Promise<{ valid: boolean; latencyMs?: number; message?: string; error?: string }> {
+    return this.verifyKey(provider, apiKey);
   }
 }
 

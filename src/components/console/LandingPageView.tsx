@@ -169,7 +169,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setResearchDepth('solo')}
-                    className={`px-3 py-1 rounded-md transition-all font-medium ${
+                    title="One model. Fastest response."
+                    className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
                       researchDepth === 'solo'
                         ? 'bg-white/10 text-stone-100'
                         : 'text-stone-400 hover:text-stone-200'
@@ -180,7 +181,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setResearchDepth('standard')}
-                    className={`px-3 py-1 rounded-md transition-all font-medium ${
+                    title="Several perspectives + web search sources."
+                    className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
                       researchDepth === 'standard'
                         ? 'bg-white/10 text-stone-100'
                         : 'text-stone-400 hover:text-stone-200'
@@ -191,7 +193,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setResearchDepth('deep')}
-                    className={`px-3 py-1 rounded-md transition-all font-medium ${
+                    title="More models + rigorous verification."
+                    className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
                       researchDepth === 'deep'
                         ? 'bg-white/10 text-stone-100'
                         : 'text-stone-400 hover:text-stone-200'
@@ -200,8 +203,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                     Deep
                   </button>
                 </div>
-                <span className="text-[10px] text-stone-500 italic">
-                  compared across multiple models
+                <span className="text-[10px] text-stone-400 font-mono">
+                  {researchDepth === 'solo' && 'One model. Fastest.'}
+                  {researchDepth === 'standard' && 'Several perspectives + web sources.'}
+                  {researchDepth === 'deep' && 'More models + rigorous verification.'}
                 </span>
               </div>
             </div>

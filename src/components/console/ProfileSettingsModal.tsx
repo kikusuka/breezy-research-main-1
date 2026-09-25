@@ -17,7 +17,16 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   keys,
   onSaveKeys,
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'grounding'>('profile');
+  const [activeTab, setActiveTab] = useState<'routing' | 'profile' | 'grounding'>('routing');
+
+  // Role Routing State
+  const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>('balanced');
+  const [roles, setRoles] = useState({
+    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+  });
 
   // LLM AI Core keys
   const [provider, setProvider] = useState('gemini');
@@ -38,6 +47,15 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         const canonical = providerConfigService.getConfig();
         const activeKeys = keys || canonical.keys;
 
+        setPreset(canonical.preset || 'balanced');
+        if (canonical.roles) {
+          setRoles({
+            architect: canonical.roles.architect || { provider: 'gemini', model: 'gemini-3.8-flash' },
+            skeptic: canonical.roles.skeptic || { provider: 'gemini', model: 'gemini-3.8-flash' },
+            verifier: canonical.roles.verifier || { provider: 'gemini', model: 'gemini-3.8-flash' },
+            arbiter: canonical.roles.arbiter || { provider: 'gemini', model: 'gemini-3.8-flash' },
+          });
+        }
         setProvider(canonical.defaultProvider || 'gemini');
         setModel(canonical.defaultModel || 'gemini-3.8-flash');
         setTavilyKey(activeKeys.tavily || '');
@@ -98,6 +116,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       providerConfigService.saveConfig({
         defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
         defaultModel: model.trim() || 'gemini-3.8-flash',
+        preset,
+        roles: roles as any,
+        fallback: { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
         keys: updatedKeys,
       });
 
@@ -182,6 +203,17 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         <div className="flex items-center gap-1 p-1 bg-black/20 rounded-xl border border-white/5">
           <button
             type="button"
+            onClick={() => setActiveTab('routing')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
+              activeTab === 'routing'
+                ? 'bg-[#ccbdff] text-[#331282]'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            Customize Roles
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('profile')}
             className={`flex-1 py-1.5 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
               activeTab === 'profile'
@@ -189,7 +221,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            AI Core & Profile
+            API Keys
           </button>
           <button
             type="button"
@@ -200,13 +232,82 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            Search Grounding Keys
+            Search Keys
           </button>
         </div>
 
         {/* Settings Fields */}
-        <div className="flex flex-col gap-4 overflow-y-auto max-h-[280px] pr-1">
-          {activeTab === 'profile' ? (
+        <div className="flex flex-col gap-4 overflow-y-auto max-h-[300px] pr-1">
+          {activeTab === 'routing' ? (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold block mb-2">
+                  Research Presets
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'fast', name: 'Fast', desc: 'Speed optimized' },
+                    { id: 'balanced', name: 'Balanced', desc: 'Multi-perspective' },
+                    { id: 'deep', name: 'Deep', desc: 'Max verification' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPreset(item.id as any)}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        preset === item.id
+                          ? 'bg-[#9d85f2]/15 border-[#9d85f2] text-white'
+                          : 'bg-black/20 border-white/5 text-stone-400 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="font-sans text-xs font-bold text-stone-200">{item.name}</div>
+                      <div className="font-mono text-[10px] opacity-70 mt-0.5">{item.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 mt-1">
+                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                  Role Model Routing
+                </label>
+                <div className="flex flex-col gap-2 bg-black/30 border border-white/5 rounded-xl p-3">
+                  {[
+                    { key: 'architect', title: 'Analyst', desc: 'Initial argument & hypothesis' },
+                    { key: 'skeptic', title: 'Critic', desc: 'Skeptical stress-testing' },
+                    { key: 'verifier', title: 'Verifier', desc: 'Fact & constraint checking' },
+                    { key: 'arbiter', title: 'Synthesizer', desc: 'Final executive summary' },
+                  ].map((role) => (
+                    <div key={role.key} className="flex items-center justify-between gap-3 text-xs pb-2 border-b border-white/5 last:border-b-0 last:pb-0">
+                      <div>
+                        <div className="font-semibold text-stone-200">{role.title}</div>
+                        <div className="font-mono text-[10px] text-stone-400">{role.desc}</div>
+                      </div>
+                      <select
+                        value={roles[role.key as keyof typeof roles]?.provider || 'gemini'}
+                        onChange={(e) => {
+                          const p = e.target.value as any;
+                          const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash';
+                          setRoles((prev) => ({
+                            ...prev,
+                            [role.key]: { provider: p, model: defaultM },
+                          }));
+                          setPreset('custom');
+                        }}
+                        className="bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#9d85f2] cursor-pointer"
+                      >
+                        <option value="gemini">Google Gemini</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="groq">Groq (Llama 3.3)</option>
+                        <option value="sambanova">SambaNova (Llama/Qwen)</option>
+                        <option value="openrouter">OpenRouter</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'profile' ? (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">

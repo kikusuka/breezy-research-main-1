@@ -38,6 +38,7 @@ import {
 } from './services/sessionStorage';
 import { exportConsensusAsMarkdown } from './utils/exportTranscript';
 import { apiClient } from './services/apiClient';
+import { providerConfigService } from './services/providerConfigService';
 
 // Storage key constants
 const STORAGE_KEYS = 'breezy_byok_keys';
@@ -414,6 +415,7 @@ export default function App() {
 
     try {
       const searchEngineValue = keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'duckduckgo'));
+      const seatsPayload = providerConfigService.getSeatsPayload();
 
       await apiClient.streamDebate(
         {
@@ -423,6 +425,7 @@ export default function App() {
           enableSearchGrounding: depth !== 'solo',
           searchEngine: searchEngineValue,
           keys,
+          seats: seatsPayload,
         },
         {
           signal: controller.signal,
