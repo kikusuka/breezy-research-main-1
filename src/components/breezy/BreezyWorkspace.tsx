@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiClient } from '../../services/apiClient';
 
 interface BreezyMessage {
   role: 'user' | 'assistant';
@@ -182,24 +183,19 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
     });
 
     try {
-      const response = await fetch('/api/breezy/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await apiClient.chatBreezy(
+        {
           prompt: userMsg.content,
           history: updatedMessages.slice(-6),
           provider,
           model,
           apiKey: apiKey || undefined,
-        }),
-      });
+        },
+        {
+          onNotice: (msg) => toast(msg),
+        }
+      );
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server responded with ${response.status}`);
-      }
-
-      const data = await response.json();
       const aiText = data.text || 'Synthesis complete.';
 
       saveChats({

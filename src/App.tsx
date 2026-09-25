@@ -37,6 +37,7 @@ import {
   SEED_SAMPLE_SESSIONS,
 } from './services/sessionStorage';
 import { exportConsensusAsMarkdown } from './utils/exportTranscript';
+import { apiClient } from './services/apiClient';
 
 // Storage key constants
 const STORAGE_KEYS = 'breezy_byok_keys';
@@ -413,46 +414,22 @@ export default function App() {
 
     try {
       const searchEngineValue = keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'duckduckgo'));
-      const response = await fetch('/api/debate/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+
+      await apiClient.streamDebate(
+        {
           prompt: trimmedPrompt,
           protocol: chosenProtocol,
           tone,
           enableSearchGrounding: depth !== 'solo' || true,
           searchEngine: searchEngineValue,
           keys,
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error('No response stream from server');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith('data: ')) continue;
-
-          try {
-            const data = JSON.parse(trimmed.slice(6));
+        },
+        {
+          signal: controller.signal,
+          onNotice: (noticeMsg) => {
+            setResearchEvents((prev) => [...prev, noticeMsg]);
+          },
+          onEvent: (data) => {
             if (data.type === 'status') {
               if (data.message) {
                 setResearchEvents((prev) => [...prev, data.message]);
@@ -465,7 +442,7 @@ export default function App() {
               setActiveRound(data.round);
               setStreamingRole(data.role || '');
               setStreamingText('');
-              
+
               // Push human-friendly state indicators to the event stream
               if (data.round === 1) {
                 setResearchEvents((prev) => [...prev, "Looking into this..."]);
@@ -565,16 +542,15 @@ export default function App() {
               });
               setIsDeliberating(false);
             }
-          } catch (e) {
-            console.warn('Failed to parse SSE line', e);
-          }
+          },
         }
-      }
+      );
     } catch (err: any) {
       if (err.name === 'AbortError') {
         console.log('Debate cancelled by user');
       } else {
         console.error('Debate error:', err);
+        setResearchEvents((prev) => [...prev, `Error: ${err.message || 'Deliberation failed'}`]);
       }
     } finally {
       setIsDeliberating(false);

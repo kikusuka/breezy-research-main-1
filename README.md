@@ -47,14 +47,36 @@ Breezy Playground is structured as a single platform shell hosting specialized w
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Technology Stack & Deployment Architecture
 
-| Layer | Technologies |
+Breezy Research consists of a static React frontend with multi-tier edge backend failover:
+
+```text
+                             BREEZY RESEARCH
+                                    │
+                         Static Frontend (Vite)
+                     (Cloudflare Pages / Vercel)
+                                    │
+                          ┌─────────┴─────────┐
+                          │                   │
+                     Cloudflare             Deno
+                      Worker               Deploy
+                     [PRIMARY]          [SECONDARY]
+                   100k req/day          1M req/mo
+                          │                   │
+                          └─────────┬─────────┘
+                                    │
+                                 Render
+                               [EMERGENCY]
+```
+
+| Layer | Technologies & Runtime |
 | :--- | :--- |
-| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Motion, D3.js |
-| **Backend Server** | Node.js, Express (`server.ts`), Server-Sent Events (SSE) streaming proxy |
-| **AI Integration** | `@google/genai` (Gemini 2.5 / 3.x), Groq, SambaNova, OpenRouter |
-| **Code Highlighting** | Prism.js |
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Motion, Prism.js, D3.js |
+| **Primary Backend** | Cloudflare Workers (`workers/index.ts`) - V8 edge isolate, 100k req/day free |
+| **Secondary Backend** | Deno Deploy (`deno/main.ts`) - 1M req/month free backup |
+| **Emergency Fallback** | Node.js Express (`server.ts`) - Render Web Service / local dev |
+| **AI Integration** | Google Gemini (`gemini-3.8-flash`), Groq, SambaNova, OpenRouter |
 | **Persistence** | IndexedDB, LocalStorage, optional Firebase / Google Drive sync |
 
 ---
@@ -62,14 +84,16 @@ Breezy Playground is structured as a single platform shell hosting specialized w
 ## 🔐 Security & Data Handling Model
 
 * **Local-First Storage**: User chat threads, research sessions, and notebook data are stored in local browser storage (IndexedDB and LocalStorage).
-* **Transparent Credentials**: API keys (BYOK) are routed via the Express backend server proxy to prevent exposure.
+* **Transparent Credentials**: API keys (BYOK) are routed via edge backend proxies to prevent client exposure.
 * **Explicit Authentication States**: Connected services strictly differentiate between real authenticated connections (OAuth / Personal Access Tokens) and local Sandbox Demo modes.
 * **Audited Scopes**: When connecting third-party services, access is requested strictly for necessary capabilities (e.g. read-only repository inspection).
-* **Transparent Model Failover**: If a requested AI model is temporarily rate-limited or unavailable, the backend gracefully switches to a compatible fallback model and explicitly notifies the user in the response stream.
+* **Bounded Edge Failover**: If the primary Cloudflare Worker is rate-limited or unavailable, requests fail over to the secondary Deno Deploy backend with clear UI notification.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Deployment
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment instructions.
 
 ### Prerequisites
 * Node.js 18+ and npm
@@ -80,13 +104,9 @@ npm install
 ```
 
 ### 2. Environment Configuration
-Create a `.env` file in the project root:
-```env
-# Optional server-side Gemini API key for default workspace queries
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional: SearXNG endpoint for self-hosted search
-SEARXNG_URL=https://your-searxng-instance.example.com
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
 ```
 
 ### 3. Run Development Server
@@ -95,10 +115,9 @@ npm run dev
 ```
 The application will launch on `http://localhost:3000`.
 
-### 4. Production Build
+### 4. Build Static Frontend
 ```bash
 npm run build
-npm start
 ```
 
 ---

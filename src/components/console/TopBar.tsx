@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConsoleTab } from './Sidebar';
+import { apiClient, BackendState } from '../../services/apiClient';
 
 export type ProductMode = 'breezy' | 'synthexis' | 'synap';
 
@@ -26,6 +27,15 @@ export const TopBar: React.FC<TopBarProps> = ({
   theme = 'dark',
   onToggleTheme,
 }) => {
+  const [backendState, setBackendState] = useState<BackendState>(() => apiClient.getState());
+  const [showBackendMenu, setShowBackendMenu] = useState(false);
+
+  useEffect(() => {
+    const unsub = apiClient.subscribe((state) => {
+      setBackendState(state);
+    });
+    return () => unsub();
+  }, []);
   return (
     <header className={`fixed top-0 left-0 lg:left-64 right-0 h-14 backdrop-blur-md border-b z-40 flex items-center justify-between px-4 sm:px-6 transition-colors ${
       theme === 'light'
@@ -91,8 +101,64 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Zone 2: Primary Actions (Search, Theme Toggle & Quick Jump) */}
+      {/* Zone 2: Primary Actions (Backend Status, Theme Toggle & Quick Jump) */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Backend Indicator Chip */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowBackendMenu(!showBackendMenu)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-mono transition-all cursor-pointer ${
+              theme === 'light'
+                ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
+                : 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10'
+            }`}
+            title="Active Backend Status & Failover Router"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="hidden md:inline">{backendState.activeName}</span>
+            <span className="md:hidden">{backendState.activeId.toUpperCase()}</span>
+            <span className="material-symbols-outlined text-[14px]">expand_more</span>
+          </button>
+
+          {showBackendMenu && (
+            <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#161a22] border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 text-stone-200 font-sans">
+              <div className="px-2 py-1 border-b border-white/5 mb-1">
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-400">
+                  Backend Router
+                </span>
+                <p className="text-[10px] text-stone-400 mt-0.5">Auto-failover enabled across edge endpoints</p>
+              </div>
+              <div className="flex flex-col gap-1">
+                {apiClient.getEndpoints().map((ep) => {
+                  const isSelected = ep.id === backendState.activeId;
+                  return (
+                    <button
+                      key={ep.id}
+                      type="button"
+                      onClick={() => {
+                        apiClient.setEndpointManually(ep.id);
+                        setShowBackendMenu(false);
+                      }}
+                      className={`text-left px-2.5 py-1.5 rounded-lg text-xs flex flex-col gap-0.5 cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-white/10 text-white font-medium'
+                          : 'hover:bg-white/5 text-stone-400 hover:text-stone-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{ep.name}</span>
+                        {isSelected && <span className="text-[10px] text-emerald-400 font-mono">Active</span>}
+                      </div>
+                      <span className="text-[10px] font-mono text-stone-400">{ep.tierInfo}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Light / Dark Mode Toggle Button */}
         {onToggleTheme && (
           <button
