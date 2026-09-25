@@ -38,7 +38,7 @@ Breezy Playground is structured as a single platform shell hosting specialized w
 ### 3. Build (Breezy IDE)
 * **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
 * **Simulated ANSI Terminal**: Real-time log streamer supporting ANSI color escape codes, live text filter search, auto-scrolling, and keyboard shortcuts (`Cmd+K` / `Ctrl+K` to clear, `Cmd+Shift+Down` to jump to bottom).
-* **Ephemeral Cloud Execution**: Headless dispatch to Google Colab and cloud compute runtimes with automatic TTL cleanup, ensuring zero persistent storage bloat on Google Drive.
+* **Execution Preview (Simulation)**: Simulated cloud-runner workflow for testing the Build workspace UI and job lifecycle previews. No remote code execution or remote GPU provisioning occurs.
 
 ### 4. Synap (Knowledge & Study Workspace)
 * **Source-Grounded Notebooks**: Ingest documents, text files, and reference notes.

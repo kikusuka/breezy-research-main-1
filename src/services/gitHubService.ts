@@ -1,5 +1,5 @@
 /**
- * GitHub Service for Synthexis
+ * GitHub Service for Breezy
  * Handles calling real GitHub REST API endpoints with User Personal Access Tokens
  */
 

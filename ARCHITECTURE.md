@@ -1,235 +1,104 @@
-# Synthexis Architecture Overview
+# Breezy Architecture Overview
 
-## 🎯 Problem We're Solving
+> **A Unified, Truthful Platform for Conversational Intelligence, Grounded Research, Interactive Development, and Study**
 
-Traditional AI research platforms have fundamental flaws:
-1. **Vendor lock-in**: Your data lives on their servers
-2. **Recurring costs**: Monthly subscriptions for basic features
-3. **No offline support**: Useless without internet
-4. **Privacy concerns**: They see all your research queries
-5. **Limited customization**: Can't bring your own models
+---
 
-## 💡 Our Solution
+## 🎯 Architecture Vision & Core Principles
 
-**Synthexis** is a browser-first AI research platform with:
-- **User-owned storage**: Google Drive, not our database
-- **Zero backend costs**: Static site hosting only
-- **Offline capability**: Ollama integration for local AI
-- **Bring-your-own-model**: Gemini, Groq, Ollama, etc.
-- **Professional UX**: Clean, corporate design
+Breezy Playground is designed around five core principles:
+1. **Truthfulness & Transparency**: Simulated environments (such as cloud job previews or sandbox terminal actions) are explicitly labeled as previews. No fabricated metrics, false execution claims, or fake model fallback syntheses.
+2. **Local-First Data Ownership**: User chat threads, research sessions, notes, and study cards reside in browser storage (IndexedDB, LocalStorage, sessionStorage) with optional cloud sync.
+3. **Pluggable Multi-Provider AI Architecture**: Seamless integration across Google Gemini (`@google/genai`), Groq, SambaNova, OpenRouter, and local Ollama inference, paired with real web search grounding (Google Search, SearXNG, Tavily, Brave).
+4. **Resilient Failover Without Fabrication**: If a primary AI provider fails or is rate-limited, requests gracefully cascade to configured backup providers or return an honest configuration error—never generating synthetic or mock answers.
+5. **Modular Workspaces**: A unified single-page application shell hosting specialized developer and research experiences.
+
+---
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      User's Browser                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   React UI   │  │  Local Cache │  │  PDF Parser  │      │
-│  │              │  │  (IndexedDB) │  │              │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │    Auth      │  │   Ollama     │  │  Google      │      │
-│  │   (Firebase) │  │   Service    │  │  Drive API   │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│   Firebase      │  │   Localhost:    │  │  Google Drive   │
-│  Authentication │  │   11434         │  │  (User's Cloud) │
-│                 │  │  (Ollama)       │  │                 │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│  AI Providers   │
-│  - Gemini API   │
-│  - Groq API     │
-│  - SambaNova    │
-│  - OpenRouter   │
-└─────────────────┘
-```
-
-## 📦 Core Services
-
-### 1. Authentication Service (`authService.ts`)
-- Firebase OAuth 2.0 with Google
-- Manages user sessions
-- Provides access tokens for Drive API
-- **Security**: Tokens stored in memory, refreshed automatically
-
-### 2. Google Drive Service (`googleDriveService.ts`)
-- Creates `/Synthexis_Data/sessions/` folder structure
-- Saves each session as individual JSON file
-- Maintains metadata index file
-- Handles sync conflicts gracefully
-- **File Format**: `session_<id>.json`
-
-### 3. Ollama Service (`ollamaService.ts`)
-- Connects to local Ollama instance
-- Supports streaming responses
-- Model management (pull, delete, list)
-- Works completely offline
-- **Endpoint**: `http://localhost:11434`
-
-### 4. PDF Service (`pdfService.ts`)
-- Extracts text from PDF files
-- Preserves page structure
-- Searches within documents
-- Converts to markdown format
-- **Library**: PDF.js
-
-## 🔄 Data Flow
-
-### Login Flow
-```
-1. User clicks "Sign in with Google"
-2. Firebase popup → Google OAuth
-3. On success: Firebase returns ID token + access token
-4. App stores tokens in memory (not localStorage!)
-5. User authenticated ✅
+```text
+                               ┌─────────────────────────────────────────┐
+                               │           User's Browser (SPA)          │
+                               │                                         │
+                               │   ┌─────────────────────────────────┐   │
+                               │   │      Breezy App Shell (Vite)    │   │
+                               │   └───────────────┬─────────────────┘   │
+                               │                   │                     │
+                ┌──────────────┼───────────────────┼─────────────────────┼──────────────┐
+                │              │                   │                     │              │
+                ▼              ▼                   ▼                     ▼              ▼
+        ┌──────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+        │    Breezy    │ │   Synthexis   │ │     Build     │ │     Synap     │ │   Settings    │
+        │(Conversations│ │  (Deep Multi- │ │  (Prism IDE,  │ │ (Study Notes, │ │   (BYOK &     │
+        │   & Canvas)  │ │ Pass Research)│ │Runner Preview)│ │Recall Decks)  │ │ Integrations) │
+        └──────┬───────┘ └───────┬───────┘ └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
+               │                 │                 │                 │                 │
+               └─────────────────┴────────┬────────┴─────────────────┴─────────────────┘
+                                          │
+                                          ▼
+                      ┌───────────────────────────────────────┐
+                      │        Data & Execution Engine        │
+                      │  - Session Storage (IndexedDB/Local)  │
+                      │  - Firebase Auth & Google Drive Sync  │
+                      │  - GitHub Service (REST / PAT)        │
+                      │  - Search Grounding Interface         │
+                      │  - Execution Preview Service          │
+                      └───────────────────┬───────────────────┘
+                                          │
+                                          ▼
+                      ┌───────────────────────────────────────┐
+                      │    Express Proxy Server (server.ts)   │
+                      │  - SSE Streaming & Provider Cascade   │
+                      │  - Gemini / Groq / OpenRouter Proxy   │
+                      │  - SearXNG Metasearch Proxy           │
+                      └───────────────────────────────────────┘
 ```
 
-### Drive Sync Flow
-```
-1. User completes login
-2. App requests Drive API scope
-3. User grants permission
-4. App creates/checks Synthexis_Data folder
-5. On session save:
-   - Upload session_*.json to Drive
-   - Update metadata index
-6. On app load:
-   - Check Drive for existing sessions
-   - Download and cache locally
-```
+---
 
-### Offline AI Flow
-```
-1. User enables "Ollama Mode" in settings
-2. App checks connection to localhost:11434
-3. User selects local model (e.g., llama3.2)
-4. All AI requests go to Ollama instead of cloud APIs
-5. Zero API costs, complete privacy ✅
-```
+## 🏛️ Workspaces Breakdown
 
-## 🗂️ File Structure
+### 1. Breezy (Conversational & Canvas Workspace)
+* **Interactive Chat**: Streaming conversations with rich markdown rendering, message history, and thread management.
+* **Canvas Prototype**: Visual workspace for organizing notes, cards, and outlines.
+* **Topic Tagging**: Automatic thread indexing and fast local recall.
 
-```
-src/
-├── services/
-│   ├── authService.ts        # Firebase authentication
-│   ├── googleDriveService.ts # Drive API operations
-│   ├── ollamaService.ts      # Local AI inference
-│   ├── pdfService.ts         # PDF parsing
-│   └── server.ts             # API proxy (optional)
-├── components/
-│   ├── AuthModal.tsx         # Login UI
-│   ├── Header.tsx            # Navigation
-│   ├── PromptInput.tsx       # Main input
-│   └── ...                   # Other components
-├── hooks/
-│   └── useLocalStorage.ts    # Persistent state
-├── types.ts                  # TypeScript definitions
-└── App.tsx                   # Main application
-```
+### 2. Synthexis (Deep Research & Grounding Engine)
+* **Multi-Stage Inquiry Pipeline**: Executes structured research rounds (problem analysis, counterchecks, evidence synthesis, and structured answers).
+* **Grounded Search Abstraction**: Connects live search providers including Google Search Grounding, SearXNG, Tavily, and Brave Search.
+* **Evidence Graph**: Direct mapping from claims to verifiable source documents with honest citation tracking.
+* **Structured Export**: Markdown export formatted with full source citations.
 
-## 🔒 Security Model
+### 3. Build (Breezy IDE & Execution Preview)
+* **Prism.js Code Editor**: Syntax highlighting for Python, TypeScript, JavaScript, HTML, CSS, and JSON.
+* **Live Sandboxed Preview Runner**: Isolated iframe execution environment with live console log interception.
+* **Execution Preview (Simulation)**: Explicitly labeled job lifecycle simulator for testing compute workflows without remote GPU spinning.
+* **ANSI Terminal**: Terminal emulator supporting ANSI color codes, text filtering, clearing (`Cmd+K`), and navigation shortcuts.
+* **GitHub Integration**: Browse repositories and commit file changes using personal access tokens.
 
-### What We Store
-| Data Type | Location | Encryption |
-|-----------|----------|------------|
-| Auth tokens | Memory (runtime only) | N/A (HTTPS) |
-| API keys | localStorage | None ⚠️ |
-| Sessions | Google Drive | Google's encryption |
-| Preferences | localStorage | None |
+### 4. Synap (Knowledge & Study Workspace)
+* **Source-Grounded Notebooks**: Ingest reference materials and lecture documents.
+* **Diagnostic Mastery**: Flags knowledge weak-spots based on review performance.
+* **Spaced Repetition**: Flashcards and quizzes linked directly to study notes.
 
-### Security Considerations
-1. **API Keys**: Currently in localStorage - consider encrypted storage
-2. **XSS Protection**: Sanitize all user inputs
-3. **CORS**: Drive API requires proper origin configuration
-4. **Token Expiry**: Refresh tokens before expiration
+---
 
-## 🚀 Performance Optimizations
+## 🔒 Security & Credential Model
 
-### Caching Strategy
-```typescript
-// 1. IndexedDB for large session data
-const db = await openDB('synthexis-cache', 1);
+| Scope | Location | Access Pattern |
+|:---|:---|:---|
+| **BYOK API Keys** | `localStorage` / Proxy | Routed server-side via Express proxy; never logged |
+| **User Data** | `IndexedDB` & `localStorage` | Local-first, private to browser instance |
+| **OAuth Tokens** | Memory / `sessionStorage` | Ephemeral Google/Firebase OAuth tokens |
+| **GitHub PAT** | `localStorage` (`breezy_github_token`) | Client-side only; scoped for repo operations |
 
-// 2. In-memory cache for active session
-const activeSessionRef = useRef<DebateSession | null>(null);
+---
 
-// 3. Background sync with Drive
-useEffect(() => {
-  const syncInterval = setInterval(syncWithDrive, 30000); // 30s
-  return () => clearInterval(syncInterval);
-}, []);
-```
+## 🛠️ Technology Stack Summary
 
-### Lazy Loading
-- Load GAPI script only when Drive connect requested
-- Initialize Ollama service on-demand
-- PDF.js worker loaded from CDN
-
-## 📊 Cost Analysis
-
-### For Users
-| Feature | Cost |
-|---------|------|
-| Platform | Free |
-| Storage | Free (user's Drive quota) |
-| Cloud AI | Pay-per-use (own API keys) |
-| Offline AI | Free (electricity only) |
-
-### For Platform Owners
-| Expense | Monthly Cost |
-|---------|-------------|
-| Hosting (Vercel) | $0 |
-| Database | $0 (user's Drive) |
-| Authentication | $0 (Firebase free tier) |
-| Bandwidth | $0 (CDN) |
-| **Total** | **$0** |
-
-## 🎯 Competitive Advantages
-
-1. **No Infrastructure Costs**: Sustainable free tier forever
-2. **Data Ownership**: Users control their research
-3. **Offline Capability**: Unique selling point
-4. **Multi-Provider**: Not locked to one AI vendor
-5. **Professional Design**: Appeals to enterprise users
-
-## 🛣️ Future Roadmap
-
-### Phase 1: Foundation (Current)
-- ✅ Google Drive storage
-- ✅ Ollama offline support
-- ✅ Solo mode
-- ✅ PDF analysis
-
-### Phase 2: Collaboration
-- Share sessions via Drive sharing
-- Real-time co-editing (Yjs CRDT)
-- Team workspaces
-
-### Phase 3: Advanced Features
-- Custom agent personas
-- Code execution sandbox
-- Usage analytics
-- Export to Notion/Obsidian
-
-### Phase 4: Monetization
-- Freemium tiers (feature gates)
-- Team plans
-- Enterprise SSO
-- White-label options
-
-## 🤝 Contributing Guidelines
-
-1. **TypeScript First**: All new code must be typed
-2. **Test Coverage**: Add tests for new services
-3. **Accessibility**: WCAG 2.1 AA minimum
-4. **Performance**: No regressions in Lighthouse scores
-5. **Documentation**: Update README for new features
+* **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Motion, Prism.js, D3.js
+* **Backend Server**: Node.js, Express (`server.ts`), Server-Sent Events (SSE) streaming proxy
+* **AI Providers**: `@google/genai` (Gemini SDK), Groq, SambaNova, OpenRouter, Ollama
+* **Authentication**: Firebase Authentication (Google OAuth)
+* **Storage**: Local-First (IndexedDB, LocalStorage), optional Google Drive / Firebase Firestore

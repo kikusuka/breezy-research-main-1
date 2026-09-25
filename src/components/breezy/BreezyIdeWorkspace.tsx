@@ -471,10 +471,10 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     if (primary === 'help') {
       output.push(
         '\u001b[1mAvailable Breezy Sandbox Commands:\u001b[0m',
-        '  \u001b[36mnpm install <pkg>\u001b[0m   - Install npm packages temporarily into sandbox',
-        '  \u001b[36mpip install <pkg>\u001b[0m   - Install python libraries temporarily',
-        '  \u001b[36mlist packages\u001b[0m       - List active packages currently mounted in sandbox',
-        '  \u001b[36mrun\u001b[0m                 - Execute current editor code in live preview runner',
+        '  \u001b[36mnpm install <pkg>\u001b[0m   - [Preview] Simulate installing npm packages into sandbox',
+        '  \u001b[36mpip install <pkg>\u001b[0m   - [Preview] Simulate installing python libraries into sandbox',
+        '  \u001b[36mlist packages\u001b[0m       - List active packages currently in sandbox',
+        '  \u001b[36mrun\u001b[0m                 - Render current code in Live Preview runner',
         '  \u001b[36mgit status\u001b[0m          - Inspect active changes for repository',
         '  \u001b[36mclear\u001b[0m               - Clear terminal history output (or Cmd+K)'
       );
@@ -485,26 +485,26 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     } else if (primary === 'run') {
       setActiveWorkspaceTab('preview');
       output.push(
-        `\u001b[32m[sandbox execution]\u001b[0m Executing ${selectedFilePath || 'scratchpad'} in live preview runner...`,
+        `\u001b[32m[preview runner]\u001b[0m Rendering ${selectedFilePath || 'scratchpad'} in live sandboxed preview...`,
         `\u001b[36m[environment]\u001b[0m Active packages: ${installedPackages.join(', ')}`,
-        `\u001b[1m\u001b[32mSUCCESS:\u001b[0m Live preview updated.`
+        `\u001b[1m\u001b[32m[preview]\u001b[0m Live sandboxed preview updated.`
       );
     } else if (primary === 'npm' && args[1]?.toLowerCase() === 'install') {
       const pkgName = args.slice(2).join(' ') || 'pkg-temp';
       setInstalledPackages((prev) => [...prev, pkgName]);
       output.push(
         `\u001b[36m[npm registry]\u001b[0m Resolving package '${pkgName}'...`,
-        `\u001b[32m+ ${pkgName}@latest\u001b[0m mounted in current sandbox environment.`
+        `\u001b[33m[preview]\u001b[0m Package installation simulated. Added '${pkgName}' to temporary sandbox.`
       );
     } else if (primary === 'pip' && args[1]?.toLowerCase() === 'install') {
       const pkgName = args.slice(2).join(' ') || 'pkg-temp';
       setInstalledPackages((prev) => [...prev, pkgName]);
       output.push(
-        `\u001b[36m[pip registry]\u001b[0m Installing '${pkgName}' into Google Account Session sandbox...`,
-        `\u001b[32mSUCCESS:\u001b[0m Installed ${pkgName}`
+        `\u001b[36m[pip registry]\u001b[0m Resolving library '${pkgName}'...`,
+        `\u001b[33m[preview]\u001b[0m Package installation simulated. Added '${pkgName}' to temporary sandbox.`
       );
     } else if (primary === 'list' && args[1]?.toLowerCase() === 'packages') {
-      output.push(`\u001b[1mCurrently Installed Packages:\u001b[0m`, ...installedPackages.map((p) => `  - \u001b[36m${p}\u001b[0m`));
+      output.push(`\u001b[1mCurrently Installed Packages (Temporary Sandbox):\u001b[0m`, ...installedPackages.map((p) => `  - \u001b[36m${p}\u001b[0m`));
     } else {
       output.push(`\u001b[31msh: command not found: ${primary}. Type "help" for available commands.\u001b[0m`);
     }
@@ -595,7 +595,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
             <button
               type="button"
               onClick={() => {
-                const token = prompt('Enter your GitHub Personal Access Token (PAT):');
+                const token = prompt('Enter your GitHub Personal Access Token (PAT) [read-only scope for browsing, repo write scope only for pushing]:');
                 if (token) {
                   localStorage.setItem('breezy_github_token', token.trim());
                   setGithubToken(token.trim());

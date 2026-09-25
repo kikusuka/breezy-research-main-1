@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
 
 export const IdeWorkspaceView: React.FC = () => {
-  const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('synthexis_github_token') || '');
-  const [isConnected, setIsConnected] = useState<boolean>(Boolean(localStorage.getItem('synthexis_github_token')));
+  const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('breezy_github_token') || localStorage.getItem('synthexis_github_token') || '');
+  const [isConnected, setIsConnected] = useState<boolean>(Boolean(localStorage.getItem('breezy_github_token') || localStorage.getItem('synthexis_github_token')));
   
   const [repos, setRepos] = useState<GitHubRepository[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>('');
@@ -15,11 +15,11 @@ export const IdeWorkspaceView: React.FC = () => {
   const [editorContent, setEditorContent] = useState<string>('');
   const [fileSha, setFileSha] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [commitMessage, setCommitMessage] = useState<string>('Refactor codebase via Synthexis IDE');
+  const [commitMessage, setCommitMessage] = useState<string>('Refactor codebase via Breezy IDE');
 
   // Terminal & Installed Packages State
   const [terminalHistory, setTerminalHistory] = useState<string[]>([
-    'Synthexis Workspace Sandbox [v1.0.0]',
+    'Breezy Workspace Sandbox [v1.0.0 - Preview Mode]',
     'Type "help" to list available operational commands.',
     ''
   ]);
@@ -131,12 +131,12 @@ export const IdeWorkspaceView: React.FC = () => {
     if (primary === 'help') {
       output.push(
         'Available Workspace Commands:',
-        '  npm install <pkg>   - Install npm packages temporarily into sandbox',
-        '  pip install <pkg>   - Install python libraries temporarily',
+        '  npm install <pkg>   - [Preview] Simulate installing npm packages into sandbox',
+        '  pip install <pkg>   - [Preview] Simulate installing python libraries',
         '  list packages       - List active packages currently mounted in sandbox',
-        '  run                 - Simulate execution of current editor content',
+        '  run                 - [Preview] Simulate execution of current editor content (No remote execution)',
         '  git status          - Inspect active changes for repository',
-        '  git log             - View commit history log metadata',
+        '  git log             - [Preview] View sample commit history log',
         '  clear               - Clear terminal history output'
       );
     } else if (primary === 'clear') {
@@ -145,14 +145,14 @@ export const IdeWorkspaceView: React.FC = () => {
       return;
     } else if (primary === 'run') {
       if (!selectedFilePath) {
-        output.push('Error: No hot file is currently active in editor. Open a file first.');
+        output.push('Error: No active file in editor. Open a file first.');
       } else {
         output.push(
-          `[sandbox execution] Executing run simulation for: ${selectedFilePath}`,
+          `[preview] Executing simulation for: ${selectedFilePath}`,
           `[environment] Active packages: ${installedPackages.join(', ')}`,
           `------------------------------------------------`,
-          `> Output from mock execution runtime:`,
-          `SUCCESS: Process exited with status 0. Compiled ${editorContent.split('\n').length} lines seamlessly.`
+          `> Simulation Output:`,
+          `[preview] Execution simulation completed for ${editorContent.split('\n').length} lines. No remote code was executed.`
         );
       }
     } else if (primary === 'npm' && args[1]?.toLowerCase() === 'install') {
@@ -160,20 +160,17 @@ export const IdeWorkspaceView: React.FC = () => {
       setInstalledPackages((prev) => [...prev, pkgName]);
       output.push(
         `[npm registry] Resolving package '${pkgName}'...`,
-        `[npm package] Fetching latest tarball...`,
-        `[sandbox filesystem] Unpacking '${pkgName}' into node_modules (temporary)`,
-        `+ ${pkgName}@latest mounted in current sandbox environment.`
+        `[preview] Package installation simulated. Added '${pkgName}' to temporary sandbox environment.`
       );
     } else if (primary === 'pip' && args[1]?.toLowerCase() === 'install') {
       const pkgName = args.slice(2).join(' ') || 'pkg-temp';
       setInstalledPackages((prev) => [...prev, pkgName]);
       output.push(
-        `[pip registry] Downloading index data for '${pkgName}'`,
-        `[sandbox environment] Building wheels for '${pkgName}' (temporary)`,
-        `SUCCESS: Successfully installed ${pkgName}`
+        `[pip registry] Resolving index for '${pkgName}'...`,
+        `[preview] Package installation simulated. Added '${pkgName}' to temporary sandbox environment.`
       );
     } else if (primary === 'list' && args[1]?.toLowerCase() === 'packages') {
-      output.push(`Currently Installed Packages (Temporary):`, ...installedPackages.map((p) => `  - ${p}`));
+      output.push(`Currently Installed Packages (Temporary Sandbox):`, ...installedPackages.map((p) => `  - ${p}`));
     } else if (primary === 'git' && args[1]?.toLowerCase() === 'status') {
       if (!selectedRepo) {
         output.push('Error: No workspace repo is currently mounted.');
@@ -188,14 +185,16 @@ export const IdeWorkspaceView: React.FC = () => {
       }
     } else if (primary === 'git' && args[1]?.toLowerCase() === 'log') {
       output.push(
-        `commit 1e4db9a8f2780bb2ccdf (HEAD -> main, origin/main)`,
-        `Author: Synthexis Core Dev Team <dev@synthexis.io>`,
+        `[preview] Sample commit history (connect repository for live git history):`,
+        `commit 248db1d (HEAD -> main, origin/main)`,
+        `Author: Breezy Team <dev@breezy.io>`,
         `Date:   ${new Date().toLocaleString()}`,
-        `    Refactor layout constraints to enforce zero-pill discipline`,
+        `    refactor: rename branding to Breezy and update migrations`,
         ``,
-        `commit 9a83427bebc890f55aa1`,
-        `Author: Boddupalli Pranav <bpranav763@gmail.com>`,
-        `    Configure Workspace synchronization and register credentials`
+        `commit 1e4db9a`,
+        `Author: Breezy Team <dev@breezy.io>`,
+        `Date:   ${new Date(Date.now() - 86400000).toLocaleString()}`,
+        `    feat: add execution preview and evidence graph grounding`
       );
     } else {
       output.push(`sh: command not found: ${primary}. Type "help" for a list of functional parameters.`);
