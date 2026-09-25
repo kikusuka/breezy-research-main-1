@@ -10,11 +10,29 @@ import { performSearchGrounding } from './search';
 import { summarizeStage, generateRealEvidenceGraph } from './evidence';
 
 export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<string, string> {
-  const origin = req.headers.get('Origin') || '*';
+  const requestOrigin = req.headers.get('Origin');
+  const allowedOriginsConfig = env.ALLOWED_ORIGINS?.trim();
+
+  let resolvedOrigin = '*';
+
+  if (allowedOriginsConfig && allowedOriginsConfig !== '*') {
+    const allowedList = allowedOriginsConfig.split(',').map((o) => o.trim().toLowerCase());
+    if (requestOrigin) {
+      const lowerOrigin = requestOrigin.toLowerCase();
+      if (allowedList.includes(lowerOrigin) || allowedList.includes('*')) {
+        resolvedOrigin = requestOrigin;
+      } else {
+        resolvedOrigin = allowedList[0] || 'null';
+      }
+    }
+  } else if (requestOrigin) {
+    resolvedOrigin = requestOrigin;
+  }
+
   return {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin': resolvedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Breezy-Client',
     'Access-Control-Max-Age': '86400',
   };
 }

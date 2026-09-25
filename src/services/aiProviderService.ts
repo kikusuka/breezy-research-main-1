@@ -1,15 +1,18 @@
 /**
- * Multi-Provider AI Service with Transparent Failover & Backup Routing
- * Supports Google Gemini, Groq, SambaNova, OpenRouter, and OpenAI-compatible APIs.
- * Honest error handling: Never generates fake "Verified Resilient Synthesis" answers.
+ * Multi-Provider AI Service with Transparent Routing
+ * Seamlessly integrates Backend Edge Proxy (Cloudflare / Deno / Render)
+ * with Client-Side Bring-Your-Own-Key (BYOK) fallback.
+ * 
+ * Truthful error handling: Never generates fake answers.
  */
 
 import { GoogleGenAI } from '@google/genai';
 import { ProviderKeyConfig } from '../types';
+import { apiClient } from './apiClient';
 
 export const aiProviderService = {
   /**
-   * Get stored provider keys from localStorage / config
+   * Get stored user provider keys from localStorage
    */
   getStoredKeys(): ProviderKeyConfig {
     try {
@@ -22,7 +25,7 @@ export const aiProviderService = {
   },
 
   /**
-   * Save provider keys
+   * Save user provider keys
    */
   saveStoredKeys(config: ProviderKeyConfig) {
     try {
@@ -32,8 +35,7 @@ export const aiProviderService = {
   },
 
   /**
-   * Generate content with genuine failover across available configured providers.
-   * If all legitimate providers fail, returns a clear, honest error instead of fabricated output.
+   * Generate content with genuine failover across available backend and BYOK providers.
    */
   async generateWithFailover(
     prompt: string,
@@ -43,32 +45,56 @@ export const aiProviderService = {
     const keys = this.getStoredKeys();
     const errors: string[] = [];
 
-    // 1. Try Google Gemini first
+    // 1. Try Primary Backend Proxy first (Cloudflare / Deno / Render)
     try {
-      const geminiKey = keys.gemini || import.meta.env.VITE_GEMINI_API_KEY || '';
-      const ai = new GoogleGenAI({ apiKey: geminiKey || undefined });
-      const response = await ai.models.generateContent({
+      const res = await apiClient.chatBreezy({
+        prompt,
+        history: [],
+        provider: 'gemini',
         model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          systemInstruction,
-          temperature,
-        },
+        apiKey: keys.gemini || undefined,
       });
 
-      if (response && response.text) {
+      if (res && res.text) {
+        const activeBackend = apiClient.getActiveEndpoint().name;
         return {
-          text: response.text,
-          providerUsed: 'Google Gemini',
+          text: res.text,
+          providerUsed: `Google Gemini (${activeBackend})`,
           modelUsed: 'gemini-3.8-flash',
         };
       }
     } catch (err: any) {
-      errors.push(`Gemini: ${err.message || 'Request failed'}`);
-      console.warn('Gemini provider failed or rate limited, checking failover providers...', err);
+      errors.push(`Backend API: ${err.message || 'Request failed'}`);
+      console.warn('Backend proxy request failed, checking client-side BYOK keys...', err);
     }
 
-    // 2. Try Groq Failover if configured
+    // 2. Direct Client-Side BYOK Gemini if configured
+    if (keys.gemini || import.meta.env.VITE_GEMINI_API_KEY) {
+      try {
+        const geminiKey = keys.gemini || import.meta.env.VITE_GEMINI_API_KEY || '';
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: {
+            systemInstruction,
+            temperature,
+          },
+        });
+
+        if (response && response.text) {
+          return {
+            text: response.text,
+            providerUsed: 'Google Gemini (Client BYOK)',
+            modelUsed: 'gemini-3.8-flash',
+          };
+        }
+      } catch (err: any) {
+        errors.push(`Client Gemini: ${err.message || 'Failed'}`);
+      }
+    }
+
+    // 3. Client-Side BYOK Groq if configured
     if (keys.groq) {
       try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -78,7 +104,7 @@ export const aiProviderService = {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama3-70b-8192',
+            model: 'llama-3.3-70b-versatile',
             messages: [
               ...(systemInstruction ? [{ role: 'system', content: systemInstruction }] : []),
               { role: 'user', content: prompt }
@@ -92,8 +118,8 @@ export const aiProviderService = {
           if (text) {
             return {
               text,
-              providerUsed: 'Groq Cloud',
-              modelUsed: 'llama3-70b-8192',
+              providerUsed: 'Groq Cloud (Client BYOK)',
+              modelUsed: 'llama-3.3-70b-versatile',
             };
           }
         } else {
@@ -101,11 +127,10 @@ export const aiProviderService = {
         }
       } catch (err: any) {
         errors.push(`Groq: ${err.message}`);
-        console.warn('Groq failover failed...', err);
       }
     }
 
-    // 3. Try OpenRouter Failover if configured
+    // 4. Client-Side BYOK OpenRouter if configured
     if (keys.openrouter) {
       try {
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -117,7 +142,7 @@ export const aiProviderService = {
             'X-Title': 'Breezy Research',
           },
           body: JSON.stringify({
-            model: 'anthropic/claude-3.5-sonnet',
+            model: 'meta-llama/llama-3.3-70b-instruct',
             messages: [
               ...(systemInstruction ? [{ role: 'system', content: systemInstruction }] : []),
               { role: 'user', content: prompt }
@@ -131,8 +156,8 @@ export const aiProviderService = {
           if (text) {
             return {
               text,
-              providerUsed: 'OpenRouter',
-              modelUsed: 'anthropic/claude-3.5-sonnet',
+              providerUsed: 'OpenRouter (Client BYOK)',
+              modelUsed: 'meta-llama/llama-3.3-70b-instruct',
             };
           }
         } else {
@@ -140,11 +165,10 @@ export const aiProviderService = {
         }
       } catch (err: any) {
         errors.push(`OpenRouter: ${err.message}`);
-        console.warn('OpenRouter failover failed...', err);
       }
     }
 
-    // 4. Honest Failure: Do NOT fabricate a response
+    // 5. Honest Failure
     const summary = errors.length > 0 ? errors.join('; ') : 'No valid API keys configured';
     throw new Error(`AI providers unavailable (${summary}). Please configure an active API key in Settings.`);
   }

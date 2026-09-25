@@ -1,15 +1,16 @@
 /**
- * Unified Breezy API Client with Intelligent Backend Failover
+ * Unified Breezy API Client with Intelligent Edge Backend Failover & Primary Recovery
  * 
  * Order of Preference:
- * 1. Cloudflare Worker (Primary)
- * 2. Deno Deploy (Secondary Fallback)
+ * 1. Cloudflare Worker (Primary Edge)
+ * 2. Deno Deploy (Secondary Backup)
  * 3. Render / Node Server (Emergency Fallback)
  * 
- * Safe Failover Policy:
+ * Resilience Features:
  * - Bounded retries (failover only on network disconnect, 502, 503, 504 before body transfer)
- * - Never duplicate destructive operations or ongoing SSE streams
- * - Cached health checks (no aggressive polling)
+ * - Automatic primary backend recovery: probes Cloudflare after cooldown when on backup
+ * - Never duplicates active SSE streams once data transfer has begun
+ * - 30-second TTL health check caching to eliminate request storms
  */
 
 export interface BackendEndpoint {
@@ -23,6 +24,7 @@ export interface BackendState {
   activeId: 'cloudflare' | 'deno' | 'render' | 'local';
   activeName: string;
   isOnline: boolean;
+  isPrimary: boolean;
   lastChecked: number;
   failoverReason?: string;
 }
@@ -35,6 +37,8 @@ class ApiClient {
   private listeners: Set<BackendListener> = new Set();
   private healthCache: Map<string, { ok: boolean; timestamp: number }> = new Map();
   private isCheckingHealth = false;
+  private lastFailoverTimestamp: number = 0;
+  private primaryRecoveryCooldownMs: number = 180000; // 3 minutes cooldown before probing primary
 
   constructor() {
     const primaryUrl = import.meta.env.VITE_PRIMARY_API_URL?.replace(/\/$/, '') || '';
@@ -106,6 +110,7 @@ class ApiClient {
       activeId: active.id,
       activeName: active.name,
       isOnline: true,
+      isPrimary: this.currentEndpointIndex === 0,
       lastChecked: Date.now(),
       failoverReason: reason,
     };
@@ -120,9 +125,42 @@ class ApiClient {
   }
 
   /**
+   * Probes the primary backend if we are currently on a backup and cooldown expired
+   */
+  public async probePrimaryRecovery(): Promise<boolean> {
+    if (this.currentEndpointIndex === 0) return true;
+    const now = Date.now();
+    if (now - this.lastFailoverTimestamp < this.primaryRecoveryCooldownMs) {
+      return false;
+    }
+
+    const primary = this.endpoints[0];
+    try {
+      const res = await fetch(`${primary.url}/api/health`, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        this.currentEndpointIndex = 0;
+        this.notify('Primary edge backend recovered.');
+        return true;
+      }
+    } catch {
+      // Primary still offline; reset failover timer for another cooldown period
+      this.lastFailoverTimestamp = now;
+    }
+    return false;
+  }
+
+  /**
    * Health check with 30-second TTL cache to prevent request storms
    */
   public async checkHealth(force: boolean = false): Promise<boolean> {
+    // Opportunistically check if primary has recovered
+    if (this.currentEndpointIndex !== 0) {
+      this.probePrimaryRecovery().catch(() => {});
+    }
+
     const endpoint = this.getActiveEndpoint();
     const cached = this.healthCache.get(endpoint.id);
     const now = Date.now();
@@ -159,6 +197,11 @@ class ApiClient {
     options: RequestInit = {},
     onFailoverNotice?: (msg: string) => void
   ): Promise<Response> {
+    // Before dispatching, check if primary edge backend recovered
+    if (this.currentEndpointIndex !== 0) {
+      await this.probePrimaryRecovery().catch(() => {});
+    }
+
     const attempts = this.endpoints.length;
     let lastError: any = null;
 
@@ -179,6 +222,7 @@ class ApiClient {
         // 502 / 503 / 504 are candidate errors for backend failover
         if ((response.status === 502 || response.status === 503 || response.status === 504) && i < attempts - 1) {
           console.warn(`Endpoint ${endpoint.name} returned status ${response.status}. Attempting backup backend...`);
+          this.lastFailoverTimestamp = Date.now();
           if (onFailoverNotice) {
             onFailoverNotice(`Primary service temporarily busy (${response.status}). Switching to backup service...`);
           }
@@ -188,6 +232,7 @@ class ApiClient {
         // If this endpoint succeeded and was a failover, update active index
         if (endpointIndex !== this.currentEndpointIndex && response.ok) {
           this.currentEndpointIndex = endpointIndex;
+          this.lastFailoverTimestamp = Date.now();
           this.notify(`Switched to ${endpoint.name}`);
           if (onFailoverNotice) {
             onFailoverNotice(`Connected to backup service (${endpoint.name}).`);
@@ -197,6 +242,7 @@ class ApiClient {
         return response;
       } catch (err: any) {
         lastError = err;
+        this.lastFailoverTimestamp = Date.now();
         console.warn(`Network failure on ${endpoint.name}: ${err.message}. Checking next backend...`);
         if (i < attempts - 1 && onFailoverNotice) {
           onFailoverNotice(`Primary service unavailable. Connecting to backup service...`);
