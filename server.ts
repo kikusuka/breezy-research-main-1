@@ -465,7 +465,7 @@ app.post('/api/vault/verify-key', async (req: Request, res: Response) => {
   }
 });
 
-export type SearchEngineProvider = 'google' | 'tavily' | 'serper' | 'brave' | 'duckduckgo';
+export type SearchEngineProvider = 'google' | 'tavily' | 'serper' | 'brave' | 'duckduckgo' | 'searxng';
 
 interface SearchResultItem {
   title: string;
@@ -628,157 +628,205 @@ async function searchDuckDuckGoKeyless(query: string): Promise<SearchResultItem[
   }
 }
 
+interface WebSearchProvider {
+  search(query: string, keys: Record<string, string>): Promise<SearchResultItem[]>;
+}
+
+class SearXNGSearchProvider implements WebSearchProvider {
+  async search(query: string): Promise<SearchResultItem[]> {
+    const searxngUrl = process.env.SEARXNG_URL || 'http://localhost:8080';
+    try {
+      const resp = await fetch(`${searxngUrl}/search?q=${encodeURIComponent(query)}&format=json`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return (data.results || []).slice(0, 5).map((r: any) => ({
+          title: r.title || 'Source Document',
+          url: r.url || '',
+          snippet: r.content || r.snippet || '',
+          source: 'SearXNG Self-Hosted',
+        }));
+      }
+    } catch (err) {
+      console.warn('SearXNG search failed:', err);
+    }
+    return [];
+  }
+}
+
+class TavilySearchProvider implements WebSearchProvider {
+  async search(query: string, keys: Record<string, string>): Promise<SearchResultItem[]> {
+    const tavilyKey = keys.tavily?.trim() || process.env.TAVILY_API_KEY;
+    if (!tavilyKey) return [];
+    try {
+      const resp = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: tavilyKey,
+          query,
+          search_depth: 'advanced',
+          include_answer: true,
+          max_results: 5,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return (data.results || []).map((r: any) => ({
+          title: r.title || 'Source Document',
+          url: r.url || '',
+          snippet: r.content || '',
+          source: 'Tavily AI Search',
+        }));
+      }
+    } catch (err) {
+      console.warn('Tavily search execution failed:', err);
+    }
+    return [];
+  }
+}
+
+class SerperSearchProvider implements WebSearchProvider {
+  async search(query: string, keys: Record<string, string>): Promise<SearchResultItem[]> {
+    const serperKey = keys.serper?.trim() || process.env.SERPER_API_KEY;
+    if (!serperKey) return [];
+    try {
+      const resp = await fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': serperKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ q: query, num: 5 }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const results: SearchResultItem[] = [];
+        if (data.organic && Array.isArray(data.organic)) {
+          data.organic.slice(0, 5).forEach((r: any) => {
+            results.push({
+              title: r.title || 'Web Result',
+              url: r.link || '',
+              snippet: r.snippet || '',
+              source: 'Serper (Google SERP Index)',
+            });
+          });
+        }
+        return results;
+      }
+    } catch (err) {
+      console.warn('Serper search execution failed:', err);
+    }
+    return [];
+  }
+}
+
+class BraveSearchProvider implements WebSearchProvider {
+  async search(query: string, keys: Record<string, string>): Promise<SearchResultItem[]> {
+    const braveKey = keys.brave?.trim() || process.env.BRAVE_API_KEY;
+    if (!braveKey) return [];
+    try {
+      const resp = await fetch(
+        `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Subscription-Token': braveKey,
+          },
+        }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const results: SearchResultItem[] = [];
+        if (data.web?.results && Array.isArray(data.web.results)) {
+          data.web.results.slice(0, 5).forEach((r: any) => {
+            results.push({
+              title: r.title || 'Brave Result',
+              url: r.url || '',
+              snippet: r.description || '',
+              source: 'Brave Independent Index',
+            });
+          });
+        }
+        return results;
+      }
+    } catch (err) {
+      console.warn('Brave search execution failed:', err);
+    }
+    return [];
+  }
+}
+
+class DuckDuckGoSearchProvider implements WebSearchProvider {
+  async search(query: string): Promise<SearchResultItem[]> {
+    try {
+      const results = await searchDuckDuckGoKeyless(query);
+      return results || [];
+    } catch (err) {
+      console.warn('DuckDuckGo search failed:', err);
+    }
+    return [];
+  }
+}
+
+function deduplicateAndRank(results: SearchResultItem[]): SearchResultItem[] {
+  const seenUrls = new Set<string>();
+  const unique: SearchResultItem[] = [];
+  for (const item of results) {
+    if (!item.url) continue;
+    let cleanUrl = item.url;
+    try {
+      const parsed = new URL(item.url);
+      cleanUrl = parsed.origin + parsed.pathname;
+    } catch {
+      // ignore
+    }
+    if (!seenUrls.has(cleanUrl)) {
+      seenUrls.add(cleanUrl);
+      unique.push(item);
+    }
+  }
+  return unique;
+}
+
 async function performSearchGrounding(
   query: string,
   engine: SearchEngineProvider = 'google',
   keys: Record<string, string> = {}
 ): Promise<SearchGroundingResult | null> {
   const trimmedQuery = query.slice(0, 300);
+  let provider: WebSearchProvider;
 
-  // 1. Tavily AI Search
-  if (engine === 'tavily') {
-    const tavilyKey = keys.tavily?.trim() || process.env.TAVILY_API_KEY;
-    if (tavilyKey) {
-      try {
-        const resp = await fetch('https://api.tavily.com/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            api_key: tavilyKey,
-            query: trimmedQuery,
-            search_depth: 'advanced',
-            include_answer: true,
-            max_results: 5,
-          }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          const results: SearchResultItem[] = (data.results || []).map((r: any) => ({
-            title: r.title || 'Source Document',
-            url: r.url || '',
-            snippet: r.content || '',
-            source: 'Tavily AI Search',
-          }));
-          return {
-            engine: 'tavily',
-            engineName: 'Tavily AI Search',
-            query: trimmedQuery,
-            summary: data.answer || '',
-            results,
-          };
-        }
-      } catch (err) {
-        console.warn('Tavily search execution failed:', err);
-      }
-    }
+  if (engine === 'searxng') {
+    provider = new SearXNGSearchProvider();
+  } else if (engine === 'tavily') {
+    provider = new TavilySearchProvider();
+  } else if (engine === 'serper') {
+    provider = new SerperSearchProvider();
+  } else if (engine === 'brave') {
+    provider = new BraveSearchProvider();
+  } else if (engine === 'duckduckgo') {
+    provider = new DuckDuckGoSearchProvider();
+  } else {
+    // Default or Google native search
+    return {
+      engine: 'google',
+      engineName: 'Google Native Search Grounding',
+      query: trimmedQuery,
+      results: [],
+    };
   }
 
-  // 2. Serper.dev (Google SERP API)
-  if (engine === 'serper') {
-    const serperKey = keys.serper?.trim() || process.env.SERPER_API_KEY;
-    if (serperKey) {
-      try {
-        const resp = await fetch('https://google.serper.dev/search', {
-          method: 'POST',
-          headers: {
-            'X-API-KEY': serperKey,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ q: trimmedQuery, num: 5 }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          const results: SearchResultItem[] = [];
-          if (data.organic && Array.isArray(data.organic)) {
-            data.organic.slice(0, 5).forEach((r: any) => {
-              results.push({
-                title: r.title || 'Web Result',
-                url: r.link || '',
-                snippet: r.snippet || '',
-                source: 'Serper (Google SERP Index)',
-              });
-            });
-          }
-          const summary = data.answerBox?.snippet || data.knowledgeGraph?.description || '';
-          return {
-            engine: 'serper',
-            engineName: 'Serper.dev (Google SERP API)',
-            query: trimmedQuery,
-            summary,
-            results,
-          };
-        }
-      } catch (err) {
-        console.warn('Serper search execution failed:', err);
-      }
-    }
-  }
+  const rawResults = await provider.search(trimmedQuery, keys);
+  const deduplicated = deduplicateAndRank(rawResults);
 
-  // 3. Brave Search API
-  if (engine === 'brave') {
-    const braveKey = keys.brave?.trim() || process.env.BRAVE_API_KEY;
-    if (braveKey) {
-      try {
-        const resp = await fetch(
-          `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(trimmedQuery)}&count=5`,
-          {
-            headers: {
-              Accept: 'application/json',
-              'Accept-Encoding': 'gzip',
-              'X-Subscription-Token': braveKey,
-            },
-          }
-        );
-        if (resp.ok) {
-          const data = await resp.json();
-          const results: SearchResultItem[] = [];
-          if (data.web?.results && Array.isArray(data.web.results)) {
-            data.web.results.slice(0, 5).forEach((r: any) => {
-              results.push({
-                title: r.title || 'Brave Result',
-                url: r.url || '',
-                snippet: r.description || '',
-                source: 'Brave Independent Index',
-              });
-            });
-          }
-          return {
-            engine: 'brave',
-            engineName: 'Brave Search API',
-            query: trimmedQuery,
-            results,
-          };
-        }
-      } catch (err) {
-        console.warn('Brave search execution failed:', err);
-      }
-    }
-  }
-
-  // 4. DuckDuckGo Keyless Web Search & Deep Research Scraper (Zero Config & Unlimited)
-  if (engine === 'duckduckgo') {
-    try {
-      const results = await searchDuckDuckGoKeyless(trimmedQuery);
-      if (results && results.length > 0) {
-        return {
-          engine: 'duckduckgo',
-          engineName: 'DuckDuckGo Keyless Search',
-          query: trimmedQuery,
-          summary: `Direct real-time search results extracted keylessly from the open web for: "${trimmedQuery}".`,
-          results,
-        };
-      }
-    } catch (err) {
-      console.warn('DuckDuckGo keyless search execution failed:', err);
-    }
-  }
-
-  // 5. Default Google Native Grounding indicator
   return {
-    engine: 'google',
-    engineName: 'Google Native Search Grounding',
+    engine,
+    engineName: engine === 'searxng' ? 'SearXNG Self-Hosted' : engine.toUpperCase(),
     query: trimmedQuery,
-    results: [],
+    results: deduplicated,
   };
 }
 
@@ -1178,6 +1226,74 @@ Ground your technical architecture, critique, and trade-off claims in the above 
 
     const groundedPrompt = `${prompt}${groundingContext}`;
 
+    if (protocol === 'solo') {
+      sendEvent('round_start', {
+        round: 1,
+        role: 'solo',
+        agentName: 'Solo Assistant',
+        title: 'Lightweight Research & Analysis',
+        provider: architectConfig.provider,
+        model: architectConfig.model,
+        description: 'Direct response to your query using a single active model and grounding resources.',
+      });
+
+      emitStatus('solo', 'Solo Assistant', 'Generating fast single-model analysis...');
+
+      const soloSystemPrompt = `You are a helpful, expert technical research assistant. 
+Your goal is to provide a comprehensive, clear, and logically sound response to the user's technical inquiry.
+Directives:
+1. FALSE PREMISE & ASSUMPTION DETECTION: Pay special attention to whether the user's question contains a false premise, incorrect historical or technical fact, or incorrect assumption (for example, asking in what year Einstein won the Nobel Prize for relativity, when it was actually for the photoelectric effect). If you detect any false premise or incorrect assumption, you MUST proactively address this directly at the very beginning under a clear heading "Premise Correction", explain the discrepancy, and show what the verified evidence and sources actually demonstrate before proceeding with the rest of your response.
+2. Structure your output clearly using markdown sections. Prioritize accuracy and clean explanation.
+3. Be calm, objective, and intellectually honest. Avoid fluff or marketing hype.`;
+
+      const soloStart = Date.now();
+      const soloContent = await callAgentWithStream({
+        provider: architectConfig.provider,
+        model: architectConfig.model,
+        apiKey: keys[architectConfig.provider],
+        systemInstruction: soloSystemPrompt,
+        userPrompt: groundedPrompt,
+        temperature: 0.7,
+        enableSearchGrounding,
+        onChunk: (chunk) => {
+          sendEvent('token', { round: 1, token: chunk });
+        },
+      });
+
+      sendEvent('round_complete', {
+        round: 1,
+        role: 'solo',
+        durationMs: Date.now() - soloStart,
+        content: soloContent,
+      });
+
+      const totalDurationMs = Date.now() - startTime;
+      sendEvent('status', { message: 'Auditing factual claims...' });
+      const { evidenceGraph, researchMetrics } = await generateRealEvidenceGraph({
+        prompt,
+        finalSynthesis: soloContent,
+        proposalContent: soloContent,
+        critiqueContent: '',
+        discoveredSources,
+        durationMs: totalDurationMs,
+        apiKey: keys.gemini || process.env.GEMINI_API_KEY,
+      });
+
+      sendEvent('evidence_graph', { evidenceGraph, researchMetrics });
+      sendEvent('complete', {
+        finalOutput: soloContent,
+        evidenceGraph,
+        researchMetrics,
+        metrics: {
+          durationMs: totalDurationMs,
+          consensusRate: 100,
+          contentionLevel: 'Low',
+          resolvedPointsCount: 0,
+        },
+      });
+      return;
+    }
+
     // ROUND 1: ANALYST (Baseline Proposal & Architecture)
     sendEvent('round_start', {
       round: 1,
@@ -1542,6 +1658,7 @@ Directives:
 2. Adjudicate impartially: discard theoretical pedantry while thoroughly integrating mitigations for every genuine edge case and vulnerability.
 3. Deliver a comprehensive, high-caliber, practical solution (code, architecture, or strategic recommendation).
 4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach and what simpler alternatives should be preferred.
+5. FALSE PREMISE & ASSUMPTION DETECTION: Pay special attention to whether the user's question contains a false premise, incorrect historical or technical fact, or incorrect assumption (for example, asking in what year Einstein won the Nobel Prize for relativity, when it was actually for the photoelectric effect). If you detect any false premise or incorrect assumption, you MUST proactively address this directly at the very beginning under a clear heading "Premise Correction", explain the discrepancy, and show what the verified evidence and sources actually demonstrate before proceeding with the rest of your response.
 ${toneInstruction}
 
 Structure your response in clean, Anthropic/Claude-style Markdown:

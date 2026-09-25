@@ -1,6 +1,6 @@
 export type ProviderId = 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'ollama';
 
-export type SearchEngineProvider = 'google' | 'tavily' | 'serper' | 'brave' | 'duckduckgo';
+export type SearchEngineProvider = 'google' | 'tavily' | 'serper' | 'brave' | 'duckduckgo' | 'searxng';
 
 export interface ProviderKeyConfig {
   gemini?: string;

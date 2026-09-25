@@ -12,6 +12,7 @@ import { ResearchNotesView } from './components/console/ResearchNotesView';
 import { ModelsConsensusView } from './components/console/ModelsConsensusView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
+import { IdeWorkspaceView } from './components/console/IdeWorkspaceView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
 
 import {
@@ -98,15 +99,14 @@ export default function App() {
   // Persistent Debate Sessions
   const [sessions, setSessions] = useState<DebateSession[]>(() => {
     const loaded = loadSessions();
-    if (loaded && loaded.length > 0) return loaded;
-    return SEED_SAMPLE_SESSIONS;
+    return loaded || [];
   });
 
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
     const savedId = loadActiveSessionId();
     const all = loadSessions();
     if (savedId && all.some((s) => s.id === savedId)) return savedId;
-    return all.length > 0 ? all[0].id : SEED_SAMPLE_SESSIONS[0].id;
+    return all.length > 0 ? all[0].id : null;
   });
 
   const activeSessionIdRef = useRef<string | null>(activeSessionId);
@@ -143,6 +143,7 @@ export default function App() {
   const [activeRound, setActiveRound] = useState<number>(0);
   const [streamingText, setStreamingText] = useState<string>('');
   const [streamingRole, setStreamingRole] = useState<string>('');
+  const [researchEvents, setResearchEvents] = useState<string[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Global Keyboard Shortcuts
@@ -234,18 +235,30 @@ export default function App() {
     setStreamingText('');
   };
 
-  const startDebate = async (promptText: string, depth: 'quick' | 'standard' | 'deep' = 'standard') => {
+  const startDebate = async (promptText: string, depth: 'solo' | 'standard' | 'deep' = 'standard') => {
     if (!promptText.trim() || isDeliberating) return;
     const trimmedPrompt = promptText.trim();
 
     setIsDeliberating(true);
     setActiveRound(1);
     setStreamingText('');
-    setStreamingRole('architect');
+    setStreamingRole(depth === 'solo' ? 'solo' : 'architect');
+    setResearchEvents([]);
 
-    const chosenProtocol = depth === 'quick' ? 'duel' : (depth === 'deep' ? 'quad' : 'trio');
+    const chosenProtocol = depth === 'solo' ? 'solo' : (depth === 'deep' ? 'quad' : 'trio');
 
-    const initialSteps: DebateStep[] = [
+    const initialSteps: DebateStep[] = depth === 'solo' ? [
+      {
+        stepId: 'step-1',
+        role: 'solo',
+        agentName: 'Solo Assistant',
+        provider: 'gemini',
+        model: 'gemini-3.8-flash',
+        status: 'running',
+        content: '',
+        timestamp: Date.now(),
+      }
+    ] : [
       {
         stepId: 'step-1',
         role: 'architect',
@@ -302,6 +315,7 @@ export default function App() {
     abortControllerRef.current = controller;
 
     try {
+      const searchEngineValue = keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'duckduckgo'));
       const response = await fetch('/api/debate/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -309,8 +323,8 @@ export default function App() {
           prompt: trimmedPrompt,
           protocol: chosenProtocol,
           tone,
-          enableSearchGrounding: depth === 'deep' || Boolean(keys.tavily || keys.serper || keys.brave || true),
-          searchEngine: keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'google')),
+          enableSearchGrounding: depth !== 'solo' || true,
+          searchEngine: searchEngineValue,
           keys,
         }),
         signal: controller.signal,
@@ -342,10 +356,29 @@ export default function App() {
 
           try {
             const data = JSON.parse(trimmed.slice(6));
-            if (data.type === 'round_start') {
+            if (data.type === 'status') {
+              if (data.message) {
+                setResearchEvents((prev) => [...prev, data.message]);
+              }
+            } else if (data.type === 'search_grounding') {
+              if (data.sources) {
+                setResearchEvents((prev) => [...prev, `Found ${data.sources.length} useful sources.`]);
+              }
+            } else if (data.type === 'round_start') {
               setActiveRound(data.round);
               setStreamingRole(data.role || '');
               setStreamingText('');
+              
+              // Push human-friendly state indicators to the event stream
+              if (data.round === 1) {
+                setResearchEvents((prev) => [...prev, "Looking into this..."]);
+              } else if (data.round === 2) {
+                setResearchEvents((prev) => [...prev, "Checking another angle..."]);
+              } else if (data.round === 3) {
+                setResearchEvents((prev) => [...prev, "Comparing sources..."]);
+              } else if (data.round >= 4) {
+                setResearchEvents((prev) => [...prev, "One source disagrees — checking why..."]);
+              }
               setSessions((prev) => {
                 const currentId = activeSessionIdRef.current;
                 const next = prev.map((s) => {
@@ -416,6 +449,7 @@ export default function App() {
                 return next;
               });
             } else if (data.type === 'complete') {
+              setResearchEvents((prev) => [...prev, "Research complete."]);
               setSessions((prev) => {
                 const currentId = activeSessionIdRef.current;
                 const next: DebateSession[] = prev.map((s) => {
@@ -498,6 +532,7 @@ export default function App() {
               streamingRoundText={streamingText}
               streamingRole={streamingRole}
               onStartDebate={startDebate}
+              researchEvents={researchEvents}
               onSaveNote={(title, content) => {
                 const newNoteSession = createNewSession(title, protocol, [], tone);
                 newNoteSession.finalOutput = content;
@@ -509,11 +544,13 @@ export default function App() {
               }}
               onExportMarkdown={handleExportMarkdown}
               keys={keys}
+              onOpenNotes={() => setActiveTab('notes')}
             />
           )}
 
           {activeTab === 'notes' && (
             <ResearchNotesView
+              sessions={sessions}
               onSelectNotePrompt={(prompt) => {
                 if (prompt) {
                   startDebate(prompt);
@@ -531,11 +568,15 @@ export default function App() {
             <WorkspaceSettingsView keys={keys} onSaveKeys={handleSaveKeys} />
           )}
 
+          {activeTab === 'ide' && (
+            <IdeWorkspaceView />
+          )}
+
           {activeTab === 'landing' && (
             <LandingPageView
-              onLaunchWorkspace={(query) => {
+              onLaunchWorkspace={(query, depth) => {
                 if (query) {
-                  startDebate(query);
+                  startDebate(query, depth);
                 }
                 setActiveTab('chat');
               }}

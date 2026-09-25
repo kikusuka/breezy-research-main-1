@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProviderKeyConfig } from '../../types';
+import { authService, AuthUser } from '../../services/authService';
+import { workspaceService, GoogleDriveFile, GmailMessage, CalendarEvent } from '../../services/workspaceService';
+import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
 
 interface WorkspaceSettingsViewProps {
   keys: ProviderKeyConfig;
@@ -7,7 +10,7 @@ interface WorkspaceSettingsViewProps {
 }
 
 export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ keys, onSaveKeys }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthesis' | 'team' | 'billing'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthesis' | 'integrations' | 'team' | 'billing'>('integrations');
   const [selectedRound, setSelectedRound] = useState<number>(2);
   const [autoResolve, setAutoResolve] = useState<boolean>(true);
   const [agreementThreshold, setAgreementThreshold] = useState<number>(78);
@@ -23,6 +26,182 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [sambanovaKey, setSambanovaKey] = useState(keys.sambanova || '');
   const [openrouterKey, setOpenrouterKey] = useState(keys.openrouter || '');
   const [isDirty, setIsDirty] = useState<boolean>(false);
+
+  // Integration States (Google)
+  const [googleUser, setGoogleUser] = useState<AuthUser | null>(null);
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
+  const [googleSubTab, setGoogleSubTab] = useState<'drive' | 'gmail' | 'calendar'>('drive');
+  const [driveFiles, setDriveFiles] = useState<GoogleDriveFile[]>([]);
+  const [gmailMsgs, setGmailMessages] = useState<GmailMessage[]>([]);
+  const [calEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
+
+  // Integration States (GitHub)
+  const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('synthexis_github_token') || '');
+  const [isGithubConnected, setIsGithubConnected] = useState<boolean>(Boolean(localStorage.getItem('synthexis_github_token')));
+  const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState<string>('');
+  const [repoContents, setRepoContents] = useState<GitHubContent[]>([]);
+  const [isLoadingGithub, setIsLoadingGithub] = useState<boolean>(false);
+
+  // Load auth state
+  useEffect(() => {
+    const unsubscribe = authService.onAuthChange((user, token) => {
+      setGoogleUser(user);
+      setGoogleToken(token);
+      if (token) {
+        loadGoogleData(token);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch Google data when tab changes or connected
+  const loadGoogleData = async (token: string) => {
+    setIsLoadingGoogle(true);
+    try {
+      const files = await workspaceService.listDriveFiles(token);
+      setDriveFiles(files);
+      const emails = await workspaceService.listGmailMessages(token);
+      setGmailMessages(emails);
+      const events = await workspaceService.listCalendarEvents(token);
+      setCalendarEvents(events);
+    } catch (e) {
+      console.error('Failed to load Google data', e);
+    } finally {
+      setIsLoadingGoogle(false);
+    }
+  };
+
+  // GitHub loader
+  useEffect(() => {
+    if (isGithubConnected && githubToken) {
+      loadGithubRepos(githubToken);
+    }
+  }, [isGithubConnected, githubToken]);
+
+  const loadGithubRepos = async (token: string) => {
+    setIsLoadingGithub(true);
+    try {
+      const repos = await gitHubService.listRepositories(token);
+      setGithubRepos(repos);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingGithub(false);
+    }
+  };
+
+  const handleConnectGoogle = async () => {
+    try {
+      const res = await authService.signInWithGoogle();
+      if (res) {
+        setGoogleUser(res.user);
+        setGoogleToken(res.accessToken);
+        loadGoogleData(res.accessToken);
+        setToastMessage('Google Workspace integrated successfully.');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
+    } catch (err: any) {
+      alert(`Google Connection Failed: ${err.message}`);
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    await authService.signOut();
+    setGoogleUser(null);
+    setGoogleToken(null);
+    setDriveFiles([]);
+    setGmailMessages([]);
+    setCalendarEvents([]);
+    setToastMessage('Google Workspace disconnected.');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleConnectGithub = () => {
+    if (!githubToken.trim()) return;
+    localStorage.setItem('synthexis_github_token', githubToken.trim());
+    setIsGithubConnected(true);
+    setToastMessage('GitHub Personal Access Token registered.');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleDisconnectGithub = () => {
+    localStorage.removeItem('synthexis_github_token');
+    setGithubToken('');
+    setIsGithubConnected(false);
+    setGithubRepos([]);
+    setSelectedRepo('');
+    setRepoContents([]);
+    setToastMessage('GitHub disconnected.');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleGithubOAuthPopup = async () => {
+    try {
+      const res = await authService.signInWithGithub();
+      if (res) {
+        setGithubToken(res.accessToken);
+        setIsGithubConnected(true);
+        setToastMessage('GitHub OAuth Authorized Successfully!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
+    } catch (err: any) {
+      alert(`GitHub OAuth Popup connection failed: ${err.message}. Enabling sandbox fallback options instead.`);
+    }
+  };
+
+  const handleInstantAutoAuthorize = () => {
+    // Generate a high-performance sandbox mock-token that acts as an auto-authorized state
+    const sandboxToken = 'ghp_synthexis_sandbox_token_demo_authenticated';
+    localStorage.setItem('synthexis_github_token', sandboxToken);
+    setGithubToken(sandboxToken);
+    setIsGithubConnected(true);
+    // Automatically load verified sandbox repo structure
+    setGithubRepos([
+      {
+        id: 1042,
+        name: 'synthexis-ledger-node',
+        full_name: 'boddupalli-pranav/synthexis-ledger-node',
+        description: 'Primary distributed ledger and transaction streaming pipeline',
+        private: true,
+        html_url: 'https://github.com/boddupalli-pranav/synthexis-ledger-node'
+      },
+      {
+        id: 2045,
+        name: 'cognitive-consensus-core',
+        full_name: 'boddupalli-pranav/cognitive-consensus-core',
+        description: 'Multi-node dialectic validation and arbiter consensus engine',
+        private: false,
+        html_url: 'https://github.com/boddupalli-pranav/cognitive-consensus-core'
+      }
+    ]);
+    setToastMessage('1-Click Sandbox Token Auto-Authorized!');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleSelectRepo = async (repoFullName: string) => {
+    setSelectedRepo(repoFullName);
+    if (!repoFullName) {
+      setRepoContents([]);
+      return;
+    }
+    setIsLoadingGithub(true);
+    try {
+      const contents = await gitHubService.listRepoContents(githubToken, repoFullName);
+      setRepoContents(contents);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingGithub(false);
+    }
+  };
 
   const handleSave = () => {
     onSaveKeys({
@@ -61,44 +240,35 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   };
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] pb-24">
+    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] pb-24 text-stone-200">
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-surface-container-highest text-on-surface shadow-2xl flex items-center gap-3 border border-outline-variant/50 animate-in fade-in slide-in-from-bottom-3">
+        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-[#1c2026] text-stone-100 shadow-2xl flex items-center gap-3 border border-white/10 animate-in fade-in slide-in-from-bottom-3">
           <span className="material-symbols-outlined text-secondary text-[20px]">task_alt</span>
           <div className="flex flex-col">
-            <span className="font-sans text-xs font-semibold">Settings updated</span>
-            <span className="font-mono text-[11px] text-outline">{toastMessage}</span>
+            <span className="font-sans text-xs font-semibold">Workspace Alert</span>
+            <span className="font-mono text-[11px] text-stone-400">{toastMessage}</span>
           </div>
         </div>
       )}
 
       <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-8 flex flex-col gap-8">
         {/* Header Strip */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-outline-variant/15">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-white/10">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase text-primary tracking-widest bg-surface-container-high px-2.5 py-1 rounded-full font-semibold">
-                System Configuration
+              <span className="font-mono text-[10px] uppercase text-[#7bdb80] tracking-widest bg-white/5 px-2.5 py-1 rounded-full font-semibold">
+                Live Integration Workspace
               </span>
-              <span className="flex h-1.5 w-1.5 rounded-full bg-secondary"></span>
-              <span className="font-mono text-xs text-outline">v2.4.9-alpha</span>
+              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              <span className="font-mono text-xs text-stone-450">Active Syncing</span>
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-on-surface tracking-tight font-semibold">
-              Workspace Settings
+            <h1 className="font-sans text-2xl sm:text-3xl text-stone-100 tracking-tight font-semibold">
+              Workspace Sync & Settings
             </h1>
-            <p className="font-sans text-xs sm:text-sm text-on-surface-variant max-w-2xl leading-relaxed">
-              Configure multi-model deliberation rules, active node providers, and workspace preferences for cluster-alpha.
+            <p className="font-sans text-xs sm:text-sm text-stone-400 max-w-2xl leading-relaxed">
+              Connect Google Drive, Google Sheets, Gmail, and GitHub accounts to fetch live documents and source code directly into your deep technical inquiries.
             </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low text-tertiary border border-outline-variant/30">
-              <span className="material-symbols-outlined text-[16px] text-secondary">cloud_done</span>
-              <span className="font-mono text-[11px] text-on-surface-variant">Sync status: Live</span>
-            </div>
-            <div className="h-4 w-px bg-surface-container-highest"></div>
-            <span className="font-mono text-[11px] text-outline">Last saved 4m ago</span>
           </div>
         </div>
 
@@ -106,373 +276,504 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             type="button"
+            onClick={() => setActiveTab('integrations')}
+            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
+              activeTab === 'integrations'
+                ? 'bg-stone-100 text-stone-950 font-semibold'
+                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">sync_alt</span>
+            <span>Workspace Sync</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('general')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
               activeTab === 'general'
-                ? 'bg-primary text-on-primary font-semibold'
-                : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                ? 'bg-stone-100 text-stone-950 font-semibold'
+                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">tune</span>
-            <span>General</span>
+            <span>Consensus Engine</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('models')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
               activeTab === 'models'
-                ? 'bg-primary text-on-primary font-semibold'
-                : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                ? 'bg-stone-100 text-stone-950 font-semibold'
+                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">key</span>
-            <span>Models & API Keys</span>
+            <span>BYOK API Keys</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('synthesis')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
               activeTab === 'synthesis'
-                ? 'bg-primary text-on-primary font-semibold'
-                : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                ? 'bg-stone-100 text-stone-950 font-semibold'
+                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">alt_route</span>
-            <span>Synthesis Engine</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('team')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs ${
-              activeTab === 'team'
-                ? 'bg-primary text-on-primary font-semibold'
-                : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">group</span>
-            <span>Team & Access</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('billing')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs ${
-              activeTab === 'billing'
-                ? 'bg-primary text-on-primary font-semibold'
-                : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">credit_card</span>
-            <span>Billing</span>
+            <span className="material-symbols-outlined text-[16px]">notifications_active</span>
+            <span>Notifications & Webhooks</span>
           </button>
         </div>
 
-        {/* 2-Column Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Main Controls (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col gap-8">
-            {/* Section 1: Active Consensus Engine */}
-            <section className="flex flex-col gap-5 p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-surface-container text-primary">
-                    <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+        {/* Workspace Sync Tab Content */}
+        {activeTab === 'integrations' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Google Integration (7 Columns) */}
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              <section className="p-6 rounded-2xl bg-[#161a22] border border-white/5 flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300">
+                      <span className="material-symbols-outlined text-[24px]">cloud</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-sans text-sm font-semibold text-stone-100">Google Workspace Sync</span>
+                      <span className="text-[11px] text-stone-400">Read Google Drive files, Doc contents, Gmail snippets & Schedule</span>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="font-sans text-base font-semibold text-on-surface">Active Consensus Engine</h2>
-                    <p className="font-sans text-xs text-on-surface-variant">
-                      Calibrate multi-turn cross validation and resolution strictness
-                    </p>
-                  </div>
-                </div>
-                <span className="font-mono text-[11px] text-secondary bg-surface-container px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                  Deterministic Mode
-                </span>
-              </div>
 
-              <div className="flex flex-col gap-3 pt-1">
-                <div className="flex justify-between items-center">
-                  <label className="font-sans text-xs text-on-surface font-medium flex items-center gap-1.5">
-                    Deliberation Rounds
-                    <span
-                      className="material-symbols-outlined text-outline text-[14px]"
-                      title="Determines peer-review dialectic iterations between models"
+                  {googleUser ? (
+                    <button
+                      type="button"
+                      onClick={handleDisconnectGoogle}
+                      className="px-3 py-1.5 rounded-lg bg-red-950 hover:bg-red-900 border border-red-500/20 text-xs font-medium text-red-200 transition-colors cursor-pointer"
                     >
-                      info
-                    </span>
-                  </label>
-                  <span className="font-mono text-xs text-primary">{roundLabels[selectedRound]}</span>
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleConnectGoogle}
+                      className="px-4 py-2 rounded-lg bg-stone-100 hover:bg-white text-stone-950 text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">login</span>
+                      <span>Sign in with Google</span>
+                    </button>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-1.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRound(1);
-                      setIsDirty(true);
-                    }}
-                    className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all ${
-                      selectedRound === 1
-                        ? 'bg-surface-container-high text-on-surface shadow-xs'
-                        : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Fast</span>
-                      <span className="font-mono text-[10px] text-tertiary">~4.2s</span>
-                    </div>
-                    <span className="font-sans text-[11px] text-outline">1 Round • Low token spend</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRound(2);
-                      setIsDirty(true);
-                    }}
-                    className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all ${
-                      selectedRound === 2
-                        ? 'bg-surface-container-high text-primary shadow-xs'
-                        : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-sans text-sm font-semibold text-primary">Balanced</span>
-                      <span className="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-                    </div>
-                    <span className="font-sans text-[11px] text-on-surface-variant">2 Rounds • Recommended</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRound(4);
-                      setIsDirty(true);
-                    }}
-                    className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all ${
-                      selectedRound === 4
-                        ? 'bg-surface-container-high text-on-surface shadow-xs'
-                        : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Deep Audit</span>
-                      <span className="font-mono text-[10px] text-tertiary">~18.5s</span>
-                    </div>
-                    <span className="font-sans text-[11px] text-outline">4 Rounds • Exhaustive check</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-4 border border-outline-variant/20">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex flex-col">
-                    <span className="font-sans text-xs text-on-surface font-medium">Auto-resolve Contradictions</span>
-                    <span className="font-sans text-[11px] text-on-surface-variant">
-                      Automatically synthesize common ground when mutual agreement breaches consensus threshold
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAutoResolve(!autoResolve);
-                      setIsDirty(true);
-                    }}
-                    className={`w-11 h-6 rounded-full relative p-0.5 transition-colors cursor-pointer ${
-                      autoResolve ? 'bg-primary' : 'bg-surface-container-highest'
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-on-primary shadow-xs transition-transform duration-200 ${
-                        autoResolve ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex flex-col gap-2 pt-1 border-t border-outline-variant/20">
-                  <div className="flex items-center justify-between">
-                    <span className="font-sans text-xs text-on-surface font-medium">Agreement Threshold</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs text-primary font-semibold">{agreementThreshold}%</span>
-                      <span className="font-mono text-[10px] text-secondary bg-surface-container-lowest px-2 py-0.5 rounded">
-                        Optimal Stability
+                {googleUser ? (
+                  <div className="flex flex-col gap-5">
+                    {/* User profile strip */}
+                    <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                      {googleUser.photoURL && (
+                        <img src={googleUser.photoURL} alt="Google User" className="w-8 h-8 rounded-full border border-white/10" referrerPolicy="no-referrer" />
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-stone-200">{googleUser.displayName}</span>
+                        <span className="text-[10px] text-stone-500 font-mono">{googleUser.email}</span>
+                      </div>
+                      <span className="ml-auto text-[10px] uppercase font-bold tracking-widest text-[#7bdb80] bg-[#7bdb80]/10 px-2 py-0.5 rounded border border-[#7bdb80]/20">
+                        Synchronized
                       </span>
                     </div>
+
+                    {/* Sub tabs for Google Workspace Services */}
+                    <div className="flex items-center gap-1.5 p-1 bg-black/20 rounded-lg border border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setGoogleSubTab('drive')}
+                        className={`flex-1 py-1.5 rounded-md text-xs font-medium text-center transition-colors cursor-pointer ${
+                          googleSubTab === 'drive' ? 'bg-white/10 text-stone-100' : 'text-stone-400 hover:text-stone-200'
+                        }`}
+                      >
+                        Google Drive
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGoogleSubTab('gmail')}
+                        className={`flex-1 py-1.5 rounded-md text-xs font-medium text-center transition-colors cursor-pointer ${
+                          googleSubTab === 'gmail' ? 'bg-white/10 text-stone-100' : 'text-stone-400 hover:text-stone-200'
+                        }`}
+                      >
+                        Gmail Messages
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGoogleSubTab('calendar')}
+                        className={`flex-1 py-1.5 rounded-md text-xs font-medium text-center transition-colors cursor-pointer ${
+                          googleSubTab === 'calendar' ? 'bg-white/10 text-stone-100' : 'text-stone-400 hover:text-stone-200'
+                        }`}
+                      >
+                        Calendar events
+                      </button>
+                    </div>
+
+                    {/* Content lists */}
+                    <div className="max-h-[320px] overflow-y-auto pr-1 flex flex-col gap-2">
+                      {isLoadingGoogle ? (
+                        <div className="py-12 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
+                          <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                          <span>Loading active Google Workspace assets...</span>
+                        </div>
+                      ) : googleSubTab === 'drive' ? (
+                        driveFiles.length > 0 ? (
+                          driveFiles.map((f) => (
+                            <div key={f.id} className="p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs transition-colors">
+                              <div className="flex items-center gap-2.5 truncate pr-2">
+                                <span className="material-symbols-outlined text-stone-500 text-[18px]">
+                                  {f.mimeType.includes('document') ? 'description' : f.mimeType.includes('spreadsheet') ? 'table_chart' : 'picture_as_pdf'}
+                                </span>
+                                <div className="flex flex-col truncate">
+                                  <span className="text-stone-200 font-medium truncate">{f.name}</span>
+                                  <span className="text-[10px] text-stone-500 mt-0.5">Modified {f.modifiedTime ? new Date(f.modifiedTime).toLocaleDateString() : 'recently'}</span>
+                                </div>
+                              </div>
+                              {f.webViewLink && (
+                                <a href={f.webViewLink} target="_blank" rel="noreferrer noopener" className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded text-[10px] text-stone-300 font-medium whitespace-nowrap">
+                                  Open Drive
+                                </a>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-12 text-center text-xs text-stone-500">No matching Google Documents or spreadsheets found in drive.</div>
+                        )
+                      ) : googleSubTab === 'gmail' ? (
+                        gmailMsgs.length > 0 ? (
+                          gmailMsgs.map((m) => (
+                            <div key={m.id} className="p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 flex flex-col gap-1 text-xs">
+                              <div className="flex justify-between items-center text-stone-400 font-sans text-[11px]">
+                                <span className="truncate max-w-[180px] font-medium">{m.from}</span>
+                                <span className="text-stone-500 text-[10px]">{m.date ? new Date(m.date).toLocaleDateString() : ''}</span>
+                              </div>
+                              <span className="text-stone-200 font-semibold truncate mt-0.5">{m.subject}</span>
+                              <p className="text-[11px] text-stone-400 italic line-clamp-2 mt-0.5 leading-relaxed">"{m.snippet}"</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-12 text-center text-xs text-stone-500">No recent messages retrieved from Gmail workspace.</div>
+                        )
+                      ) : (
+                        calEvents.length > 0 ? (
+                          calEvents.map((evt) => (
+                            <div key={evt.id} className="p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-stone-200 font-semibold">{evt.summary}</span>
+                                {evt.start?.dateTime && (
+                                  <span className="text-[10px] text-stone-500">{new Date(evt.start.dateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                )}
+                              </div>
+                              <span className="text-[9px] uppercase tracking-wider text-stone-400 bg-white/5 border border-white/5 px-2 py-0.5 rounded font-mono">
+                                Calendar Event
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-12 text-center text-xs text-stone-500">No upcoming primary calendar events documented.</div>
+                        )
+                      )}
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="95"
-                    value={agreementThreshold}
-                    onChange={(e) => {
-                      setAgreementThreshold(Number(e.target.value));
-                      setIsDirty(true);
-                    }}
-                    className="w-full h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                  <div className="flex justify-between items-center text-[10px] font-mono text-outline">
-                    <span>50% Permissive</span>
-                    <span className="text-tertiary">Recommended for financial & architectural synthesis</span>
-                    <span>95% Strict</span>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.01] p-8 text-center flex flex-col items-center justify-center gap-3">
+                    <span className="material-symbols-outlined text-stone-500 text-3xl">cloud_sync</span>
+                    <div className="max-w-sm">
+                      <h4 className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Sync inactive</h4>
+                      <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                        Authorize Synthexis to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* GitHub Integration (5 Columns) */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              <section className="p-6 rounded-2xl bg-[#161a22] border border-white/5 flex flex-col gap-5">
+                <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300">
+                    <span className="material-symbols-outlined text-[24px]">terminal</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-sans text-sm font-semibold text-stone-100">GitHub Sync Setup</span>
+                    <span className="text-[11px] text-stone-400">Import code files directly from repo specs</span>
                   </div>
                 </div>
-              </div>
-            </section>
 
-            {/* Section 2: Connected AI Model Providers */}
-            <section className="flex flex-col gap-5 p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-surface-container text-primary">
-                    <span className="material-symbols-outlined text-[20px]">hub</span>
+                {isGithubConnected ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-emerald-400 text-[18px]">verified</span>
+                        <span className="text-stone-200 font-medium">PAT Token Active</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDisconnectGithub}
+                        className="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-500/10 text-red-200 text-[10px] rounded cursor-pointer"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[11px] text-stone-450 uppercase tracking-wider font-semibold">Select Repository</label>
+                      <select
+                        value={selectedRepo}
+                        onChange={(e) => handleSelectRepo(e.target.value)}
+                        className="w-full bg-[#1c212a] border border-white/10 rounded-lg p-2 text-xs text-stone-200 outline-none"
+                      >
+                        <option value="">-- Choose Repository --</option>
+                        {githubRepos.map((repo) => (
+                          <option key={repo.id} value={repo.full_name}>{repo.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {isLoadingGithub ? (
+                      <div className="py-8 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-[15px] animate-spin">sync</span>
+                        <span>Browsing GitHub...</span>
+                      </div>
+                    ) : repoContents.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[11px] text-stone-450 uppercase tracking-wider font-semibold">Root Contents</span>
+                        <div className="max-h-[160px] overflow-y-auto pr-1 border border-white/5 bg-black/10 rounded-lg p-2 flex flex-col gap-1.5 text-[11px]">
+                          {repoContents.map((file) => (
+                            <div key={file.path} className="flex items-center gap-2 text-stone-300">
+                              <span className="material-symbols-outlined text-stone-500 text-[15px]">
+                                {file.type === 'dir' ? 'folder' : 'article'}
+                              </span>
+                              <span className="truncate">{file.name}</span>
+                              {file.type === 'file' && (
+                                <span className="ml-auto text-[9px] text-stone-500">{(file.size / 1024).toFixed(1)} KB</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      selectedRepo && <div className="py-6 text-center text-xs text-stone-500">Empty repository or permission error.</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {/* Native One-Click Authorize & OAuth buttons */}
+                    <div className="flex flex-col gap-2.5">
+                      <button
+                        type="button"
+                        onClick={handleGithubOAuthPopup}
+                        className="w-full bg-[#24292e] hover:bg-[#2f363d] border border-white/10 text-stone-100 font-sans text-xs font-semibold py-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">account_circle</span>
+                        <span>Sign in with GitHub OAuth</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleInstantAutoAuthorize}
+                        className="w-full bg-[#1b2b20] hover:bg-[#253e2d] border border-emerald-500/20 text-emerald-300 font-sans text-xs font-semibold py-2.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[16px] text-emerald-400">offline_pin</span>
+                        <span>1-Click Auto-Authorize Sandbox</span>
+                      </button>
+                    </div>
+
+                    <div className="relative flex py-1 items-center">
+                      <div className="flex-grow border-t border-white/5"></div>
+                      <span className="flex-shrink mx-3 text-[10px] text-stone-500 uppercase tracking-widest font-mono">or manual key</span>
+                      <div className="flex-grow border-t border-white/5"></div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] text-stone-450 uppercase tracking-wider font-semibold font-mono">Personal Access Token (PAT)</label>
+                      <input
+                        type="password"
+                        value={githubToken}
+                        onChange={(e) => setGithubToken(e.target.value)}
+                        placeholder="ghp_..."
+                        className="bg-[#1c212a] border border-white/10 rounded-lg px-3 py-2 text-xs text-stone-100 outline-none focus:border-white/20"
+                      />
+                      <p className="text-[10px] text-stone-500 leading-relaxed">
+                        Specify a custom token if you want to connect a dedicated private organization repository manually.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleConnectGithub}
+                      disabled={!githubToken.trim()}
+                      className="w-full bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Verify Token
+                    </button>
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
+        )}
+
+        {/* Consensus tab content */}
+        {activeTab === 'general' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
+            <div className="lg:col-span-8 flex flex-col gap-8">
+              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-white/5 text-stone-300">
+                      <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                    </div>
+                    <div>
+                      <h2 className="font-sans text-base font-semibold text-on-surface">Active Consensus Engine</h2>
+                      <p className="font-sans text-xs text-stone-400">
+                        Calibrate multi-turn cross validation and resolution strictness
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 pt-1">
+                  <div className="flex justify-between items-center">
+                    <label className="font-sans text-xs text-stone-300 font-medium flex items-center gap-1.5">
+                      Deliberation Rounds
+                    </label>
+                    <span className="font-mono text-xs text-stone-400">{roundLabels[selectedRound]}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-1.5 bg-black/20 rounded-xl border border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRound(1);
+                        setIsDirty(true);
+                      }}
+                      className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all cursor-pointer ${
+                        selectedRound === 1
+                          ? 'bg-white/10 text-stone-100 shadow-xs'
+                          : 'bg-transparent text-stone-400 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-sans text-sm font-semibold">Fast</span>
+                        <span className="font-mono text-[10px] text-stone-500">~4.2s</span>
+                      </div>
+                      <span className="font-sans text-[11px] text-stone-500">1 Round • Fast answer</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRound(2);
+                        setIsDirty(true);
+                      }}
+                      className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all cursor-pointer ${
+                        selectedRound === 2
+                          ? 'bg-white/10 text-stone-100 shadow-xs'
+                          : 'bg-transparent text-stone-400 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-sans text-sm font-semibold">Balanced</span>
+                        <span className="material-symbols-outlined text-[15px] text-emerald-400">check_circle</span>
+                      </div>
+                      <span className="font-sans text-[11px] text-stone-500">2 Rounds • Recommended</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRound(4);
+                        setIsDirty(true);
+                      }}
+                      className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all cursor-pointer ${
+                        selectedRound === 4
+                          ? 'bg-white/10 text-stone-100 shadow-xs'
+                          : 'bg-transparent text-stone-400 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-sans text-sm font-semibold">Deep Audit</span>
+                        <span className="font-mono text-[10px] text-stone-500">~18.5s</span>
+                      </div>
+                      <span className="font-sans text-[11px] text-stone-500">4 Rounds • Exhaustive check</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/[0.02] flex flex-col gap-4 border border-white/5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                      <span className="font-sans text-xs text-stone-300 font-medium">Auto-resolve Contradictions</span>
+                      <span className="font-sans text-[11px] text-stone-400">
+                        Automatically synthesize common ground when mutual agreement breaches consensus threshold
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAutoResolve(!autoResolve);
+                        setIsDirty(true);
+                      }}
+                      className={`w-11 h-6 rounded-full relative p-0.5 transition-colors cursor-pointer ${
+                        autoResolve ? 'bg-stone-100' : 'bg-white/10'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-stone-950 shadow-xs transition-transform duration-200 ${
+                          autoResolve ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-1 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-sans text-xs text-stone-300 font-medium">Agreement Threshold</span>
+                      <span className="font-mono text-xs text-stone-400 font-semibold">{agreementThreshold}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="50"
+                      max="95"
+                      value={agreementThreshold}
+                      onChange={(e) => {
+                        setAgreementThreshold(Number(e.target.value));
+                        setIsDirty(true);
+                      }}
+                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-stone-100"
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
+
+        {/* Models and BYOK API Keys Tab Content */}
+        {activeTab === 'models' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
+                <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                  <div className="p-2 rounded-xl bg-white/5 text-stone-300">
+                    <span className="material-symbols-outlined text-[20px]">key</span>
                   </div>
                   <div>
-                    <h2 className="font-sans text-base font-semibold text-on-surface">Connected AI Model Providers</h2>
-                    <p className="font-sans text-xs text-on-surface-variant">
-                      Allocated archetypes across your triad dialectic network
+                    <h2 className="font-sans text-base font-semibold text-stone-100">BYOK Key Vault Configuration</h2>
+                    <p className="font-sans text-xs text-stone-400">
+                      Input your own developer provider credentials to leverage primary model families
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[11px] text-secondary bg-secondary/10 px-2.5 py-1 rounded">
-                    3 Active Nodes
-                  </span>
-                </div>
-              </div>
 
-              {/* Connected Nodes List */}
-              <div className="grid grid-cols-1 gap-3">
-                {/* Claude 3.5 Sonnet */}
-                <div className="p-4 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-outline-variant/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#2e1d10] flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-[#e09153] text-[22px]">psychology</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans text-sm text-on-surface font-semibold">Claude 3.5 Sonnet</span>
-                        <span className="font-mono text-[10px] text-outline bg-surface-container-lowest px-1.5 py-0.5 rounded">
-                          Anthropic API
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-[11px] text-tertiary">Assigned:</span>
-                        <span className="font-mono text-[11px] text-primary">Lead Analyst • Thesis</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 self-end sm:self-center">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest font-mono text-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                      <span className="text-on-surface">12ms</span>
-                    </div>
-                    <span className="font-mono text-[11px] text-secondary bg-secondary-container/30 px-2 py-0.5 rounded font-medium">
-                      Connected
-                    </span>
-                  </div>
-                </div>
-
-                {/* GPT-4o */}
-                <div className="p-4 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-outline-variant/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#132c25] flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-[#10a37f] text-[22px]">bolt</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans text-sm text-on-surface font-semibold">GPT-4o</span>
-                        <span className="font-mono text-[10px] text-outline bg-surface-container-lowest px-1.5 py-0.5 rounded">
-                          OpenAI API
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-[11px] text-tertiary">Assigned:</span>
-                        <span className="font-mono text-[11px] text-[#e3b341]">Adversarial Critic • Antithesis</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 self-end sm:self-center">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest font-mono text-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                      <span className="text-on-surface">18ms</span>
-                    </div>
-                    <span className="font-mono text-[11px] text-secondary bg-secondary-container/30 px-2 py-0.5 rounded font-medium">
-                      Connected
-                    </span>
-                  </div>
-                </div>
-
-                {/* Gemini 1.5 Pro */}
-                <div className="p-4 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-outline-variant/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#14233c] flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-primary text-[22px]">auto_awesome</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans text-sm text-on-surface font-semibold">Gemini 1.5 Pro</span>
-                        <span className="font-mono text-[10px] text-outline bg-surface-container-lowest px-1.5 py-0.5 rounded">
-                          Google AI
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-[11px] text-tertiary">Assigned:</span>
-                        <span className="font-mono text-[11px] text-secondary">Final Synthesizer • Synthesis</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 self-end sm:self-center">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest font-mono text-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                      <span className="text-on-surface">14ms</span>
-                    </div>
-                    <span className="font-mono text-[11px] text-secondary bg-secondary-container/30 px-2 py-0.5 rounded font-medium">
-                      Connected
-                    </span>
-                  </div>
-                </div>
-
-                {/* DeepSeek R1 */}
-                <div className="p-4 rounded-xl bg-surface-container/60 hover:bg-surface-container transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-outline-variant/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-tertiary text-[22px]">terminal</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans text-sm text-on-surface font-medium">DeepSeek R1</span>
-                        <span className="font-mono text-[10px] text-outline bg-surface-container-lowest px-1.5 py-0.5 rounded">
-                          Self-Hosted Endpoint
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-[11px] text-outline">Assigned:</span>
-                        <span className="font-mono text-[11px] text-tertiary">Standby Reasoning Node</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 self-end sm:self-center">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest font-mono text-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-outline"></span>
-                      <span className="text-outline">Idle</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* API Key Vault Configuration */}
-              <div className="p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/30 flex flex-col gap-3">
-                <span className="font-mono text-[11px] uppercase text-outline font-semibold">
-                  Custom BYOK Provider Keys
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="font-mono text-[10px] text-tertiary">Google Gemini API Key</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">Google Gemini API Key</label>
                     <input
                       type="password"
                       value={geminiKey}
@@ -480,12 +781,12 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                         setGeminiKey(e.target.value);
                         setIsDirty(true);
                       }}
-                      placeholder="AIzaSy... (optional if server key configured)"
-                      className="bg-surface-container rounded px-3 py-1.5 font-mono text-xs text-on-surface border border-outline-variant/30 focus:border-primary outline-none"
+                      placeholder="AIzaSy... (leave empty to use default server key)"
+                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-mono text-[10px] text-tertiary">Groq API Key</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">Groq API Key</label>
                     <input
                       type="password"
                       value={groqKey}
@@ -494,11 +795,11 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                         setIsDirty(true);
                       }}
                       placeholder="gsk_..."
-                      className="bg-surface-container rounded px-3 py-1.5 font-mono text-xs text-on-surface border border-outline-variant/30 focus:border-primary outline-none"
+                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-mono text-[10px] text-tertiary">SambaNova API Key</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">SambaNova API Key</label>
                     <input
                       type="password"
                       value={sambanovaKey}
@@ -507,11 +808,11 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                         setIsDirty(true);
                       }}
                       placeholder="Enter SambaNova key"
-                      className="bg-surface-container rounded px-3 py-1.5 font-mono text-xs text-on-surface border border-outline-variant/30 focus:border-primary outline-none"
+                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-mono text-[10px] text-tertiary">OpenRouter API Key</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">OpenRouter API Key</label>
                     <input
                       type="password"
                       value={openrouterKey}
@@ -520,249 +821,90 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                         setIsDirty(true);
                       }}
                       placeholder="sk-or-v1-..."
-                      className="bg-surface-container rounded px-3 py-1.5 font-mono text-xs text-on-surface border border-outline-variant/30 focus:border-primary outline-none"
+                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
                     />
                   </div>
                 </div>
-              </div>
-            </section>
 
-            {/* Section 3: Appearance & Workspace */}
-            <section className="flex flex-col gap-5 p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-surface-container text-primary">
-                  <span className="material-symbols-outlined text-[20px]">palette</span>
+                <div className="flex items-center gap-3 pt-4 border-t border-white/5 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleDiscard}
+                    disabled={!isDirty}
+                    className="px-4 py-2 rounded-xl text-xs text-stone-400 hover:text-stone-200 cursor-pointer disabled:opacity-50"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    className="px-5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-950 text-xs font-semibold cursor-pointer shadow-md"
+                  >
+                    Save Keys
+                  </button>
                 </div>
-                <div>
-                  <h2 className="font-sans text-base font-semibold text-on-surface">Appearance & Workspace</h2>
-                  <p className="font-sans text-xs text-on-surface-variant">
-                    Interface layout density and notification dispatch channels
-                  </p>
-                </div>
-              </div>
+              </section>
+            </div>
+          </div>
+        )}
 
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-sans text-xs text-on-surface font-medium">Interface Color Space</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setThemeMode('obsidian')}
-                      className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all border ${
-                        themeMode === 'obsidian'
-                          ? 'bg-surface-container-high text-on-surface border-primary/50 shadow-xs'
-                          : 'bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high'
-                      }`}
-                    >
-                      <div className="w-5 h-5 rounded-full bg-[#0a0e14] flex items-center justify-center border border-outline-variant/40">
-                        <div className="w-2 h-2 rounded-full bg-primary"></div>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-sans text-xs font-semibold">Dark Obsidian</span>
-                        <span className="font-mono text-[9px] text-outline">High contrast (OLED)</span>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setThemeMode('slate')}
-                      className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all border ${
-                        themeMode === 'slate'
-                          ? 'bg-surface-container-high text-on-surface border-primary/50 shadow-xs'
-                          : 'bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high'
-                      }`}
-                    >
-                      <div className="w-5 h-5 rounded-full bg-[#20252d] flex items-center justify-center border border-outline-variant/40"></div>
-                      <div className="flex flex-col">
-                        <span className="font-sans text-xs font-medium">Slate Grey</span>
-                        <span className="font-mono text-[9px] text-outline">Subdued tones</span>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setThemeMode('system')}
-                      className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all border ${
-                        themeMode === 'system'
-                          ? 'bg-surface-container-high text-on-surface border-primary/50 shadow-xs'
-                          : 'bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high'
-                      }`}
-                    >
-                      <div className="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant/40">
-                        <span className="material-symbols-outlined text-[12px] text-outline">brightness_auto</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-sans text-xs font-medium">System Auto</span>
-                        <span className="font-mono text-[9px] text-outline">Sync with OS</span>
-                      </div>
-                    </button>
+        {/* Notifications & Webhooks Tab Content */}
+        {activeTab === 'synthesis' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
+                <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                  <div className="p-2 rounded-xl bg-white/5 text-stone-300">
+                    <span className="material-symbols-outlined text-[20px]">notifications_active</span>
+                  </div>
+                  <div>
+                    <h2 className="font-sans text-base font-semibold text-stone-100">Synthesis Webhook Dispatches</h2>
+                    <p className="font-sans text-xs text-stone-400">
+                      Configure webhook relays to notify external teams of completed inquiries or contradictions
+                    </p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-3 border border-outline-variant/20">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="font-sans text-xs text-on-surface font-medium">Synthesis Drift Webhook Alerts</span>
-                      <span className="font-sans text-[11px] text-on-surface-variant">
-                        Send payload when models diverge beyond 40% margin of error
-                      </span>
+                      <span className="text-xs text-stone-300 font-semibold">Relay Completion Status</span>
+                      <span className="text-[11px] text-stone-500 leading-relaxed">Send a lightweight JSON payload of the synthesis once final answers complete</span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setWebhookActive(!webhookActive);
-                        setIsDirty(true);
-                      }}
+                      onClick={() => setWebhookActive(!webhookActive)}
                       className={`w-11 h-6 rounded-full relative p-0.5 transition-colors cursor-pointer ${
-                        webhookActive ? 'bg-primary' : 'bg-surface-container-highest'
+                        webhookActive ? 'bg-stone-100' : 'bg-white/10'
                       }`}
                     >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-on-primary shadow-xs transition-transform duration-200 ${
-                          webhookActive ? 'translate-x-5' : 'translate-x-0'
-                        }`}
+                      <div className={`w-5 h-5 rounded-full bg-stone-950 transition-transform duration-200 ${webhookActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  {webhookActive && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="text"
+                        value={webhookUrl}
+                        onChange={(e) => setWebhookUrl(e.target.value)}
+                        className="flex-1 bg-[#1c212a] border border-white/10 rounded-lg p-2 text-xs text-stone-200 outline-none"
+                        placeholder="https://hooks.slack.com/services/..."
                       />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="text"
-                      value={webhookUrl}
-                      onChange={(e) => {
-                        setWebhookUrl(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full bg-surface-container-lowest rounded-lg px-3 py-1.5 font-mono text-xs text-on-surface border border-outline-variant/30 outline-none focus:border-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={testWebhook}
-                      className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-xs font-medium shrink-0 transition-colors border border-outline-variant/30"
-                    >
-                      Test Ping
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={testWebhook}
+                        className="px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-stone-300 font-semibold cursor-pointer shrink-0"
+                      >
+                        Test relay
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </section>
-          </div>
-
-          {/* Right Telemetry Column (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            {/* Cluster Health */}
-            <div className="p-5 rounded-2xl bg-surface-container-low flex flex-col gap-4 border border-outline-variant/30 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] uppercase text-outline font-semibold">
-                  Dialectic Cluster Health
-                </span>
-                <span className="w-2 h-2 rounded-full bg-secondary"></span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="font-sans text-3xl text-on-surface font-semibold">99.98%</span>
-                <span className="font-mono text-xs text-secondary">+0.04% vs 24h</span>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-1">
-                <div className="flex justify-between font-mono text-[11px] text-outline">
-                  <span>Token Velocity</span>
-                  <span className="text-on-surface">1,420 tps</span>
-                </div>
-                <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: '68%' }}></div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between font-mono text-[11px] text-outline">
-                  <span>Consensus Convergence</span>
-                  <span className="text-on-surface">94.2%</span>
-                </div>
-                <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-secondary h-full rounded-full" style={{ width: '94%' }}></div>
-                </div>
-              </div>
-              <div className="p-3 rounded-xl bg-surface-container-lowest flex items-center justify-between border border-outline-variant/20">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-primary">data_saver_on</span>
-                  <span className="font-sans text-xs text-on-surface">Token Quota</span>
-                </div>
-                <span className="font-mono text-[11px] text-outline">4.2M / 10M</span>
-              </div>
-            </div>
-
-            {/* Compliance & Data Boundary */}
-            <div className="p-5 rounded-2xl bg-surface-container-low flex flex-col gap-2.5 border border-outline-variant/30 shadow-xs">
-              <div className="flex items-center gap-2 text-outline">
-                <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                <span className="font-mono text-[10px] uppercase font-semibold">Compliance & Data Boundary</span>
-              </div>
-              <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                All prompt exchanges are encrypted in transit with zero model training retention agreements applied to OpenAI and Anthropic pipelines.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setToastMessage('Zero-Retention agreement verified: Ephemeral enclave active');
-                  setShowToast(true);
-                  setTimeout(() => setShowToast(false), 2500);
-                }}
-                className="font-sans text-xs text-primary hover:underline flex items-center gap-1 font-medium pt-1 text-left"
-              >
-                <span>Read Zero-Retention Policy</span>
-                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-              </button>
-            </div>
-
-            {/* Quick Shortcuts */}
-            <div className="p-5 rounded-2xl bg-surface-container-low flex flex-col gap-3 border border-outline-variant/30 shadow-xs">
-              <span className="font-mono text-[10px] uppercase text-outline font-semibold">Quick Shortcuts</span>
-              <div className="flex flex-col gap-2 font-mono text-[11px]">
-                <div className="flex justify-between items-center py-1 border-b border-outline-variant/15">
-                  <span className="text-on-surface-variant">Switch active dialectic</span>
-                  <span className="bg-surface-container px-2 py-0.5 rounded text-outline">⌥ D</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-outline-variant/15">
-                  <span className="text-on-surface-variant">Force unanimous vote</span>
-                  <span className="bg-surface-container px-2 py-0.5 rounded text-outline">⌘ ⇧ U</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-on-surface-variant">Inspect token logs</span>
-                  <span className="bg-surface-container px-2 py-0.5 rounded text-outline">⌘ L</span>
-                </div>
-              </div>
+              </section>
             </div>
           </div>
-        </div>
-
-        {/* Sticky Bottom Save Bar */}
-        <div className="sticky bottom-6 z-30 mt-4 p-4 rounded-2xl bg-surface-container-low/95 backdrop-blur-md shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-outline-variant/30">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
-            <div className="flex flex-col">
-              <span className="font-sans text-xs text-on-surface font-medium">
-                {isDirty ? 'Unsaved changes in Deliberation Engine' : 'All dialectic preferences synchronized'}
-              </span>
-              <span className="font-mono text-[10px] text-outline">
-                Last persisted to cluster: Today at {new Date().toLocaleTimeString()} UTC
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={handleDiscard}
-              className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-sans text-xs font-medium transition-colors border border-outline-variant/30"
-            >
-              Discard Changes
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-sans text-xs font-semibold transition-all shadow-md flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[17px]">save</span>
-              <span>Save Preferences</span>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

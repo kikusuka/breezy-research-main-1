@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { EvidenceGraphView } from './EvidenceGraphView';
 
 interface LandingPageViewProps {
-  onLaunchWorkspace: (prompt?: string, depth?: 'quick' | 'standard' | 'deep') => void;
+  onLaunchWorkspace: (prompt?: string, depth?: 'solo' | 'standard' | 'deep') => void;
   onOpenNotes: () => void;
   onOpenModels: () => void;
 }
@@ -13,7 +13,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   onOpenModels,
 }) => {
   const [inputText, setInputText] = useState('');
-  const [researchDepth, setResearchDepth] = useState<'quick' | 'standard' | 'deep'>('standard');
+  const [researchDepth, setResearchDepth] = useState<'solo' | 'standard' | 'deep'>('standard');
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -31,6 +31,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const handleSend = () => {
     if (!inputText.trim()) return;
     const prompt = inputText.trim();
+
+    // Coding capabilities guard
+    const isCodeQuery = /code|function|program|write|class|react|html|javascript|python|css|typescript|develop|git|repo/i.test(prompt);
+    const hasGithub = Boolean(localStorage.getItem('synthexis_github_token'));
+    if (isCodeQuery && !hasGithub) {
+      alert("GitHub Integration Required: Synthexis coding capabilities are currently offline. Connect your GitHub Personal Access Token in Settings to mount your repositories, save code files, and run terminal simulations.");
+      return;
+    }
+
     setInputText('');
     setAttachedFile(null);
     onLaunchWorkspace(prompt, researchDepth);
@@ -159,14 +168,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 <div className="flex items-center gap-1 bg-black/25 p-0.5 rounded-lg border border-white/5 text-[11px]">
                   <button
                     type="button"
-                    onClick={() => setResearchDepth('quick')}
+                    onClick={() => setResearchDepth('solo')}
                     className={`px-3 py-1 rounded-md transition-all font-medium ${
-                      researchDepth === 'quick'
+                      researchDepth === 'solo'
                         ? 'bg-white/10 text-stone-100'
                         : 'text-stone-400 hover:text-stone-200'
                     }`}
                   >
-                    Quick
+                    Solo
                   </button>
                   <button
                     type="button"
@@ -177,7 +186,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                         : 'text-stone-400 hover:text-stone-200'
                     }`}
                   >
-                    Standard
+                    Research
                   </button>
                   <button
                     type="button"
