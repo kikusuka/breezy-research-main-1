@@ -467,6 +467,9 @@ export default function App() {
                       ...updatedSteps[idx],
                       status: 'running',
                       agentName: data.agentName || updatedSteps[idx].agentName,
+                      provider: data.provider || updatedSteps[idx].provider,
+                      model: data.model || updatedSteps[idx].model,
+                      role: data.role || updatedSteps[idx].role,
                     };
                   }
                   return { ...s, steps: updatedSteps };

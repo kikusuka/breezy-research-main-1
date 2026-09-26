@@ -265,11 +265,11 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                       {displayName || 'Researcher'}
                     </span>
                     <span className={`font-mono text-[9px] px-2 py-0.5 rounded-full ${authUser ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'}`}>
-                      {authUser ? 'Google OAuth Active' : 'Session Enclave Active'}
+                      {authUser ? 'Google OAuth Active' : 'Local Session Active'}
                     </span>
                   </div>
                   <p className="font-sans text-[11px] text-stone-400 truncate mt-0.5">
-                    {email || 'bpranav763@gmail.com'}
+                    {email || 'researcher@workspace.local'}
                   </p>
                 </div>
               </div>

@@ -63,11 +63,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
     if (!inputText.trim() || isDeliberating) return;
     const prompt = inputText.trim();
     
-    // Coding capabilities guard
-    const isCodeQuery = /code|function|program|write|class|react|html|javascript|python|css|typescript|develop|git|repo/i.test(prompt);
-    const hasGithub = Boolean(localStorage.getItem('synthexis_github_token'));
-    if (isCodeQuery && !hasGithub) {
-      alert("GitHub Integration Required: Synthexis coding capabilities are currently offline. Connect your GitHub Personal Access Token in Settings to mount your repositories, save code files, and run terminal simulations.");
+    // Only guard direct GitHub repo mutations
+    const isGithubRepoOp = /push to repo|commit to repo|open pull request|create pull request|mount github repo/i.test(prompt);
+    const hasGithub = Boolean(localStorage.getItem('synthexis_github_token') || localStorage.getItem('breezy_github_token'));
+    if (isGithubRepoOp && !hasGithub) {
+      alert("GitHub Integration Required: Direct repository commits require a connected GitHub Personal Access Token in Settings.");
       return;
     }
 
@@ -419,7 +419,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     <span>·</span>
                     <span>{activeRound || 1} angles</span>
                     <span>·</span>
-                    <span>{sources.length || 11} sources</span>
+                    <span>{sources.length} sources</span>
                   </div>
                 </div>
 
@@ -539,7 +539,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
             {/* Zero-Pill Footer Metadata Strip */}
             <div className="pt-6 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs text-stone-400 font-sans">
               <div className="flex items-center gap-2">
-                <span>{sources.length || 11} sources</span>
+                <span>{sources.length} sources</span>
                 <span>·</span>
                 <span>{contradictions.length || 0} disagreements</span>
                 <span>·</span>

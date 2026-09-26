@@ -9,7 +9,7 @@ export interface UserProfile {
   roleTitle: string;
   organization: string;
   photoURL?: string;
-  authorizationType: 'google_oauth' | 'session_enclave' | 'guest';
+  authorizationType: 'google_oauth' | 'github_oauth' | 'session_enclave' | 'guest';
 }
 
 const PROFILE_STORAGE_KEY = 'breezy_user_profile';
@@ -21,22 +21,22 @@ export const userProfileService = {
       if (raw) {
         const parsed = JSON.parse(raw);
         return {
-          displayName: parsed.displayName || 'Pranav B',
-          email: parsed.email || 'bpranav763@gmail.com',
-          roleTitle: parsed.roleTitle || 'Principal Systems Engineer',
-          organization: parsed.organization || 'Breezy Research Lab',
+          displayName: parsed.displayName || 'Guest Researcher',
+          email: parsed.email || 'researcher@workspace.local',
+          roleTitle: parsed.roleTitle || 'Research Systems Engineer',
+          organization: parsed.organization || 'Breezy Research Workspace',
           photoURL: parsed.photoURL || undefined,
-          authorizationType: parsed.authorizationType || 'session_enclave',
+          authorizationType: parsed.authorizationType || 'guest',
         };
       }
     } catch {}
 
     return {
-      displayName: 'Pranav B',
-      email: 'bpranav763@gmail.com',
-      roleTitle: 'Principal Systems Engineer',
-      organization: 'Breezy Research Lab',
-      authorizationType: 'session_enclave',
+      displayName: 'Guest Researcher',
+      email: 'researcher@workspace.local',
+      roleTitle: 'Research Systems Engineer',
+      organization: 'Breezy Research Workspace',
+      authorizationType: 'guest',
     };
   },
 

@@ -759,28 +759,32 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
           summary: critiqueSummary,
         });
 
-        // STAGE 3: VERIFIER (Factual & Constraint Verification)
-        const verifierRoundNum = 3;
-        await sendEvent('round_start', {
-          round: verifierRoundNum,
-          role: 'verifier',
-          agentName: 'Verifier',
-          title: 'Factual & Constraint Verification',
-          provider: verifierConfig.provider,
-          model: verifierConfig.model,
-          description: 'Audits claims for empirical validity, constraint violations, and factual precision.',
-        });
+        let verifierContent = '';
+        let verifierSummary = '';
 
-        emitStatus('verifier', 'Verifier', 'Verifying facts, math, and constraints across proposal and critique');
+        // Execute Verifier Stage ONLY IF protocol is 'quad' or default (Deep Mode)
+        if (protocol === 'quad' || protocol === 'deep') {
+          const verifierRoundNum = 3;
+          await sendEvent('round_start', {
+            round: verifierRoundNum,
+            role: 'verifier',
+            agentName: 'Verifier',
+            title: 'Factual & Constraint Verification',
+            provider: verifierConfig.provider,
+            model: verifierConfig.model,
+            description: 'Audits claims for empirical validity, constraint violations, and factual precision.',
+          });
 
-        const verifierSystemPrompt = `You are the **Lead Verifier** in a multi-model dialectical review pipeline.
+          emitStatus('verifier', 'Verifier', 'Verifying facts, math, and constraints across proposal and critique');
+
+          const verifierSystemPrompt = `You are the **Lead Verifier** in a multi-model dialectical review pipeline.
 Your objective is to independently verify claims, math, benchmarks, and constraint assumptions across the Analyst proposal and Critic review.
 Structure your audit in clear Markdown:
 ### Verified Facts & Constraints
 ### Unsubstantiated Claims / Risk Assumptions
 ### Recommended Adjustments`;
 
-        const verifierUserPrompt = `USER INQUIRY: ${prompt}
+          const verifierUserPrompt = `USER INQUIRY: ${prompt}
 
 ANALYST PROPOSAL (CONDENSED):
 ${proposalSummary}
@@ -790,24 +794,23 @@ ${critiqueSummary}
 
 Perform rigorous empirical and constraint verification on these analyses.`;
 
-        let verifierContent = '';
-        const roundVerifierStart = Date.now();
-        try {
-          verifierContent = await callAgentWithStream({
-            provider: verifierConfig.provider,
-            model: verifierConfig.model,
-            apiKey: keys[verifierConfig.provider],
-            systemInstruction: verifierSystemPrompt,
-            userPrompt: verifierUserPrompt,
-            temperature: 0.3,
-            enableSearchGrounding: false,
-            onChunk: (chunk) => {
-              sendEvent('token', { round: verifierRoundNum, token: chunk });
-            },
-            env,
-          });
-        } catch (err: any) {
-          verifierContent = `### Verified Facts & Constraints
+          const roundVerifierStart = Date.now();
+          try {
+            verifierContent = await callAgentWithStream({
+              provider: verifierConfig.provider,
+              model: verifierConfig.model,
+              apiKey: keys[verifierConfig.provider],
+              systemInstruction: verifierSystemPrompt,
+              userPrompt: verifierUserPrompt,
+              temperature: 0.3,
+              enableSearchGrounding: false,
+              onChunk: (chunk) => {
+                sendEvent('token', { round: verifierRoundNum, token: chunk });
+              },
+              env,
+            });
+          } catch (err: any) {
+            verifierContent = `### Verified Facts & Constraints
 * Baseline architecture parameters and API structures verified against standard protocols.
 
 ### Unsubstantiated Claims / Risk Assumptions
@@ -815,20 +818,21 @@ Perform rigorous empirical and constraint verification on these analyses.`;
 
 ### Recommended Adjustments
 * Apply defensive rate-limiting and fallback circuit breakers.`;
+          }
+
+          verifierSummary = await summarizeStage(verifierContent, 'Verifier (Audit)', geminiKey, env);
+
+          await sendEvent('round_complete', {
+            round: verifierRoundNum,
+            role: 'verifier',
+            durationMs: Date.now() - roundVerifierStart,
+            content: verifierContent,
+            summary: verifierSummary,
+          });
         }
 
-        const verifierSummary = await summarizeStage(verifierContent, 'Verifier (Audit)', geminiKey, env);
-
-        await sendEvent('round_complete', {
-          round: verifierRoundNum,
-          role: 'verifier',
-          durationMs: Date.now() - roundVerifierStart,
-          content: verifierContent,
-          summary: verifierSummary,
-        });
-
-        // STAGE 4: SYNTHESIZER (Final Executive Resolution)
-        const finalRoundNum = 4;
+        // SYNTHESIZER (Final Resolution)
+        const finalRoundNum = (protocol === 'quad' || protocol === 'deep') ? 4 : 3;
         await sendEvent('round_start', {
           round: finalRoundNum,
           role: 'arbiter',
@@ -844,7 +848,7 @@ Perform rigorous empirical and constraint verification on these analyses.`;
         const arbiterSystemPrompt = `You are the **Lead Synthesizer** in a multi-model dialectical review pipeline.
 Your objective is to produce the final, definitive synthesized response for the user inquiry.
 Directives:
-1. Review the Analyst's proposal, the Critic's red-teaming, and the Verifier's empirical audit.
+1. Review the Analyst's proposal, the Critic's red-teaming${verifierSummary ? ', and the Verifier\'s empirical audit' : ''}.
 2. Adjudicate impartially: thoroughly integrate mitigations for every genuine edge case.
 3. Deliver a comprehensive, high-caliber, practical solution.
 4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach.
@@ -860,10 +864,7 @@ ${proposalContent}
 ---
 STAGE 2 - CRITIC REVIEW (CONDENSED):
 ${critiqueSummary}
-
----
-STAGE 3 - VERIFIER AUDIT (CONDENSED):
-${verifierSummary}
+${verifierSummary ? `\n---\nSTAGE 3 - VERIFIER AUDIT (CONDENSED):\n${verifierSummary}` : ''}
 
 Synthesize the final, definitive, high-integrity answer for the user.`;
 

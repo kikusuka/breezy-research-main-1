@@ -89,6 +89,21 @@ const DEFAULT_ROLES: CanonicalWorkspaceConfig['roles'] = PRESET_ROLE_CONFIGS.bal
 
 export const providerConfigService = {
   /**
+   * Apply preset and update role seat assignments canonically
+   */
+  applyPreset(presetId: 'fast' | 'balanced' | 'deep' | 'custom'): CanonicalWorkspaceConfig {
+    const current = this.getConfig();
+    const targetRoles = PRESET_ROLE_CONFIGS[presetId];
+    const updated: CanonicalWorkspaceConfig = {
+      ...current,
+      preset: presetId,
+      roles: targetRoles ? { ...targetRoles } : current.roles,
+    };
+    this.saveConfig(updated);
+    return updated;
+  },
+
+  /**
    * Get canonical workspace provider config
    */
   getConfig(): CanonicalWorkspaceConfig {

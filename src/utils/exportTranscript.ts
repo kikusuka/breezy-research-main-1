@@ -97,9 +97,10 @@ export function generateConsensusMarkdown(debate: ExportableDebate): string {
 
   if (debate.metrics) {
     md += `### Analysis Summary\n\n`;
+    const alignmentStr = debate.metrics.consensusRate !== null && debate.metrics.consensusRate !== undefined ? `${debate.metrics.consensusRate}%` : 'N/A';
     md += `| Metric | Value | Description |\n`;
     md += `| :--- | :--- | :--- |\n`;
-    md += `| **Model Alignment** | **${debate.metrics.consensusRate ?? 90}%** | Degree of cross-agent alignment |\n`;
+    md += `| **Model Alignment** | **${alignmentStr}** | Degree of cross-agent alignment |\n`;
     md += `| **Review Intensity** | **${debate.metrics.contentionLevel ?? 'Moderate'}** | Scrutiny level |\n`;
     if (debate.metrics.resolvedPointsCount) {
       md += `| **Points Resolved** | **${debate.metrics.resolvedPointsCount}** | Edge-case vulnerabilities neutralized |\n`;
@@ -138,8 +139,9 @@ export function generateMarkdownTranscript(debate: ExportableDebate): string {
   md += `**Timestamp:** ${humanDate} (${dateStr})\n`;
 
   if (debate.metrics) {
+    const alignVal = debate.metrics.consensusRate !== null && debate.metrics.consensusRate !== undefined ? `${debate.metrics.consensusRate}%` : 'N/A';
     md += `\n### Analysis Telemetry\n`;
-    md += `- **Model Alignment:** ${debate.metrics.consensusRate ?? 90}%\n`;
+    md += `- **Model Alignment:** ${alignVal}\n`;
     md += `- **Review Intensity:** ${debate.metrics.contentionLevel ?? 'Moderate'}\n`;
     if (debate.metrics.resolvedPointsCount) {
       md += `- **Points Resolved:** ${debate.metrics.resolvedPointsCount} items addressed\n`;

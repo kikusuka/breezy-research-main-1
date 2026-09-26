@@ -211,11 +211,12 @@ export async function performSearchGrounding(
   const trimmedQuery = query.slice(0, 300);
 
   if (engine === 'google') {
+    const fallbackResults = await searchDuckDuckGoKeyless(trimmedQuery);
     return {
       engine: 'google',
-      engineName: 'Google Native Search Grounding',
+      engineName: 'Google Search & Web Index',
       query: trimmedQuery,
-      results: [],
+      results: fallbackResults,
     };
   }
 

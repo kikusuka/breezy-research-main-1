@@ -215,13 +215,27 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     setIsDirty(false);
   };
 
-  const testWebhook = () => {
-    setToastMessage('Webhook test ping sent successfully to Slack endpoint');
+  const testWebhook = async () => {
+    if (!webhookUrl || !webhookUrl.startsWith('http')) {
+      setToastMessage('Enter a valid webhook HTTP(S) URL to test dispatch');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+    setToastMessage('Dispatching webhook test payload...');
     setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      setToastMessage('Settings updated: Dialectic rules propagated to 3 nodes');
-    }, 3000);
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Synthesis Webhook Connection Test Successful' }),
+        mode: 'no-cors',
+      });
+      setToastMessage('Webhook test dispatch request completed');
+    } catch {
+      setToastMessage('Webhook dispatch failed: Network error or CORS restriction');
+    }
+    setTimeout(() => setShowToast(false), 3500);
   };
 
   const roundLabels: Record<number, string> = {
@@ -644,10 +658,12 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                         key={item.id}
                         type="button"
                         onClick={() => {
-                          setPreset(item.id as any);
-                          const cfg = providerConfigService.getConfig();
-                          cfg.preset = item.id as any;
-                          providerConfigService.saveConfig(cfg);
+                          const p = item.id as any;
+                          setPreset(p);
+                          const updatedConfig = providerConfigService.applyPreset(p);
+                          if (updatedConfig.roles) {
+                            setRoles(updatedConfig.roles);
+                          }
                           setToastMessage(`Research preset updated to ${item.name}`);
                           setShowToast(true);
                           setTimeout(() => setShowToast(false), 2500);

@@ -157,6 +157,12 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       ? Math.round(((claimsSupported + 0.5 * (claimsIdentified - claimsContradicted - claimsUnresolved)) / claimsIdentified) * 100)
       : null;
 
+    const primaryDomainsRegex = /(\.gov|\.edu|\.org|github\.com|arxiv\.org|apache\.org|ietf\.org|w3\.org|docs?\.)/i;
+    const primarySourcesCount = discoveredSources.filter((s: any) => {
+      const url = s.url || s.domain || s.title || '';
+      return primaryDomainsRegex.test(url);
+    }).length;
+
     const researchMetrics = {
       durationMs,
       claimsIdentified,
@@ -164,7 +170,7 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       claimsContradicted,
       claimsUnresolved,
       sourcesConsulted,
-      primarySourcesCount: 0,
+      primarySourcesCount,
       consensusRate,
     };
 

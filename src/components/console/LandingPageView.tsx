@@ -60,21 +60,27 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     }
   }, [inputText]);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    const prompt = inputText.trim();
+  const [fileContent, setFileContent] = useState<string>('');
 
-    // Coding capabilities guard
-    const isCodeQuery = /code|function|program|write|class|react|html|javascript|python|css|typescript|develop|git|repo/i.test(prompt);
-    const hasGithub = Boolean(localStorage.getItem('synthexis_github_token'));
-    if (isCodeQuery && !hasGithub) {
-      alert("GitHub Integration Required: Synthesis coding capabilities are currently offline. Connect your GitHub Personal Access Token in Settings to mount your repositories, save code files, and run terminal simulations.");
+  const handleSend = () => {
+    if (!inputText.trim() && !fileContent) return;
+    let fullPrompt = inputText.trim();
+    if (fileContent) {
+      fullPrompt += `\n\n--- ATTACHED FILE CONTEXT (${attachedFile?.name}) ---\n${fileContent}`;
+    }
+
+    // Only guard explicit GitHub repo mutations
+    const isGithubRepoOp = /push to repo|commit to repo|open pull request|create pull request|mount github repo/i.test(fullPrompt);
+    const hasGithub = Boolean(localStorage.getItem('synthexis_github_token') || localStorage.getItem('breezy_github_token'));
+    if (isGithubRepoOp && !hasGithub) {
+      alert("GitHub Integration Required: Direct repository commits require a connected GitHub Personal Access Token in Settings.");
       return;
     }
 
     setInputText('');
     setAttachedFile(null);
-    onLaunchWorkspace(prompt, researchDepth);
+    setFileContent('');
+    onLaunchWorkspace(fullPrompt, researchDepth);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -91,6 +97,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         name: file.name,
         size: `${(file.size / 1024).toFixed(1)} KB`,
       });
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target?.result as string;
+        if (text) {
+          setFileContent(text.slice(0, 12000)); // Cap to prevent token limit overflow
+        }
+      };
+      reader.readAsText(file);
     }
   };
 
