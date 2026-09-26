@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { EvidenceGraphView } from './EvidenceGraphView';
 import { providerConfigService, AVAILABLE_MODELS, PRESET_ROLE_CONFIGS } from '../../services/providerConfigService';
+import { loadSessions } from '../../services/sessionStorage';
 
 interface LandingPageViewProps {
   onLaunchWorkspace: (prompt?: string, depth?: 'solo' | 'standard' | 'deep') => void;
@@ -24,6 +25,33 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
   const isUserTyping = inputText.trim().length > 0;
 
+  // Real, concrete factual operational state calculations
+  const [factualMetric, setFactualMetric] = useState('0 research streams · no active sessions');
+
+  useEffect(() => {
+    try {
+      const sessions = loadSessions();
+      const count = sessions.length;
+      if (count === 0) {
+        setFactualMetric('0 active research streams');
+      } else {
+        const lastActiveTime = sessions[0].updatedAt || sessions[0].createdAt || Date.now();
+        const diffMs = Date.now() - lastActiveTime;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        let timeStr = 'active just now';
+        if (diffHours >= 24) {
+          const days = Math.floor(diffHours / 24);
+          timeStr = `last active ${days}d ago`;
+        } else if (diffHours >= 1) {
+          timeStr = `last active ${diffHours}h ago`;
+        }
+        setFactualMetric(`${count} research stream${count > 1 ? 's' : ''} · ${timeStr}`);
+      }
+    } catch {
+      setFactualMetric('0 active research streams');
+    }
+  }, []);
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -40,7 +68,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     const isCodeQuery = /code|function|program|write|class|react|html|javascript|python|css|typescript|develop|git|repo/i.test(prompt);
     const hasGithub = Boolean(localStorage.getItem('synthexis_github_token'));
     if (isCodeQuery && !hasGithub) {
-      alert("GitHub Integration Required: Synthexis coding capabilities are currently offline. Connect your GitHub Personal Access Token in Settings to mount your repositories, save code files, and run terminal simulations.");
+      alert("GitHub Integration Required: Synthesis coding capabilities are currently offline. Connect your GitHub Personal Access Token in Settings to mount your repositories, save code files, and run terminal simulations.");
       return;
     }
 
@@ -86,7 +114,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   ];
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#10141a] text-stone-200">
+    <div className="flex flex-col w-full min-h-screen bg-[#08090c] text-stone-200">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -98,18 +126,23 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
       {/* Hero Container */}
       <div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-12 sm:py-24 flex flex-col justify-center items-center text-center">
-        {/* Understated Wordmark */}
-        <span className="font-serif text-3xl sm:text-4xl font-normal text-stone-100 tracking-tight mb-8">
-          Synthexis
+        {/* Understated Wordmark in elegant Serif */}
+        <span className="font-serif italic text-4xl sm:text-5xl font-normal text-stone-100 tracking-tight mb-2">
+          Synthesis
         </span>
+
+        {/* Dynamic Factual Metric Greeting (No jargon, 100% verified state) */}
+        <div className="font-mono text-[11px] text-[#d4ff33] tracking-wide mb-8 uppercase">
+          {factualMetric}
+        </div>
 
         {/* Minimalist Question Header */}
         <h1 className="text-xl sm:text-2xl font-serif text-stone-300 font-normal mb-8 tracking-wide">
           What are you curious about?
         </h1>
 
-        {/* The Weirdly Simple Input Area */}
-        <div className="w-full bg-[#161a22] border border-white/5 rounded-2xl p-4 shadow-xl text-left focus-within:border-white/10 transition-all max-w-xl">
+        {/* The Industrial Input Area */}
+        <div className="w-full bg-[#0f1218] border border-white/5 rounded-2xl p-4 shadow-xl text-left focus-within:border-[#d4ff33]/40 transition-all max-w-xl">
           <div className="flex items-start gap-3">
             {/* Plus Icon to attach media/files */}
             <button
@@ -134,14 +167,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               />
             </div>
 
-            {/* Standard enter button */}
+            {/* Industrial Acid Lime Send Button */}
             <button
               type="button"
               onClick={handleSend}
               disabled={!inputText.trim()}
               className={`flex items-center justify-center w-8 h-8 rounded-full transition-all shrink-0 mt-0.5 ${
                 inputText.trim()
-                  ? 'bg-stone-100 text-stone-950 hover:bg-white cursor-pointer shadow-md'
+                  ? 'bg-[#d4ff33] text-black hover:bg-[#d4ff33]/90 cursor-pointer shadow-md'
                   : 'bg-white/5 text-stone-500 cursor-not-allowed'
               }`}
               title="Press Enter or Click to Inquire"
@@ -180,7 +213,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   title="One model. Fastest response."
                   className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
                     researchDepth === 'solo'
-                      ? 'bg-white/10 text-stone-100 shadow-xs'
+                      ? 'bg-[#d4ff33]/15 text-[#d4ff33] border border-[#d4ff33]/30 shadow-xs'
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
@@ -197,7 +230,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   title="3 perspectives: Analyst + Critic + Synthesizer."
                   className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
                     researchDepth === 'standard'
-                      ? 'bg-white/10 text-stone-100 shadow-xs'
+                      ? 'bg-[#d4ff33]/15 text-[#d4ff33] border border-[#d4ff33]/30 shadow-xs'
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
@@ -214,7 +247,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   title="4 stages: Analyst + Critic + Verifier + Synthesizer."
                   className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
                     researchDepth === 'deep'
-                      ? 'bg-white/10 text-stone-100 shadow-xs'
+                      ? 'bg-[#d4ff33]/15 text-[#d4ff33] border border-[#d4ff33]/30 shadow-xs'
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
@@ -225,7 +258,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowModelSetup(!showModelSetup)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-stone-300 text-xs transition-colors cursor-pointer border border-white/5"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-stone-300 text-xs transition-colors cursor-pointer border border-white/5 focus:border-[#d4ff33]"
               >
                 <span className="material-symbols-outlined text-[14px]">tune</span>
                 <span className="font-mono text-[11px]">Model Setup</span>
@@ -242,13 +275,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
           {/* Model Setup Popover Panel */}
           {showModelSetup && (
-            <div className="mt-3 p-4 rounded-xl bg-[#141822] border border-white/10 shadow-2xl text-left flex flex-col gap-3 text-stone-200 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="mt-3 p-4 rounded-xl bg-[#0f1218] border border-white/10 shadow-2xl text-left flex flex-col gap-3 text-stone-200 animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="flex items-center justify-between pb-2 border-b border-white/5">
                 <span className="font-sans text-xs font-bold text-stone-100">Model Setup per Role</span>
                 <button
                   type="button"
                   onClick={() => setShowModelSetup(false)}
-                  className="text-stone-400 hover:text-stone-200 text-xs cursor-pointer"
+                  className="text-stone-400 hover:text-[#d4ff33] text-xs cursor-pointer"
                 >
                   Done
                 </button>
@@ -285,7 +318,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                           setConfig(nextConfig);
                           providerConfigService.saveConfig(nextConfig);
                         }}
-                        className="bg-black/60 border border-white/10 rounded px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#ccbdff] cursor-pointer"
+                        className="bg-black/60 border border-white/10 rounded px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#d4ff33] cursor-pointer"
                       >
                         {modelsList.map((m) => (
                           <option key={m.id} value={m.id}>
@@ -340,7 +373,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             How it works
           </span>
           <p className="text-xs text-stone-400 leading-relaxed mb-6">
-            Synthexis translates complex technical questions into distinct perspectives, cross-checks assumptions across multiple frontier models, and verifies findings using verified documents and public datasets. The machinery stays quiet, giving you clear answers backed by original sources.
+            Synthesis translates complex technical questions into distinct perspectives, cross-checks assumptions across multiple frontier models, and verifies findings using verified documents and public datasets. The machinery stays quiet, giving you clear answers backed by original sources.
           </p>
 
           <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
@@ -358,7 +391,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <span className="text-xs font-semibold text-stone-300 group-hover:text-stone-100 transition-colors">
                     {item.title}
                   </span>
-                  <span className="text-[10px] text-stone-500 flex items-center gap-1">
+                  <span className="text-[10px] text-stone-500 flex items-center gap-1 group-hover:text-[#d4ff33] transition-colors">
                     Explore <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
                   </span>
                 </div>
