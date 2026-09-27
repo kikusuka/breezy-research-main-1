@@ -28,21 +28,13 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
         {/* Hero Section */}
         <section className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-2">
           <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#292932]/80 text-[#e6deff] text-xs font-semibold shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.06)] border border-white/5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#45dfa4] animate-pulse"></span>
-              <span>Adaptive Memory Engine · Active Session</span>
-            </div>
-            <h1 className="font-sans text-3xl sm:text-4xl text-stone-100 tracking-tight font-bold">
-              Good afternoon, Elena.
+            <h1 className="font-serif italic text-3xl sm:text-4xl text-stone-100 tracking-tight font-normal">
+              Synap Repository
             </h1>
-            <p className="font-sans text-sm sm:text-base text-[#cac4d4] max-w-2xl leading-relaxed">
-              Your{' '}
-              <span className="text-[#e6deff] font-semibold">
-                Cognitive Neuroscience
-              </span>{' '}
-              final is in 4 days. You’re at{' '}
-              <span className="text-[#45dfa4] font-bold tracking-tight">81%</span>{' '}
-              predicted mastery across core neural pathways.
+            <p className="font-mono text-xs text-[#d4ff33] uppercase tracking-wide">
+              {notebooks.length === 0
+                ? '0 active notebooks · create your first course repository'
+                : `${notebooks.length} notebook${notebooks.length > 1 ? 's' : ''} loaded · ${notebooks.reduce((acc, n) => acc + n.sources.length, 0)} sources indexed`}
             </p>
           </div>
 
@@ -50,7 +42,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
             <button
               type="button"
               onClick={onNewNotebook}
-              className="group relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-[#9d85f2] to-[#4918c8] text-white font-sans text-xs font-semibold shadow-[0_4px_20px_-2px_rgba(157,133,242,0.35)] hover:shadow-[0_8px_28px_rgba(157,133,242,0.5)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+              className="group relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#d4ff33] text-black font-sans text-xs font-bold shadow-md hover:bg-[#d4ff33]/90 transition-all duration-300 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-90">
                 add
@@ -58,33 +50,56 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
               <span>New Notebook</span>
             </button>
 
-            <button
-              type="button"
-              onClick={onResumeReview}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f1f27] hover:bg-[#292932] text-stone-100 font-sans text-xs font-semibold border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.08)] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[#cabeff] text-[18px]">
-                play_circle
-              </span>
-              <span>Resume Review</span>
-              <span className="text-[10px] text-[#cac4d4] px-1.5 py-0.5 rounded bg-[#1b1b23]">
-                Action Potentials
-              </span>
-            </button>
+            {notebooks.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={onResumeReview}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f1f27] hover:bg-[#292932] text-stone-100 font-sans text-xs font-semibold border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.08)] hover:-translate-y-0.5 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[#d4ff33] text-[18px]">
+                    play_circle
+                  </span>
+                  <span>Resume Review</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={onStartQuiz}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1b1b23] hover:bg-[#1f1f27] text-[#cac4d4] hover:text-stone-100 font-sans text-xs font-semibold border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.04)] transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">timer</span>
-              <span>5-Min Quiz</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={onStartQuiz}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1b1b23] hover:bg-[#1f1f27] text-[#cac4d4] hover:text-stone-100 font-sans text-xs font-semibold border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.04)] transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">timer</span>
+                  <span>Practice Quiz</span>
+                </button>
+              </>
+            )}
           </div>
         </section>
 
-        {/* Notebook Cards Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        {/* Empty State when zero notebooks exist */}
+        {notebooks.length === 0 ? (
+          <div className="p-12 rounded-2xl bg-[#14141e] border border-white/5 text-center flex flex-col items-center justify-center gap-4 mt-8">
+            <div className="w-12 h-12 rounded-full bg-[#d4ff33]/10 text-[#d4ff33] border border-[#d4ff33]/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px]">folder_open</span>
+            </div>
+            <div className="flex flex-col gap-1 max-w-md">
+              <span className="font-sans text-base font-bold text-stone-100">No Course Notebooks Yet</span>
+              <p className="font-sans text-xs text-stone-400 leading-relaxed">
+                Organize lecture notes, PDF docs, and generate interactive flashcards grounded directly in your course materials.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onNewNotebook}
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#d4ff33] text-black font-sans text-xs font-bold hover:bg-[#d4ff33]/90 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              <span>Create First Notebook</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {notebooks.map((nb) => {
             const isBio = nb.courseCode.includes('Bio');
             const isCS = nb.courseCode.includes('CS');
@@ -338,6 +353,8 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
             </div>
           </div>
         </section>
+        </div>
+        )}
       </div>
     </div>
   );

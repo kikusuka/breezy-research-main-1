@@ -37,13 +37,20 @@ export function useStorageManager(userId: string | null, isDriveConnected: boole
   // Calculate storage usage
   const calculateUsage = useCallback(async () => {
     if (!userId || !isDriveConnected) {
-      // Fallback for local-only mode (estimate based on localStorage)
-      const localSize = new TextEncoder().encode(localStorage.getItem(`synthexis_sessions_${userId}`) || '').length;
+      // Calculate total size across all Breezy, Synthexis, and Synap storage keys
+      let totalLocalBytes = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('breezy') || key.startsWith('synthexis') || key.startsWith('synap:'))) {
+          const val = localStorage.getItem(key) || '';
+          totalLocalBytes += new TextEncoder().encode(val).length;
+        }
+      }
       const newLimit = limit || (DEFAULT_LIMIT_MB * 1024 * 1024);
-      const pct = Math.min((localSize / newLimit) * 100, 100);
+      const pct = Math.min((totalLocalBytes / newLimit) * 100, 100);
       
       setStats({
-        usedBytes: localSize,
+        usedBytes: totalLocalBytes,
         limitBytes: newLimit,
         percentage: pct,
         fileCount: 0,
@@ -93,9 +100,21 @@ export function useStorageManager(userId: string | null, isDriveConnected: boole
   // Delete specific sessions to free space
   const deleteSessions = async (sessionIds: string[]) => {
     if (!isDriveConnected) {
-      // Local deletion logic would go here
-      alert('Local deletion not fully implemented in this demo');
-      return false;
+      try {
+        const raw = localStorage.getItem('breezy_research_sessions_v1') || localStorage.getItem('synthexis_debate_sessions_v1');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            const next = parsed.filter((s: any) => !sessionIds.includes(s.id));
+            localStorage.setItem('breezy_research_sessions_v1', JSON.stringify(next));
+          }
+        }
+        await calculateUsage();
+        return true;
+      } catch (err) {
+        console.error('Failed to delete local research sessions:', err);
+        return false;
+      }
     }
 
     try {

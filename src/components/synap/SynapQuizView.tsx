@@ -14,30 +14,27 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
 }) => {
   const quizItems = studyItems.filter((i) => i.type === 'quiz');
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedOpt, setSelectedOpt] = useState<number | null>(1); // default demo state on option B
-  const [isAnswered, setIsAnswered] = useState<boolean>(true);
+  const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
+  const [isAnswered, setIsAnswered] = useState<boolean>(false);
 
-  const fallbackItem: SynapStudyItem = {
-    id: 'quiz-default',
-    type: 'quiz',
-    topic: 'Receptor Electrophysiology',
-    prompt:
-      'A researcher applies APV (an NMDA receptor antagonist) to a hippocampal slice preparation before delivering a high-frequency tetanus stimulation (100 Hz). What is the expected physiological outcome on synaptic strength?',
-    options: [
-      'Baseline EPSP amplitudes will permanently double.',
-      'Early and late-phase LTP induction will be blocked; synaptic transmission remains at baseline.',
-      'Long-Term Depression (LTD) will immediately be triggered instead.',
-      'Presynaptic glutamate release will be irreversibly inhibited.',
-    ],
-    correctIndex: 1,
-    explanation:
-      'APV selectively and competitively binds NMDA receptors, preventing Ca²⁺ influx even during robust 100 Hz tetanic depolarization. Because Ca²⁺ entry through NMDA is the essential trigger for CaMKII autophosphorylation, LTP induction is fully blocked. Baseline transmission via AMPA receptors remains unaffected.',
-    reference: 'Referenced in Lecture 8 (Slide 19) & Kandel Ch. 12',
-    history: [],
-  };
+  if (quizItems.length === 0) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-12 rounded-2xl bg-[#14141e] border border-white/5 text-center flex flex-col items-center justify-center gap-4 animate-in fade-in duration-300">
+        <div className="w-12 h-12 rounded-full bg-[#d4ff33]/10 text-[#d4ff33] border border-[#d4ff33]/20 flex items-center justify-center">
+          <span className="material-symbols-outlined text-[24px]">quiz</span>
+        </div>
+        <div className="flex flex-col gap-1 max-w-md">
+          <span className="font-sans text-base font-bold text-stone-100">No Quiz Questions Available</span>
+          <p className="font-sans text-xs text-stone-400 leading-relaxed">
+            Upload notes or lecture materials to your active course notebook, then click &ldquo;Generate Flashcards &amp; Quizzes&rdquo; to build interactive practice sets.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  const item = quizItems[currentStep] || fallbackItem;
-  const isCorrect = selectedOpt === item.correctIndex;
+  const item = quizItems[currentStep];
+  const isCorrect = selectedOpt === item?.correctIndex;
 
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;

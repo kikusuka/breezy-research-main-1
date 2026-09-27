@@ -23,19 +23,11 @@ export const SynapStudyPlanView: React.FC<SynapStudyPlanViewProps> = ({
               </span>
               <span>Adaptive Runway Engine</span>
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-stone-100 tracking-tight font-bold">
-              Elena's Exam Runway & Adaptive Study Schedule
+            <h1 className="font-serif italic text-2xl sm:text-3xl text-stone-100 tracking-tight font-normal">
+              Exam Runway & Adaptive Study Schedule
             </h1>
             <p className="font-sans text-xs sm:text-sm text-[#cac4d4] mt-1">
-              Synced with{' '}
-              <span className="text-[#cabeff] font-medium">
-                Cognitive Neuroscience Final
-              </span>{' '}
-              in 4 days (May 18) and{' '}
-              <span className="text-stone-100 font-medium">
-                Distributed Systems
-              </span>{' '}
-              in 10 days (May 24).
+              Grounded in your active course notebooks and flashcard history.
             </p>
           </div>
 
