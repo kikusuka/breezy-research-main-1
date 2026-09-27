@@ -306,6 +306,8 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           theme={theme}
           onToggleTheme={onToggleTheme}
+          activeNotebookTitle={currentNotebook?.title}
+          activeDaysLeft={currentNotebook?.daysLeft}
         />
 
         {/* View Router */}

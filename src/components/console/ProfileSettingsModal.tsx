@@ -103,10 +103,10 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const handleSave = () => {
     // Save user profile
     userProfileService.saveProfile({
-      displayName: displayName.trim() || 'Pranav B',
-      email: email.trim() || 'bpranav763@gmail.com',
-      roleTitle: roleTitle.trim() || 'Principal Systems Engineer',
-      organization: organization.trim() || 'Breezy Research Lab',
+      displayName: displayName.trim() || 'Guest Researcher',
+      email: email.trim() || 'researcher@workspace.local',
+      roleTitle: roleTitle.trim() || 'Research Systems Engineer',
+      organization: organization.trim() || 'Breezy Research Workspace',
       authorizationType: authUser ? 'google_oauth' : 'session_enclave',
     });
 

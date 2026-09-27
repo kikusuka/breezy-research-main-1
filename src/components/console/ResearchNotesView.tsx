@@ -18,8 +18,10 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  const copyCitation = (title: string) => {
-    navigator.clipboard.writeText(`Synthexis Research Archive: "${title}" (Verified Multi-Model Consensus)`);
+  const copyCitation = (title: string, protocol?: string) => {
+    const isSolo = protocol === 'solo';
+    const label = isSolo ? 'Solo Model Inquiry' : 'Verified Multi-Model Consensus';
+    navigator.clipboard.writeText(`Breezy Research Archive: "${title}" (${label})`);
     showToast('Citation reference copied to clipboard');
   };
 
@@ -268,7 +270,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => copyCitation(note.prompt)}
+                          onClick={() => copyCitation(note.prompt, note.protocol)}
                           className="p-1 rounded text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
                           title="Copy Citation Reference"
                         >

@@ -88,16 +88,18 @@ export const synapService = {
       if (found) return found;
     }
     if (nbs.length > 0) return nbs[0];
+    return null;
+  },
 
-    // Create a default Course Study Notebook if none exist yet
+  createNotebook(title: string, courseCode: string = 'GEN-101'): SynapNotebook {
     const newNb: SynapNotebook = {
       id: `nb-${Date.now()}`,
-      title: 'Research Study Notebook',
-      courseCode: 'RESEARCH-101',
-      track: 'General Academic',
-      examDate: 'Final Review',
-      daysLeft: 14,
-      readiness: 85,
+      title: title.trim() || 'New Notebook',
+      courseCode: courseCode.trim().toUpperCase() || 'COURSE',
+      track: 'General',
+      examDate: '',
+      daysLeft: 0,
+      readiness: 0,
       masteredCount: 0,
       weakCount: 0,
       sourceCount: 0,
@@ -107,7 +109,8 @@ export const synapService = {
       chat: [],
       topicTree: [],
     };
-    this.saveNotebooks([newNb]);
+    const nbs = this.loadNotebooks();
+    this.saveNotebooks([newNb, ...nbs]);
     this.setActiveNotebookId(newNb.id);
     return newNb;
   },

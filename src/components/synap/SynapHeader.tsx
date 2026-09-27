@@ -10,6 +10,8 @@ interface SynapHeaderProps {
   onToggleMobileMenu?: () => void;
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
+  activeNotebookTitle?: string;
+  activeDaysLeft?: number;
 }
 
 export const SynapHeader: React.FC<SynapHeaderProps> = ({
@@ -20,6 +22,8 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
   onToggleMobileMenu,
   theme = 'dark',
   onToggleTheme,
+  activeNotebookTitle,
+  activeDaysLeft,
 }) => {
   return (
     <header className={`fixed top-0 left-0 lg:left-72 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b shadow-sm transition-colors ${
@@ -97,17 +101,21 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
               </span>
             </div>
 
-            <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-[#1b1b23] border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.06)]">
-              <span className="material-symbols-outlined text-[#cabeff] text-[15px]">
-                schedule
-              </span>
-              <span className="font-sans text-[11px] text-stone-200">
-                Neurobiology Final
-              </span>
-              <span className="font-mono text-[11px] text-[#e6deff] font-semibold">
-                • 4 days left
-              </span>
-            </div>
+            {activeNotebookTitle && (
+              <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-[#1b1b23] border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.06)]">
+                <span className="material-symbols-outlined text-[#cabeff] text-[15px]">
+                  schedule
+                </span>
+                <span className="font-sans text-[11px] text-stone-200">
+                  {activeNotebookTitle}
+                </span>
+                {activeDaysLeft !== undefined && activeDaysLeft > 0 && (
+                  <span className="font-mono text-[11px] text-[#e6deff] font-semibold">
+                    • {activeDaysLeft} days left
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

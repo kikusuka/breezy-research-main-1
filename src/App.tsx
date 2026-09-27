@@ -774,27 +774,29 @@ export default function App() {
                 keys={keys}
                 onOpenNotes={() => setActiveTab('notes')}
                 onExportToSynap={(s) => {
-                  const notebook = synapService.getActiveNotebook();
-                  if (notebook) {
-                    synapService.addStudyItems(notebook.id, [
-                      {
-                        id: `item-${Date.now()}-1`,
-                        type: 'flashcard',
-                        prompt: `Key Finding: ${s.prompt.slice(0, 80)}`,
-                        answer: s.finalOutput?.slice(0, 300) || s.prompt,
-                        topic: s.prompt.slice(0, 30),
-                        history: [],
-                      },
-                      {
-                        id: `item-${Date.now()}-2`,
-                        type: 'flashcard',
-                        prompt: `Constraints & Considerations: ${s.prompt.slice(0, 50)}`,
-                        answer: s.steps.find((st) => st.role === 'skeptic')?.content?.slice(0, 300) || 'Operational and scaling considerations audited.',
-                        topic: s.prompt.slice(0, 30),
-                        history: [],
-                      },
-                    ]);
+                  let notebook = synapService.getActiveNotebook();
+                  if (!notebook) {
+                    const promptTitle = s.prompt.slice(0, 40).trim() || 'Research Synthesis';
+                    notebook = synapService.createNotebook(promptTitle, 'RESEARCH');
                   }
+                  synapService.addStudyItems(notebook.id, [
+                    {
+                      id: `item-${Date.now()}-1`,
+                      type: 'flashcard',
+                      prompt: `Key Finding: ${s.prompt.slice(0, 80)}`,
+                      answer: s.finalOutput?.slice(0, 300) || s.prompt,
+                      topic: s.prompt.slice(0, 30),
+                      history: [],
+                    },
+                    {
+                      id: `item-${Date.now()}-2`,
+                      type: 'flashcard',
+                      prompt: `Constraints & Considerations: ${s.prompt.slice(0, 50)}`,
+                      answer: s.steps.find((st) => st.role === 'skeptic')?.content?.slice(0, 300) || 'Operational and scaling considerations audited.',
+                      topic: s.prompt.slice(0, 30),
+                      history: [],
+                    },
+                  ]);
                   setProductMode('synap');
                 }}
                 onOpenInIde={(s) => {
