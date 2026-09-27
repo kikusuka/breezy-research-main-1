@@ -60,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <SynthexisLogoIcon className="w-5 h-5" />
               <span className="font-serif text-base font-medium tracking-tight text-stone-100">
-                Synthexis
+                Consensus
               </span>
             </button>
 

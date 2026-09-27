@@ -60,6 +60,9 @@ export interface CanonicalWorkspaceConfig {
     model: string;
   };
   keys: CanonicalProviderKeys;
+  agreementThreshold?: number;
+  autoResolve?: boolean;
+  selectedRound?: number;
 }
 
 const CANONICAL_STORAGE_KEY = 'breezy_canonical_provider_config';
@@ -118,6 +121,9 @@ export const providerConfigService = {
           roles: { ...DEFAULT_ROLES, ...parsed.roles },
           fallback: parsed.fallback || { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
           keys: parsed.keys || {},
+          agreementThreshold: typeof parsed.agreementThreshold === 'number' ? parsed.agreementThreshold : 78,
+          autoResolve: typeof parsed.autoResolve === 'boolean' ? parsed.autoResolve : true,
+          selectedRound: typeof parsed.selectedRound === 'number' ? parsed.selectedRound : 2,
         };
       }
 
@@ -148,6 +154,9 @@ export const providerConfigService = {
         roles: DEFAULT_ROLES,
         fallback: { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
         keys,
+        agreementThreshold: 78,
+        autoResolve: true,
+        selectedRound: 2,
       };
 
       this.saveConfig(initialConfig);
@@ -160,6 +169,9 @@ export const providerConfigService = {
         roles: DEFAULT_ROLES,
         fallback: { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
         keys: {},
+        agreementThreshold: 78,
+        autoResolve: true,
+        selectedRound: 2,
       };
     }
   },

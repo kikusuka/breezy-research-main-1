@@ -11,10 +11,11 @@ interface WorkspaceSettingsViewProps {
 }
 
 export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ keys, onSaveKeys }) => {
+  const canonical = providerConfigService.getConfig();
   const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthesis' | 'integrations' | 'team' | 'billing'>('integrations');
-  const [selectedRound, setSelectedRound] = useState<number>(2);
-  const [autoResolve, setAutoResolve] = useState<boolean>(true);
-  const [agreementThreshold, setAgreementThreshold] = useState<number>(78);
+  const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
+  const [autoResolve, setAutoResolve] = useState<boolean>(canonical.autoResolve ?? true);
+  const [agreementThreshold, setAgreementThreshold] = useState<number>(canonical.agreementThreshold ?? 78);
   const [themeMode, setThemeMode] = useState<'obsidian' | 'slate' | 'system'>('obsidian');
   const [webhookActive, setWebhookActive] = useState<boolean>(() => {
     const saved = localStorage.getItem('breezy_webhook_active');
@@ -27,7 +28,6 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [toastMessage, setToastMessage] = useState<string>('Settings updated: Configuration saved.');
 
   // Role routing & presets
-  const canonical = providerConfigService.getConfig();
   const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>(canonical.preset || 'balanced');
   const [roles, setRoles] = useState(canonical.roles || {
     architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
@@ -207,9 +207,21 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
       sambanova: sambanovaKey.trim() || undefined,
       openrouter: openrouterKey.trim() || undefined,
     });
+
+    const currentConfig = providerConfigService.getConfig();
+    providerConfigService.saveConfig({
+      ...currentConfig,
+      preset,
+      roles,
+      agreementThreshold,
+      autoResolve,
+      selectedRound,
+    });
+
     localStorage.setItem('breezy_webhook_url', webhookUrl.trim());
     localStorage.setItem('breezy_webhook_active', String(webhookActive));
     setIsDirty(false);
+    setToastMessage('Settings updated: Configuration saved.');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -219,6 +231,14 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     setGroqKey(keys.groq || '');
     setSambanovaKey(keys.sambanova || '');
     setOpenrouterKey(keys.openrouter || '');
+
+    const current = providerConfigService.getConfig();
+    setPreset(current.preset || 'balanced');
+    setRoles(current.roles);
+    setAgreementThreshold(current.agreementThreshold ?? 78);
+    setAutoResolve(current.autoResolve ?? true);
+    setSelectedRound(current.selectedRound ?? 2);
+
     setIsDirty(false);
   };
 
@@ -252,10 +272,22 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     setTimeout(() => setShowToast(false), 3500);
   };
 
+  const getSpeedEstimate = (rounds: number) => {
+    const activeRoles = Object.values(roles);
+    if (activeRoles.length === 0) return `~${rounds * 2}s`;
+    const avgSeconds = activeRoles.reduce((sum, r) => {
+      if (r.provider === 'anthropic' || (r.model && r.model.includes('sonnet'))) return sum + 4.5;
+      if (r.provider === 'groq') return sum + 1.2;
+      return sum + 2.0;
+    }, 0) / activeRoles.length;
+    const totalEst = Math.max(1, Math.round(avgSeconds * rounds));
+    return `~${totalEst}s`;
+  };
+
   const roundLabels: Record<number, string> = {
-    1: '1 Round • Fast',
-    2: '2 Rounds • Balanced',
-    4: '4 Rounds • Deep Audit',
+    1: `1 Round • Fast (${getSpeedEstimate(1)})`,
+    2: `2 Rounds • Balanced (${getSpeedEstimate(2)})`,
+    4: `4 Rounds • Deep Audit (${getSpeedEstimate(4)})`,
   };
 
   const isGoogleConnected = Boolean(googleUser && googleToken);
@@ -810,7 +842,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="font-sans text-sm font-semibold">Fast</span>
-                        <span className="font-mono text-[10px] text-stone-500">~4.2s</span>
+                        <span className="font-mono text-[10px] text-stone-500">{getSpeedEstimate(1)}</span>
                       </div>
                       <span className="font-sans text-[11px] text-stone-500">1 Round • Fast answer</span>
                     </button>
@@ -829,7 +861,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="font-sans text-sm font-semibold">Balanced</span>
-                        <span className="material-symbols-outlined text-[15px] text-emerald-400">check_circle</span>
+                        <span className="font-mono text-[10px] text-stone-500">{getSpeedEstimate(2)}</span>
                       </div>
                       <span className="font-sans text-[11px] text-stone-500">2 Rounds • Recommended</span>
                     </button>
@@ -848,7 +880,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="font-sans text-sm font-semibold">Deep Audit</span>
-                        <span className="font-mono text-[10px] text-stone-500">~18.5s</span>
+                        <span className="font-mono text-[10px] text-stone-500">{getSpeedEstimate(4)}</span>
                       </div>
                       <span className="font-sans text-[11px] text-stone-500">4 Rounds • Exhaustive check</span>
                     </button>

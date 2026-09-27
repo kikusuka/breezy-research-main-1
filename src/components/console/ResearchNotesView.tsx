@@ -5,13 +5,25 @@ import { providerConfigService } from '../../services/providerConfigService';
 interface ResearchNotesViewProps {
   onSelectNotePrompt: (prompt: string) => void;
   sessions: DebateSession[];
+  onSync?: () => void;
 }
 
-export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNotePrompt, sessions }) => {
+export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNotePrompt, sessions, onSync }) => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'solo' | 'multi'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  React.useEffect(() => {
+    const handleStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -65,24 +77,27 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
             <span className="font-mono text-[10px] uppercase text-[#7bdb80] bg-white/5 px-2.5 py-0.5 rounded font-semibold">
               Consensus Archive
             </span>
-            <span className="font-mono text-[11px] text-stone-500">Workspace Verified</span>
+            <span className="font-mono text-[11px] text-stone-500 font-medium">Workspace Saved</span>
           </div>
           <h1 className="text-xl sm:text-2xl text-stone-100 tracking-tight font-semibold font-serif">
             Research Notes & Synthesis Archives
           </h1>
           <p className="text-xs sm:text-sm text-stone-400 max-w-2xl leading-relaxed">
-            All completed inquiries are automatically converted into formal technical archives, backed by extracted claims, identified tensions, and verified publication citations.
+            All completed inquiries are automatically converted into formal technical archives, backed by extracted claims, identified tensions, and relevant publication citations.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => showToast('Vault synchronized with local browser storage')}
+            onClick={() => {
+              onSync?.();
+              showToast('Vault re-indexed with browser storage');
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-stone-300 text-xs font-medium transition-all border border-white/10 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px] text-stone-400">cloud_sync</span>
-            <span>Sync Archives</span>
+            <span>Refresh & Re-index</span>
           </button>
           <button
             type="button"
@@ -300,7 +315,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               <div className="max-w-md">
                 <h4 className="text-xs font-semibold text-stone-300 uppercase tracking-wider">No synthesis archives yet</h4>
                 <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-                  Start an inquiry in the Research Workspace. Once the multi-model analysis is complete, the final verified answers will reside here permanently.
+                  Start an inquiry in the Research Workspace. Once the multi-model analysis is complete, the final compiled answers will reside here permanently.
                 </p>
               </div>
             </div>
@@ -312,8 +327,8 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           <div className="bg-[#161a22] p-4 rounded-xl flex flex-col gap-3 border border-white/5 font-sans">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
               <span className="text-xs font-semibold text-stone-200">Active Peer Nodes</span>
-              <span className="font-mono text-[9px] text-[#7bdb80] bg-[#7bdb80]/10 px-2 py-0.5 rounded border border-[#7bdb80]/20">
-                Online
+              <span className={`font-mono text-[9px] px-2 py-0.5 rounded border ${isOnline ? 'text-[#7bdb80] bg-[#7bdb80]/10 border-[#7bdb80]/20' : 'text-red-400 bg-red-400/10 border-red-500/20'}`}>
+                {isOnline ? 'Online' : 'Offline'}
               </span>
             </div>
             {(() => {
@@ -321,19 +336,28 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               return (
                 <div className="flex flex-col gap-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-stone-400">Node A (Analyst)</span>
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-stone-500'}`}></span>
+                      <span>Node A (Analyst)</span>
+                    </div>
                     <span className="font-mono text-[11px] text-stone-300 truncate max-w-[140px]">
                       {roles.architect?.model || 'Gemini 3.8 Flash'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-stone-400">Node B (Critic)</span>
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-stone-500'}`}></span>
+                      <span>Node B (Critic)</span>
+                    </div>
                     <span className="font-mono text-[11px] text-stone-300 truncate max-w-[140px]">
                       {roles.skeptic?.model || 'Gemini 3.8 Flash'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-stone-400">Node C (Synthesizer)</span>
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-stone-500'}`}></span>
+                      <span>Node C (Synthesizer)</span>
+                    </div>
                     <span className="font-mono text-[11px] text-stone-300 truncate max-w-[140px]">
                       {roles.arbiter?.model || 'Gemini 3.8 Flash'}
                     </span>

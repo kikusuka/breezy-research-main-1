@@ -70,7 +70,7 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
               }`}
             >
               <SynthexisLogoIcon className="w-4 h-4" />
-              <span>Synthexis</span>
+              <span>Consensus</span>
             </button>
 
             <button

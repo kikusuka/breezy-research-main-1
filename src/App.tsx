@@ -444,6 +444,7 @@ export default function App() {
     try {
       const searchEngineValue = keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'duckduckgo'));
       const seatsPayload = providerConfigService.getSeatsPayload();
+      const canonicalConfig = providerConfigService.getConfig();
 
       await apiClient.streamDebate(
         {
@@ -454,6 +455,9 @@ export default function App() {
           searchEngine: searchEngineValue,
           keys,
           seats: seatsPayload,
+          maxRounds: canonicalConfig.selectedRound ?? 2,
+          autoResolveContradictions: canonicalConfig.autoResolve ?? true,
+          agreementThreshold: canonicalConfig.agreementThreshold ?? 78,
         },
         {
           signal: controller.signal,
@@ -830,6 +834,10 @@ export default function App() {
                   startDebate(prompt);
                 }
                 setActiveTab('chat');
+              }}
+              onSync={() => {
+                const refreshed = loadSessions();
+                setSessions(refreshed || []);
               }}
             />
           )}
