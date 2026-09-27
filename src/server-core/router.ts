@@ -496,16 +496,25 @@ Analyze this deliberation and output the JSON object.`;
           arbiterTemp = 0.5;
         }
 
-        const architectConfig = seats.architect || { provider: 'gemini', model: 'gemini-3.8-flash' };
-        const skepticConfig = seats.skeptic || {
-          provider: keys.groq ? 'groq' : (keys.sambanova ? 'sambanova' : 'gemini'),
-          model: keys.groq ? 'llama-3.3-70b-versatile' : (keys.sambanova ? 'Meta-Llama-3.3-70B-Instruct' : 'gemini-3.8-flash'),
+        const resolveSeatConfig = (seat: any, roleName: string, fallbackProv: string, fallbackModel: string) => {
+          const chosen = seat || { provider: fallbackProv, model: fallbackModel };
+          const prov = chosen.provider;
+          if (prov === 'gemini') return chosen;
+
+          const hasKey = Boolean(keys[prov]?.trim() || (env as any)[`${prov.toUpperCase()}_API_KEY`]);
+          if (!hasKey) {
+            sendEvent('notice', {
+              message: `No API key provided for ${prov.toUpperCase()}. Falling back to Gemini for ${roleName} stage.`
+            });
+            return { provider: 'gemini', model: 'gemini-3.8-flash' };
+          }
+          return chosen;
         };
-        const verifierConfig = seats.verifier || {
-          provider: keys.sambanova ? 'sambanova' : 'gemini',
-          model: keys.sambanova ? 'Qwen2.5-72B-Instruct' : 'gemini-3.8-flash',
-        };
-        const arbiterConfig = seats.arbiter || { provider: 'gemini', model: 'gemini-3.8-flash' };
+
+        const architectConfig = resolveSeatConfig(seats.architect, 'Analyst', 'gemini', 'gemini-3.8-flash');
+        const skepticConfig = resolveSeatConfig(seats.skeptic, 'Critic', keys.groq ? 'groq' : 'gemini', keys.groq ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash');
+        const verifierConfig = resolveSeatConfig(seats.verifier, 'Verifier', keys.sambanova ? 'sambanova' : 'gemini', keys.sambanova ? 'Qwen2.5-72B-Instruct' : 'gemini-3.8-flash');
+        const arbiterConfig = resolveSeatConfig(seats.arbiter, 'Synthesizer', 'gemini', 'gemini-3.8-flash');
 
         const emitStatus = (role: string, agentName: string, taskDescription: string) => {
           sendEvent('status', {
@@ -810,14 +819,15 @@ Perform rigorous empirical and constraint verification on these analyses.`;
               env,
             });
           } catch (err: any) {
-            verifierContent = `### Verified Facts & Constraints
-* Baseline architecture parameters and API structures verified against standard protocols.
-
-### Unsubstantiated Claims / Risk Assumptions
-* High-concurrency benchmarks should be verified under real load spikes.
-
-### Recommended Adjustments
-* Apply defensive rate-limiting and fallback circuit breakers.`;
+            const errMsg = err?.message || 'API error or connection timeout';
+            console.warn(`[Verifier Stage Error] ${verifierConfig.provider}/${verifierConfig.model} failed:`, errMsg);
+            verifierContent = `*Verifier Stage Notice: Independent verification model (${verifierConfig.provider}/${verifierConfig.model}) was unavailable (${errMsg}). Final synthesis proceeded directly with Analyst and Critic outputs.*`;
+            
+            await sendEvent('stage_warning', {
+              round: verifierRoundNum,
+              role: 'verifier',
+              message: `Verifier model (${verifierConfig.provider}) unavailable: ${errMsg}. Synthesis proceeded without independent verification.`,
+            });
           }
 
           verifierSummary = await summarizeStage(verifierContent, 'Verifier (Audit)', geminiKey, env);
