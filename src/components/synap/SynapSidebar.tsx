@@ -1,5 +1,6 @@
 import React from 'react';
 import { SynapNavView } from '../../types/synap';
+import { userProfileService } from '../../services/userProfileService';
 
 interface SynapSidebarProps {
   activeView: SynapNavView;
@@ -135,17 +136,15 @@ export const SynapSidebar: React.FC<SynapSidebarProps> = ({
             className="p-3 rounded-xl bg-[#181824] hover:bg-[#222233] border border-white/5 flex items-center justify-between cursor-pointer transition-colors shadow-inner"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <img
-                alt="Profile Avatar"
-                className="w-8 h-8 rounded-full object-cover ring-1 ring-[#9D85F2]/30 shrink-0"
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-              />
+              <div className="w-8 h-8 rounded-full bg-[#d4ff33]/20 text-[#d4ff33] border border-[#d4ff33]/30 flex items-center justify-center font-bold text-xs shrink-0">
+                {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
+              </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-sans text-xs font-bold text-stone-100 truncate">
-                  Elena Rostova
+                  {userProfileService.getProfile().displayName}
                 </span>
                 <span className="font-mono text-[10px] text-[#A5B0D6] truncate">
-                  Neuroscience & CS
+                  {userProfileService.getProfile().roleTitle}
                 </span>
               </div>
             </div>

@@ -213,8 +213,8 @@ export async function performSearchGrounding(
   if (engine === 'google') {
     const fallbackResults = await searchDuckDuckGoKeyless(trimmedQuery);
     return {
-      engine: 'google',
-      engineName: 'Google Search & Web Index',
+      engine: 'duckduckgo',
+      engineName: 'DuckDuckGo Keyless Index',
       query: trimmedQuery,
       results: fallbackResults,
     };

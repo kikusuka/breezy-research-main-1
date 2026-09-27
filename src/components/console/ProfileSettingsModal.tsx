@@ -168,10 +168,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const handleClearAll = () => {
     if (
       confirm(
-        'Are you sure you want to clear all local state, including course notebooks, sources, and chat threads? This action is irreversible.'
+        'Are you sure you want to clear all Breezy workspace data, including research sessions, provider keys, and saved notebooks? This action is irreversible.'
       )
     ) {
-      localStorage.clear();
+      const breezyKeys = Object.keys(localStorage).filter(
+        (k) => k.startsWith('breezy') || k.startsWith('synthexis') || k.startsWith('synap:')
+      );
+      breezyKeys.forEach((k) => localStorage.removeItem(k));
       window.location.reload();
     }
   };

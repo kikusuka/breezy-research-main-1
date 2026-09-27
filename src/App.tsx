@@ -437,6 +437,10 @@ export default function App() {
               if (data.message) {
                 setResearchEvents((prev) => [...prev, data.message]);
               }
+            } else if (data.type === 'stage_warning' || data.type === 'notice') {
+              if (data.message) {
+                setResearchEvents((prev) => [...prev, `⚠️ ${data.message}`]);
+              }
             } else if (data.type === 'search_grounding') {
               if (data.sources) {
                 setResearchEvents((prev) => [...prev, `Found ${data.sources.length} useful sources.`]);

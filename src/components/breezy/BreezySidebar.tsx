@@ -1,5 +1,6 @@
 import React from 'react';
 import { BreezyLogoIcon } from '../icons/ProductLogos';
+import { userProfileService } from '../../services/userProfileService';
 
 export type BreezyTab = 'chat' | 'ide' | 'canvas';
 
@@ -210,17 +211,15 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
           className="pt-3 border-t border-slate-800/80 flex items-center justify-between bg-slate-900/50 p-2.5 rounded-2xl cursor-pointer hover:bg-slate-800/50 transition-colors border border-white/5"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <img
-              alt="Elena Profile"
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-sky-500/40 shrink-0"
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-            />
+            <div className="w-8 h-8 rounded-full bg-[#d4ff33]/20 text-[#d4ff33] border border-[#d4ff33]/30 flex items-center justify-center font-bold text-xs shrink-0">
+              {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
+            </div>
             <div className="flex flex-col min-w-0">
               <span className="font-sans text-xs font-bold text-slate-200 leading-tight truncate">
-                Elena Rostova
+                {userProfileService.getProfile().displayName}
               </span>
-              <span className="font-sans text-[11px] text-slate-400 leading-none truncate mt-0.5">
-                Neuroscience & CS
+              <span className="font-sans text-[10px] text-slate-400 leading-none truncate mt-0.5">
+                {userProfileService.getProfile().roleTitle}
               </span>
             </div>
           </div>

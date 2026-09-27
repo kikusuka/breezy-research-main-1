@@ -1,6 +1,7 @@
 import React from 'react';
 import { DebateSession } from '../../types';
 import { SynthexisLogoIcon } from '../icons/ProductLogos';
+import { userProfileService } from '../../services/userProfileService';
 
 export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing';
 
@@ -194,17 +195,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-stone-400">
             <div className="flex items-center gap-2.5 min-w-0">
-              <img
-                alt="Profile Avatar"
-                className="w-7 h-7 rounded-full object-cover ring-1 ring-sky-500/30 shrink-0"
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-              />
+              <div className="w-7 h-7 rounded-full bg-[#d4ff33]/20 text-[#d4ff33] border border-[#d4ff33]/30 flex items-center justify-center font-bold text-xs shrink-0">
+                {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
+              </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-sans text-[11px] font-bold text-stone-200 leading-tight truncate">
-                  Elena Rostova
+                  {userProfileService.getProfile().displayName}
                 </span>
                 <span className="font-sans text-[10px] text-stone-500 leading-none truncate mt-0.5">
-                  Neuroscience & CS
+                  {userProfileService.getProfile().roleTitle}
                 </span>
               </div>
             </div>
