@@ -9,6 +9,7 @@ interface SynapNotebooksViewProps {
   onResumeReview: () => void;
   onStartQuiz: () => void;
   onClearWorkspace?: () => void;
+  onDeleteNotebook?: (nbId: string, e: React.MouseEvent) => void;
 }
 
 export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
@@ -19,7 +20,18 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
   onResumeReview,
   onStartQuiz,
   onClearWorkspace,
+  onDeleteNotebook,
 }) => {
+  const getDaysLeftText = (examDateStr?: string) => {
+    if (!examDateStr || examDateStr === 'Unscheduled') return 'Unscheduled';
+    const target = new Date(examDateStr);
+    if (isNaN(target.getTime())) return examDateStr;
+    const diffDays = Math.ceil((target.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return 'Past date';
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day left';
+    return `${diffDays} days left`;
+  };
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
       {/* Background Ambient Glows */}
@@ -279,21 +291,33 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                       event
                     </span>
                     <span className="font-mono text-xs text-stone-200">
-                      {nb.examDate}
+                      {nb.examDate || 'Unscheduled'}
                     </span>
                     <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-[#4918c8]/40 text-[#e6deff] font-semibold">
-                      {nb.daysLeft} days left
+                      {getDaysLeftText(nb.examDate)}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 font-sans text-xs font-semibold text-[#ccbdff] group-hover:text-white transition-colors"
-                  >
-                    <span>Enter Synthesis</span>
-                    <span className="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-1">
-                      arrow_forward
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {onDeleteNotebook && (
+                      <button
+                        type="button"
+                        onClick={(e) => onDeleteNotebook(nb.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-white/10 text-stone-400 hover:text-[#ffb4ab] transition-opacity cursor-pointer"
+                        title="Delete notebook"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 font-sans text-xs font-semibold text-[#ccbdff] group-hover:text-white transition-colors"
+                    >
+                      <span>Open Notebook</span>
+                      <span className="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-1">
+                        arrow_forward
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </article>
             );

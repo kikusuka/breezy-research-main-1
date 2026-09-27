@@ -9,6 +9,7 @@ import { SynapQuizView } from './SynapQuizView';
 import { SynapStudyPlanView } from './SynapStudyPlanView';
 import { SynapProviderModal } from './SynapProviderModal';
 import { SynapAddSourceModal } from './SynapAddSourceModal';
+import { SynapCreateNotebookModal } from './SynapCreateNotebookModal';
 import {
   SynapNavView,
   SynapNotebook,
@@ -46,6 +47,8 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
+  const [isCreateNotebookOpen, setIsCreateNotebookOpen] = useState(false);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -78,14 +81,26 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     });
   };
 
-  const handleClearWorkspace = () => {
-    if (confirm('Are you sure you want to clear all stored notebooks and reset your workspace?')) {
-      setNotebooks([]);
-      synapService.saveNotebooks([]);
-      setActiveNotebookId('');
-      synapService.setActiveNotebookId('');
-      showToast('Workspace reset. 0 active notebooks.');
+  const handleDeleteNotebook = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = notebooks.filter((n) => n.id !== id);
+    setNotebooks(next);
+    synapService.saveNotebooks(next);
+    if (activeNotebookId === id) {
+      const nextId = next.length > 0 ? next[0].id : '';
+      setActiveNotebookId(nextId);
+      synapService.setActiveNotebookId(nextId);
     }
+    showToast('Course notebook deleted.');
+  };
+
+  const handleConfirmClearWorkspace = () => {
+    setNotebooks([]);
+    synapService.saveNotebooks([]);
+    setActiveNotebookId('');
+    synapService.setActiveNotebookId('');
+    setIsResetConfirmOpen(false);
+    showToast('Workspace reset. 0 active notebooks.');
   };
 
   const handleSelectNotebook = (id: string) => {
@@ -94,33 +109,50 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     setActiveView('active-notebook');
   };
 
-  const handleNewNotebook = () => {
-    const title = prompt('Enter Notebook Title (e.g. "Advanced Electrophysiology")');
-    if (!title) return;
+  const handleCreateNotebook = (
+    data: Partial<SynapNotebook>,
+    initialSourceText?: string,
+    initialSourceTitle?: string
+  ) => {
+    const initialSources = initialSourceText
+      ? [
+          {
+            id: `src-${Date.now()}`,
+            title: initialSourceTitle || `${data.title} - Initial Notes`,
+            text: initialSourceText,
+            type: 'notes' as const,
+            addedAt: 'Just now',
+            wordCount: `${initialSourceText.split(/\s+/).length} words`,
+            badge: 'User Notes',
+          },
+        ]
+      : [];
+
     const newNb: SynapNotebook = {
       id: `nb-${Date.now()}`,
-      title,
-      courseCode: 'General',
-      track: 'Course Repository',
-      examDate: 'Unscheduled',
-      daysLeft: 0,
+      title: data.title || 'Untitled Course',
+      courseCode: data.courseCode || 'General',
+      track: data.track || 'Course Repository',
+      examDate: data.examDate || 'Unscheduled',
+      daysLeft: data.daysLeft || 0,
       readiness: 0,
       masteredCount: 0,
       weakCount: 0,
-      sourceCount: 0,
+      sourceCount: initialSources.length,
       createdAt: new Date().toISOString(),
       topicTree: [],
-      sources: [],
+      sources: initialSources,
       chat: [],
       studyItems: [],
     };
+
     const next = [newNb, ...notebooks];
     setNotebooks(next);
     synapService.saveNotebooks(next);
     setActiveNotebookId(newNb.id);
     synapService.setActiveNotebookId(newNb.id);
     setActiveView('active-notebook');
-    showToast(`Created "${title}" notebook.`);
+    showToast(`Created "${newNb.title}" notebook.`);
   };
 
   const handleSendMessage = async (text: string) => {
@@ -282,11 +314,12 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
             <SynapNotebooksView
               notebooks={notebooks}
               onSelectNotebook={handleSelectNotebook}
-              onNewNotebook={handleNewNotebook}
+              onNewNotebook={() => setIsCreateNotebookOpen(true)}
               onInspectWeakSpots={() => setActiveView('weak-spots')}
               onResumeReview={() => setActiveView('flashcard-review')}
               onStartQuiz={() => setActiveView('quiz-mode')}
-              onClearWorkspace={handleClearWorkspace}
+              onClearWorkspace={() => setIsResetConfirmOpen(true)}
+              onDeleteNotebook={handleDeleteNotebook}
             />
           )}
 
@@ -350,6 +383,12 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
       </div>
 
       {/* Modals */}
+      <SynapCreateNotebookModal
+        isOpen={isCreateNotebookOpen}
+        onClose={() => setIsCreateNotebookOpen(false)}
+        onCreate={handleCreateNotebook}
+      />
+
       <SynapProviderModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -362,6 +401,37 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
         onClose={() => setIsAddSourceOpen(false)}
         onAddSource={handleAddSource}
       />
+
+      {/* Reset Confirmation Dialog */}
+      {isResetConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-[#161622] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-stone-200">
+            <div className="flex items-center gap-3 text-[#ffb4ab]">
+              <span className="material-symbols-outlined text-[24px]">delete_sweep</span>
+              <h3 className="font-sans text-base font-bold text-stone-100">Reset Study Workspace</h3>
+            </div>
+            <p className="font-sans text-xs text-[#cac4d4] leading-relaxed">
+              This will permanently remove all stored course notebooks, flashcards, and practice histories from your local browser storage.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#cac4d4] hover:text-white transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearWorkspace}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ffb4ab] hover:bg-white text-[#690005] transition-colors cursor-pointer shadow-md"
+              >
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

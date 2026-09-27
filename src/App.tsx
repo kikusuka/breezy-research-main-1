@@ -186,6 +186,12 @@ export default function App() {
     }
   });
 
+  const [appToast, setAppToast] = useState<string | null>(null);
+  const showAppToast = (msg: string) => {
+    setAppToast(msg);
+    setTimeout(() => setAppToast(null), 3500);
+  };
+
   const handleSaveKeys = (newKeys: ProviderKeyConfig) => {
     setKeys(newKeys);
     try {
@@ -663,7 +669,7 @@ export default function App() {
           {breezyTab === 'chat' && (
             <BreezyWorkspace
               onOpenSettings={() => setIsProfileSettingsOpen(true)}
-              toast={(msg) => alert(msg)}
+              toast={showAppToast}
             />
           )}
 
@@ -679,6 +685,14 @@ export default function App() {
             />
           )}
         </div>
+
+        {/* Global Toast Notification */}
+        {appToast && (
+          <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
+            <span>{appToast}</span>
+          </div>
+        )}
 
         <ProfileSettingsModal
           isOpen={isProfileSettingsOpen}
@@ -813,6 +827,14 @@ export default function App() {
         keys={keys}
         onSaveKeys={handleSaveKeys}
       />
+
+      {/* Global Toast Notification */}
+      {appToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
+          <span>{appToast}</span>
+        </div>
+      )}
     </div>
   );
 }

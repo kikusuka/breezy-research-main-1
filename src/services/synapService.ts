@@ -19,11 +19,32 @@ export const synapService = {
       const raw = localStorage.getItem(STORAGE_KEY_NOTEBOOKS);
       if (raw) {
         const parsed: SynapNotebook[] = JSON.parse(raw);
-        // Clean out legacy code-generated sample notebooks so users start with a clean slate
-        const userNotebooks = parsed.filter(
-          (nb) => !['bio-301', 'cs-442', 'math-210', 'phil-102'].includes(nb.id)
-        );
-        return userNotebooks;
+        // Clean out all legacy hardcoded sample/prototype notebooks so users operate on real data
+        const cleanNotebooks = Array.isArray(parsed)
+          ? parsed.filter((nb: SynapNotebook) => {
+              if (!nb || !nb.id) return false;
+              const id = nb.id.toLowerCase();
+              const title = (nb.title || '').toLowerCase();
+              const code = (nb.courseCode || '').toLowerCase();
+              const isSampleId =
+                ['bio-301', 'cs-442', 'math-210', 'math-220', 'phil-102', 'phil-215', 'sample-nb-1', 'sample-nb-2'].includes(id) ||
+                id.startsWith('sample-');
+              const isSampleTitle =
+                title.includes('discrete mathematics') ||
+                title.includes('history of modern philosophy') ||
+                title.includes('cellular neurobiology') ||
+                title.includes('distributed systems & consensus');
+              const isSampleCode =
+                code.includes('math 220') || code.includes('phil 215') || code.includes('bio 301');
+              const isSampleDate =
+                (nb.examDate === 'June 2' || nb.examDate === 'June 8') &&
+                (nb.daysLeft === 19 || nb.daysLeft === 25);
+              return !isSampleId && !isSampleTitle && !isSampleCode && !isSampleDate;
+            })
+          : [];
+        // Immediately persist the sanitized notebooks list back to localStorage
+        this.saveNotebooks(cleanNotebooks);
+        return cleanNotebooks;
       }
     } catch {}
     this.saveNotebooks([]);
