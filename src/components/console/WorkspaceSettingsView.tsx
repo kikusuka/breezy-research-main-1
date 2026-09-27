@@ -16,10 +16,15 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [autoResolve, setAutoResolve] = useState<boolean>(true);
   const [agreementThreshold, setAgreementThreshold] = useState<number>(78);
   const [themeMode, setThemeMode] = useState<'obsidian' | 'slate' | 'system'>('obsidian');
-  const [webhookActive, setWebhookActive] = useState<boolean>(true);
-  const [webhookUrl, setWebhookUrl] = useState<string>('https://hooks.slack.com/services/T04G/B02/synthexis-alerts');
+  const [webhookActive, setWebhookActive] = useState<boolean>(() => {
+    const saved = localStorage.getItem('breezy_webhook_active');
+    return saved !== null ? saved === 'true' : false;
+  });
+  const [webhookUrl, setWebhookUrl] = useState<string>(() => {
+    return localStorage.getItem('breezy_webhook_url') || '';
+  });
   const [showToast, setShowToast] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string>('Settings updated: Dialectic rules propagated to 3 nodes');
+  const [toastMessage, setToastMessage] = useState<string>('Settings updated: Configuration saved.');
 
   // Role routing & presets
   const canonical = providerConfigService.getConfig();
@@ -202,6 +207,8 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
       sambanova: sambanovaKey.trim() || undefined,
       openrouter: openrouterKey.trim() || undefined,
     });
+    localStorage.setItem('breezy_webhook_url', webhookUrl.trim());
+    localStorage.setItem('breezy_webhook_active', String(webhookActive));
     setIsDirty(false);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
