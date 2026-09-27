@@ -24,7 +24,7 @@ export const IdeWorkspaceView: React.FC = () => {
     ''
   ]);
   const [terminalInput, setTerminalInput] = useState<string>('');
-  const [installedPackages, setInstalledPackages] = useState<string[]>(['lodash', 'typescript']);
+  const [installedPackages, setInstalledPackages] = useState<string[]>([]);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
   // Toast State
@@ -184,18 +184,11 @@ export const IdeWorkspaceView: React.FC = () => {
         );
       }
     } else if (primary === 'git' && args[1]?.toLowerCase() === 'log') {
-      output.push(
-        `[preview] Sample commit history (connect repository for live git history):`,
-        `commit 248db1d (HEAD -> main, origin/main)`,
-        `Author: Breezy Team <dev@breezy.io>`,
-        `Date:   ${new Date().toLocaleString()}`,
-        `    refactor: rename branding to Breezy and update migrations`,
-        ``,
-        `commit 1e4db9a`,
-        `Author: Breezy Team <dev@breezy.io>`,
-        `Date:   ${new Date(Date.now() - 86400000).toLocaleString()}`,
-        `    feat: add execution preview and evidence graph grounding`
-      );
+      if (!selectedRepo) {
+        output.push('Error: No workspace repo is currently mounted.');
+      } else {
+        output.push(`[git log] Repository ${selectedRepo} mounted. To inspect commits and pull requests, visit GitHub.`);
+      }
     } else {
       output.push(`sh: command not found: ${primary}. Type "help" for a list of functional parameters.`);
     }

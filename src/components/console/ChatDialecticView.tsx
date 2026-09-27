@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DebateSession, DebateStep, ProviderKeyConfig } from '../../types';
 import { EvidenceGraphView } from './EvidenceGraphView';
+import { userProfileService } from '../../services/userProfileService';
 
 interface ChatDialecticViewProps {
   session: DebateSession;
@@ -79,8 +80,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
   const stepCritic = session.steps.find((s) => s.role === 'skeptic');
   const stepSynthesizer = session.steps.find((s) => s.role === 'synthesizer' || s.role === 'arbiter');
 
-  const agreementScore = session.metrics?.consensusRate || 94.2;
-  const durationText = session.metrics?.durationMs ? `${(session.metrics.durationMs / 1000).toFixed(1)}s` : '1.4s';
+  const durationText = session.metrics?.durationMs
+    ? `${(session.metrics.durationMs / 1000).toFixed(1)}s`
+    : '';
 
   const suggestionChips = [
     'Show cost comparison ($/mo)',
@@ -165,12 +167,14 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-sans text-xs font-semibold text-on-surface">Dr. K. Vance</span>
+              <span className="font-sans text-xs font-semibold text-on-surface">
+                {userProfileService.getProfile().displayName}
+              </span>
               <span className="font-mono text-[10px] text-outline">
                 {new Date(session.createdAt || Date.now()).toLocaleTimeString()}
               </span>
               <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 bg-surface-container rounded text-tertiary border border-outline-variant/30">
-                Architect
+                {userProfileService.getProfile().roleTitle}
               </span>
             </div>
             <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/25 text-on-surface font-sans text-sm leading-relaxed shadow-xs">

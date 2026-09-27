@@ -4,7 +4,7 @@ import { DebateSession, ProviderKeyConfig, EvidenceSource } from '../../types';
 import { EvidenceGraphView } from './EvidenceGraphView';
 
 interface ResearchConversationViewProps {
-  session: DebateSession;
+  session?: DebateSession | null;
   isDeliberating: boolean;
   activeRound: number;
   streamingRoundText: string;
@@ -87,6 +87,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   };
 
   const handleCopy = () => {
+    if (!session) return;
     const textToCopy = session.finalOutput || session.prompt;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
@@ -94,6 +95,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   };
 
   const handleSave = () => {
+    if (!session) return;
     onSaveNote?.(session.prompt.slice(0, 60), session.finalOutput || '');
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -109,11 +111,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
     }
   };
 
-  const sources: EvidenceSource[] = session.evidenceGraph?.sourcesConsulted || [];
-  const claims = session.evidenceGraph?.claims || [];
-  const contradictions = session.evidenceGraph?.contradictions || [];
+  const sources: EvidenceSource[] = session?.evidenceGraph?.sourcesConsulted || [];
+  const claims = session?.evidenceGraph?.claims || [];
+  const contradictions = session?.evidenceGraph?.contradictions || [];
 
-  const isInitialPrompt = !session.finalOutput && !isDeliberating && session.steps.length === 0;
+  const isInitialPrompt = !session || (!session.finalOutput && !isDeliberating && (!session.steps || session.steps.length === 0));
 
   // Real, natural technical topics
   const realScenarios = [
@@ -354,7 +356,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 <div className="flex items-center gap-2">
                   <span className="uppercase tracking-wider text-[10px] text-stone-500 font-semibold">Research Inquiry</span>
                   <span>·</span>
-                  <span>{new Date(session.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{new Date(session?.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {sources.length > 0 && (
                     <>
                       <span>·</span>
@@ -397,7 +399,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-serif font-normal text-stone-100 leading-snug tracking-tight">
-                {session.prompt}
+                {session?.prompt}
               </h1>
             </header>
 
@@ -435,7 +437,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
             {/* Central Sourced Answer */}
             <article className="prose prose-invert max-w-none text-stone-200 leading-relaxed font-sans text-sm sm:text-[15px] space-y-4">
-              {session.finalOutput ? (
+              {session?.finalOutput ? (
                 <ReactMarkdown>{session.finalOutput}</ReactMarkdown>
               ) : isDeliberating && streamingRoundText ? (
                 <div className="opacity-95">
@@ -481,7 +483,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
             )}
 
             {/* Collapsible Research Trail View (technical steps) */}
-            {session.steps && session.steps.length > 0 && (
+            {session?.steps && session.steps.length > 0 && (
               <section className="border border-white/5 rounded-xl overflow-hidden bg-white/[0.01]">
                 <button
                   type="button"
@@ -698,9 +700,9 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
             {/* Evidence Graph View Component */}
             <EvidenceGraphView
-              evidenceGraph={session.evidenceGraph}
-              researchMetrics={session.researchMetrics}
-              sessionTitle={session.prompt}
+              evidenceGraph={session?.evidenceGraph}
+              researchMetrics={session?.researchMetrics}
+              sessionTitle={session?.prompt}
             />
           </div>
         </div>

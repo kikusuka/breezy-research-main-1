@@ -43,6 +43,10 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
 
   const currentCard = cards[currentIndex % cards.length];
 
+  const masteredCount = cards.filter((c) => c.history && c.history.some((h) => h.correct)).length;
+  const strugglingCount = cards.filter((c) => c.history && c.history.some((h) => !h.correct)).length;
+  const reviewingCount = Math.max(0, cards.length - masteredCount - strugglingCount);
+
   const handleRate = (rating: number) => {
     const isCorrect = rating >= 3;
     onRateCard(currentCard.id, rating, isCorrect);
@@ -67,11 +71,11 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
             </span>
             <div className="flex items-center gap-1.5 text-[#cac4d4] font-sans text-xs truncate">
               <span className="text-stone-100 font-semibold tracking-tight">
-                Cognitive Neuroscience
+                Course Study Session
               </span>
               <span className="text-[#938e9d]">•</span>
               <span className="truncate">
-                {currentCard.topic || 'Synaptic Plasticity'}
+                {currentCard.topic || 'Active Concept'}
               </span>
             </div>
           </div>
@@ -79,17 +83,17 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
           <div className="hidden sm:flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1b1b23] border border-white/5 font-mono text-[11px]">
               <span className="w-2 h-2 rounded-full bg-[#45dfa4]"></span>
-              <span className="text-stone-100 font-bold">11</span>
+              <span className="text-stone-100 font-bold">{masteredCount}</span>
               <span className="text-[#cac4d4]">Mastered</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1b1b23] border border-white/5 font-mono text-[11px]">
               <span className="w-2 h-2 rounded-full bg-[#cabeff]"></span>
-              <span className="text-stone-100 font-bold">2</span>
+              <span className="text-stone-100 font-bold">{reviewingCount}</span>
               <span className="text-[#cac4d4]">Reviewing</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1b1b23] border border-white/5 font-mono text-[11px]">
               <span className="w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
-              <span className="text-stone-100 font-bold">1</span>
+              <span className="text-stone-100 font-bold">{strugglingCount}</span>
               <span className="text-[#cac4d4]">Struggling</span>
             </div>
           </div>
@@ -196,76 +200,36 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
                 <div className="w-full my-4 flex items-center gap-3">
                   <div className="flex-1 h-px bg-[#484552]/40 shadow-[0_1px_3px_rgba(157,133,242,0.15)]"></div>
                   <span className="font-mono text-[10px] text-[#cac4d4]/70 uppercase tracking-widest px-1 font-semibold">
-                    Detailed Synthesis
+                    Target Answer &amp; Key Synthesis
                   </span>
                   <div className="flex-1 h-px bg-[#484552]/40 shadow-[0_1px_3px_rgba(157,133,242,0.15)]"></div>
                 </div>
 
                 <div className="flex flex-col gap-3 text-stone-200">
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-[#1f1f27]/60 border border-white/5">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#34343d] text-[#cabeff] font-mono text-xs font-bold shrink-0 mt-0.5">
-                      1
+                  <div className="p-4 rounded-xl bg-[#1f1f27]/80 border border-white/5 flex flex-col gap-2">
+                    <span className="font-sans text-xs font-semibold text-[#cabeff]">
+                      Answer:
                     </span>
-                    <p className="font-sans text-xs sm:text-sm text-stone-200 leading-relaxed">
-                      <strong className="text-[#cabeff] font-semibold">
-                        Molecular Blockade:
-                      </strong>{' '}
-                      At resting membrane potential (-70 mV), extracellular{' '}
-                      <span className="px-1.5 py-0.5 rounded bg-[#34343d] text-[#ccbdff] font-mono text-[11px]">
-                        Mg²⁺
-                      </span>{' '}
-                      ions are drawn electrostatically into the pore, physically obstructing ionic conductance.
+                    <p className="font-sans text-sm text-stone-100 leading-relaxed">
+                      {currentCard.answer || currentCard.explanation || 'No answer details specified for this card.'}
                     </p>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-[#1f1f27]/60 border border-white/5">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#34343d] text-[#45dfa4] font-mono text-xs font-bold shrink-0 mt-0.5">
-                      2
-                    </span>
-                    <p className="font-sans text-xs sm:text-sm text-stone-200 leading-relaxed">
-                      <strong className="text-[#68fcbf] font-semibold">
-                        Electrostatic Expulsion:
-                      </strong>{' '}
-                      When adjacent AMPA receptors trigger local postsynaptic depolarization (~ -30 mV), the positive interior repels the divalent{' '}
-                      <span className="px-1.5 py-0.5 rounded bg-[#34343d] text-[#ccbdff] font-mono text-[11px]">
-                        Mg²⁺
-                      </span>{' '}
-                      cation out of the channel, allowing unhindered{' '}
-                      <span className="font-semibold text-[#45dfa4]">
-                        Ca²⁺ and Na⁺
-                      </span>{' '}
-                      influx.
-                    </p>
-                  </div>
-
-                  {/* Mnemonic Pill */}
-                  <div className="p-2.5 rounded-xl bg-[#0d0d15] border border-white/5 flex items-center justify-between gap-2 overflow-x-auto">
-                    <div className="flex items-center gap-1.5 text-[#cac4d4] font-mono text-[10px] whitespace-nowrap">
-                      <span className="material-symbols-outlined text-[#ccbdff] text-[16px] shrink-0">
-                        insights
+                  {currentCard.explanation && currentCard.explanation !== currentCard.answer && (
+                    <div className="p-3.5 rounded-xl bg-[#0d0d15] border border-white/5 flex flex-col gap-1">
+                      <span className="font-mono text-[10px] uppercase text-[#68fcbf] font-semibold">
+                        Conceptual Explanation
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-[#292932] text-stone-100">
-                        [Glutamate bound]
-                      </span>
-                      <span className="text-[#938e9d] font-bold">+</span>
-                      <span className="px-2 py-0.5 rounded bg-[#292932] text-[#e6deff]">
-                        [Depol to -30mV]
-                      </span>
-                      <span className="text-[#ccbdff] font-bold">➔</span>
-                      <span className="px-2 py-0.5 rounded bg-[#292932] text-[#ffb4ab]">
-                        Mg²⁺ expelled
-                      </span>
-                      <span className="text-[#45dfa4] font-bold">➔</span>
-                      <span className="px-2 py-0.5 rounded bg-[#00ab78]/30 text-[#68fcbf] font-bold">
-                        Ca²⁺ Influx
-                      </span>
+                      <p className="font-sans text-xs text-[#cac4d4] leading-relaxed">
+                        {currentCard.explanation}
+                      </p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </>
             ) : (
               <div className="py-12 text-center text-[#938e9d] font-sans text-xs">
-                Click to flip and reveal detailed synthesis
+                Click to flip and reveal answer
               </div>
             )}
           </div>
@@ -276,7 +240,7 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
               <span className="material-symbols-outlined text-[15px] text-[#938e9d]">
                 menu_book
               </span>
-              <span>{currentCard.reference || 'Kandel Ch. 12, p. 254'}</span>
+              <span>{currentCard.reference || currentCard.topic || 'Course Notes'}</span>
             </div>
 
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#ccbdff]">
@@ -396,10 +360,10 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
           </div>
           <div className="flex flex-col min-w-0">
             <span className="font-sans text-xs font-semibold text-stone-100 truncate">
-              Still confused by the Mg²⁺ electrostatic plug?
+              Need more clarity on this concept?
             </span>
             <span className="font-sans text-[11px] text-[#cac4d4] truncate">
-              Ask Synap Coach to explain using an airlock water valve analogy.
+              Ask Synap Coach to explain &quot;{currentCard.prompt}&quot; with an intuitive analogy.
             </span>
           </div>
         </div>
@@ -408,7 +372,7 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
           type="button"
           onClick={() =>
             onAskAiToBreakDown(
-              'Explain the NMDA Mg2+ electrostatic plug using an airlock water valve analogy.'
+              `Explain "${currentCard.prompt}" with a clear, intuitive analogy and step-by-step conceptual breakdown.`
             )
           }
           className="shrink-0 ml-4 px-3.5 py-2 rounded-xl bg-[#ccbdff] text-[#331282] font-sans text-xs font-bold hover:bg-white transition-all flex items-center gap-1.5 shadow-[0_4px_16px_rgba(157,133,242,0.3)] cursor-pointer"

@@ -18,56 +18,21 @@ interface BreezyCanvasWorkspaceProps {
   onOpenSettings?: () => void;
 }
 
-const DEFAULT_CARDS: CanvasCard[] = [
-  {
-    id: 'card-1',
-    type: 'research',
-    title: 'Distributed Consensus & Event Sourcing',
-    content: 'Investigating high-throughput append-only transaction logs. Comparing Kafka topic partitioning with Raft-replicated memory state machines.',
-    color: 'sky',
-    tags: ['Architecture', 'Distributed-Systems'],
-    createdAt: new Date().toLocaleDateString(),
-  },
-  {
-    id: 'card-2',
-    type: 'code',
-    title: 'SSE Streaming Handler Pattern',
-    content: 'const eventStream = new EventSource("/api/debate/stream");\neventStream.onmessage = (e) => handleToken(JSON.parse(e.data));',
-    color: 'emerald',
-    tags: ['TypeScript', 'Backend'],
-    createdAt: new Date().toLocaleDateString(),
-  },
-  {
-    id: 'card-3',
-    type: 'idea',
-    title: 'Epistemic Uncertainty Scoring in Evidence Trees',
-    content: 'Extract claim-level contradictions automatically and render a calibrated confidence index based on retrieved domain authority.',
-    color: 'violet',
-    tags: ['Research', 'AI'],
-    createdAt: new Date().toLocaleDateString(),
-  },
-  {
-    id: 'card-4',
-    type: 'task',
-    title: 'Verify mobile viewport scaling across iPhone and iPad',
-    content: 'Ensure touch targets >= 44px, sticky bottoms adapt to dynamic viewport height (100dvh), and drawers close on selection.',
-    color: 'amber',
-    tags: ['Mobile', 'UI'],
-    completed: true,
-    createdAt: new Date().toLocaleDateString(),
-  },
-];
-
 export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () => {
   const [cards, setCards] = useState<CanvasCard[]>(() => {
     try {
       const stored = localStorage.getItem('breezy:canvas:cards');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const userCards = parsed.filter(
+            (c: CanvasCard) => !['card-1', 'card-2', 'card-3', 'card-4'].includes(c.id)
+          );
+          return userCards;
+        }
       }
     } catch {}
-    return DEFAULT_CARDS;
+    return [];
   });
 
   const [activeFilter, setActiveFilter] = useState<'all' | CanvasCardType>('all');

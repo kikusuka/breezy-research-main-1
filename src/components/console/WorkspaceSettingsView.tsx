@@ -222,18 +222,25 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
       setTimeout(() => setShowToast(false), 3000);
       return;
     }
-    setToastMessage('Dispatching webhook test payload...');
+    setToastMessage('Dispatching webhook test payload via backend...');
     setShowToast(true);
     try {
-      const res = await fetch(webhookUrl, {
+      const res = await fetch('/api/webhook/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: 'Synthesis Webhook Connection Test Successful' }),
-        mode: 'no-cors',
+        body: JSON.stringify({
+          webhookUrl,
+          payload: { text: 'Breezy Synthesis Webhook Connection Test Successful' },
+        }),
       });
-      setToastMessage('Webhook test dispatch request completed');
-    } catch {
-      setToastMessage('Webhook dispatch failed: Network error or CORS restriction');
+      const data = await res.json();
+      if (data.success) {
+        setToastMessage(`Webhook payload accepted (HTTP ${data.status})`);
+      } else {
+        setToastMessage(`Webhook dispatch rejected: ${data.error || 'HTTP ' + data.status}`);
+      }
+    } catch (err: any) {
+      setToastMessage(`Webhook test failed: ${err.message || 'Connection error'}`);
     }
     setTimeout(() => setShowToast(false), 3500);
   };

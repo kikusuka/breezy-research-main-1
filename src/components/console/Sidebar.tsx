@@ -17,6 +17,7 @@ interface SidebarProps {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
   onOpenProfile?: () => void;
+  onDeleteSession?: (id: string, e: React.MouseEvent) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -29,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile = false,
   onCloseMobile,
   onOpenProfile,
+  onDeleteSession,
 }) => {
   return (
     <>
@@ -152,38 +154,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
 
             <div className="flex flex-col gap-1">
-              {sessions.map((s) => {
-                const isActive = s.id === activeSessionId && activeTab === 'chat';
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => {
-                      onSelectSession(s.id);
-                      onSelectTab('chat');
-                      onCloseMobile?.();
-                    }}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-colors flex flex-col gap-1 ${
-                      isActive
-                        ? 'bg-white/10 text-stone-100 font-medium border border-white/10'
-                        : 'text-stone-400 hover:bg-white/[0.04] hover:text-stone-200'
-                    }`}
-                  >
-                    <span className="truncate leading-tight">
-                      {s.prompt}
-                    </span>
-                    <div className="flex items-center gap-1.5 text-[10px] text-stone-500">
-                      <span>{new Date(s.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                      {s.evidenceGraph?.sourcesConsulted && s.evidenceGraph.sourcesConsulted.length > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{s.evidenceGraph.sourcesConsulted.length} sources</span>
-                        </>
+              {sessions.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-stone-500 font-sans">
+                  No inquiries yet.
+                </p>
+              ) : (
+                sessions.map((s) => {
+                  if (!s) return null;
+                  const isActive = s.id === activeSessionId && activeTab === 'chat';
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => {
+                        onSelectSession(s.id);
+                        onSelectTab('chat');
+                        onCloseMobile?.();
+                      }}
+                      className={`group w-full text-left px-3 py-2.5 rounded-lg text-xs transition-colors flex items-start justify-between gap-2 cursor-pointer ${
+                        isActive
+                          ? 'bg-white/10 text-stone-100 font-medium border border-white/10'
+                          : 'text-stone-400 hover:bg-white/[0.04] hover:text-stone-200'
+                      }`}
+                    >
+                      <div className="flex flex-col gap-1 min-w-0 flex-1">
+                        <span className="truncate leading-tight">
+                          {s.prompt}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-stone-500">
+                          <span>{new Date(s.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                          {s.evidenceGraph?.sourcesConsulted && s.evidenceGraph.sourcesConsulted.length > 0 && (
+                            <>
+                              <span>·</span>
+                              <span>{s.evidenceGraph.sourcesConsulted.length} sources</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {onDeleteSession && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteSession(s.id, e);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 text-stone-500 hover:text-stone-200 transition-opacity shrink-0"
+                          title="Delete inquiry"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">close</span>
+                        </button>
                       )}
                     </div>
-                  </button>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

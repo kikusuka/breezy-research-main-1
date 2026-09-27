@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DebateSession } from '../../types';
+import { providerConfigService } from '../../services/providerConfigService';
 
 interface ResearchNotesViewProps {
   onSelectNotePrompt: (prompt: string) => void;
@@ -128,7 +129,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           <div className="flex flex-col">
             <span className="text-[10px] uppercase text-stone-500 font-semibold font-mono">Total Sources</span>
             <span className="text-xl text-emerald-400 font-semibold mt-0.5 tabular-nums">
-              {completedSessions.reduce((acc, s) => acc + (s.evidenceGraph?.sourcesConsulted?.length || 0), 0)}
+              {completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0)}
             </span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-stone-300 border border-white/10">
@@ -213,6 +214,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               }
             >
               {filteredSessions.map((note) => {
+                if (!note) return null;
                 const sourceCount = note.evidenceGraph?.sourcesConsulted?.length || 0;
                 const claimCount = note.evidenceGraph?.claims?.length || 0;
                 const contradictionCount = note.evidenceGraph?.contradictions?.length || 0;
@@ -308,20 +310,31 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                 Online
               </span>
             </div>
-            <div className="flex flex-col gap-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-stone-400">Node A (Analyst)</span>
-                <span className="font-mono text-[11px] text-stone-300">Claude 3.5 Sonnet</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-stone-400">Node B (Critic)</span>
-                <span className="font-mono text-[11px] text-stone-300">GPT-4o</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-stone-400">Node C (Synthesizer)</span>
-                <span className="font-mono text-[11px] text-stone-300">Gemini 3.8 Flash</span>
-              </div>
-            </div>
+            {(() => {
+              const roles = providerConfigService.getConfig().roles;
+              return (
+                <div className="flex flex-col gap-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-stone-400">Node A (Analyst)</span>
+                    <span className="font-mono text-[11px] text-stone-300 truncate max-w-[140px]">
+                      {roles.architect?.model || 'Gemini 3.8 Flash'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-stone-400">Node B (Critic)</span>
+                    <span className="font-mono text-[11px] text-stone-300 truncate max-w-[140px]">
+                      {roles.skeptic?.model || 'Gemini 3.8 Flash'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-stone-400">Node C (Synthesizer)</span>
+                    <span className="font-mono text-[11px] text-stone-300 truncate max-w-[140px]">
+                      {roles.arbiter?.model || 'Gemini 3.8 Flash'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="bg-[#161a22] p-4 rounded-xl flex flex-col gap-2.5 border border-white/5 font-sans text-xs">

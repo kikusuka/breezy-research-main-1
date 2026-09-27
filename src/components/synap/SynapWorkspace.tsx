@@ -54,6 +54,16 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const totalStudyItems = notebooks.reduce((acc, n) => acc + n.studyItems.length, 0);
+  const totalMastered = notebooks.reduce(
+    (acc, n) =>
+      acc +
+      n.studyItems.filter((i) => i.history && i.history.some((h) => h.correct)).length,
+    0
+  );
+  const overallReadiness =
+    totalStudyItems > 0 ? Math.round((totalMastered / totalStudyItems) * 100) : 0;
+
   const currentNotebook =
     notebooks.find((n) => n.id === activeNotebookId) ?? notebooks[0] ?? null;
 
@@ -66,6 +76,16 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
       synapService.saveNotebooks(next);
       return next;
     });
+  };
+
+  const handleClearWorkspace = () => {
+    if (confirm('Are you sure you want to clear all stored notebooks and reset your workspace?')) {
+      setNotebooks([]);
+      synapService.saveNotebooks([]);
+      setActiveNotebookId('');
+      synapService.setActiveNotebookId('');
+      showToast('Workspace reset. 0 active notebooks.');
+    }
   };
 
   const handleSelectNotebook = (id: string) => {
@@ -247,7 +267,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
       <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
         {/* Top Header */}
         <SynapHeader
-          readinessPercentage={currentNotebook?.readiness ?? 0}
+          readinessPercentage={overallReadiness}
           productMode={productMode}
           onSelectProductMode={onSelectProductMode}
           onOpenQuickJump={() => setActiveView('weak-spots')}
@@ -266,6 +286,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
               onInspectWeakSpots={() => setActiveView('weak-spots')}
               onResumeReview={() => setActiveView('flashcard-review')}
               onStartQuiz={() => setActiveView('quiz-mode')}
+              onClearWorkspace={handleClearWorkspace}
             />
           )}
 
@@ -281,6 +302,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
 
           {activeView === 'weak-spots' && (
             <SynapWeakSpotsView
+              notebooks={notebooks}
               onStartTriage={() => setActiveView('flashcard-review')}
               onReviewCard={(concept) => {
                 showToast(`Assembling triage for ${concept}...`);
@@ -320,6 +342,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
 
           {activeView === 'study-plan' && (
             <SynapStudyPlanView
+              notebooks={notebooks}
               onStartFlashcards={() => setActiveView('flashcard-review')}
             />
           )}

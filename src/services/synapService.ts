@@ -18,11 +18,16 @@ export const synapService = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_NOTEBOOKS);
       if (raw) {
-        return JSON.parse(raw);
+        const parsed: SynapNotebook[] = JSON.parse(raw);
+        // Clean out legacy code-generated sample notebooks so users start with a clean slate
+        const userNotebooks = parsed.filter(
+          (nb) => !['bio-301', 'cs-442', 'math-210', 'phil-102'].includes(nb.id)
+        );
+        return userNotebooks;
       }
     } catch {}
-    this.saveNotebooks(initialNotebooks);
-    return initialNotebooks;
+    this.saveNotebooks([]);
+    return [];
   },
 
   saveNotebooks(notebooks: SynapNotebook[]): void {
@@ -34,7 +39,7 @@ export const synapService = {
   },
 
   getActiveNotebookId(): string {
-    return localStorage.getItem(STORAGE_KEY_ACTIVE_NB) || 'bio-301';
+    return localStorage.getItem(STORAGE_KEY_ACTIVE_NB) || '';
   },
 
   setActiveNotebookId(id: string): void {
@@ -66,6 +71,10 @@ export const synapService = {
     sources: SynapSource[],
     systemInstruction = ''
   ): Promise<string> {
+    if (!sources || sources.length === 0) {
+      return "This notebook has no indexed document sources yet. Upload notes, PDFs, or slides using 'Add Doc / PDF' to enable grounded AI answers.";
+    }
+
     const provider = this.getProvider();
     const context = sources
       .map((s) => `--- SOURCE: ${s.title} ---\n${s.text}`)

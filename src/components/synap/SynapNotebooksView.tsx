@@ -8,6 +8,7 @@ interface SynapNotebooksViewProps {
   onInspectWeakSpots: () => void;
   onResumeReview: () => void;
   onStartQuiz: () => void;
+  onClearWorkspace?: () => void;
 }
 
 export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
@@ -17,6 +18,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
   onInspectWeakSpots,
   onResumeReview,
   onStartQuiz,
+  onClearWorkspace,
 }) => {
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -49,6 +51,18 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
               </span>
               <span>New Notebook</span>
             </button>
+
+            {onClearWorkspace && (
+              <button
+                type="button"
+                onClick={onClearWorkspace}
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-[#1f1f27] hover:bg-[#292932] text-[#ffb4ab] font-sans text-xs font-semibold border border-white/5 hover:border-[#ffb4ab]/30 transition-all cursor-pointer"
+                title="Clear all stored notebooks and reset to fresh empty state"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                <span>Reset Workspace</span>
+              </button>
+            )}
 
             {notebooks.length > 0 && (
               <>
@@ -101,20 +115,27 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
           <div className="space-y-6">
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {notebooks.map((nb) => {
-            const isBio = nb.courseCode.includes('Bio');
-            const isCS = nb.courseCode.includes('CS');
-            const isMath = nb.courseCode.includes('Math');
-            const isPhil = nb.courseCode.includes('Phil');
+            const realTotalItems = nb.studyItems.length;
+            const realMasteredCount = nb.studyItems.filter(
+              (i) => i.history && i.history.some((h) => h.correct)
+            ).length;
+            const realWeakCount = nb.studyItems.filter(
+              (i) => i.history && i.history.some((h) => !h.correct)
+            ).length;
+            const realSourceCount = nb.sources.length;
+            const computedReadiness =
+              realTotalItems > 0
+                ? Math.round((realMasteredCount / realTotalItems) * 100)
+                : 0;
 
-            const strokeColor = isBio
-              ? '#ccbdff'
-              : isCS
-              ? '#FBBF24'
-              : isMath
-              ? '#45dfa4'
-              : '#cabeff';
+            const strokeColor =
+              computedReadiness >= 75
+                ? '#45dfa4'
+                : computedReadiness >= 40
+                ? '#ccbdff'
+                : '#ffb4ab';
 
-            const dashOffset = 188.5 - (188.5 * nb.readiness) / 100;
+            const dashOffset = 188.5 - (188.5 * computedReadiness) / 100;
 
             return (
               <article
@@ -127,11 +148,11 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-mono text-[#ccbdff] uppercase tracking-wider">
-                          Course · {nb.courseCode}
+                          Course · {nb.courseCode || 'General'}
                         </span>
                         <span className="text-[#938e9d] text-xs">•</span>
                         <span className="text-[11px] font-mono text-[#cabeff]">
-                          {nb.track}
+                          {nb.track || 'Course Repository'}
                         </span>
                       </div>
                       <h2 className="font-sans text-lg text-stone-100 font-semibold group-hover:text-[#ccbdff] transition-colors">
@@ -166,7 +187,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                       </svg>
                       <div className="absolute flex flex-col items-center justify-center">
                         <span className="font-mono text-sm text-stone-100 font-bold leading-none">
-                          {nb.readiness}%
+                          {computedReadiness}%
                         </span>
                         <span className="font-mono text-[8px] text-[#cac4d4] uppercase tracking-tighter mt-0.5">
                           Readiness
@@ -175,45 +196,47 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Vulnerability Banner */}
+                  {/* Status Banner */}
                   <div className="p-3.5 rounded-xl bg-[#0d0d15]/80 border border-white/5 space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#cac4d4] flex items-center gap-1.5 font-medium">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            isBio || isCS ? 'bg-[#ffb4ab] animate-ping' : 'bg-[#45dfa4]'
+                            realWeakCount > 0
+                              ? 'bg-[#ffb4ab]'
+                              : realTotalItems > 0
+                              ? 'bg-[#45dfa4]'
+                              : 'bg-stone-500'
                           }`}
                         ></span>
-                        {isBio
-                          ? 'Key Retention Vulnerability'
-                          : isCS
-                          ? 'Action Required'
-                          : 'Peak Mastery'}
+                        {realTotalItems === 0
+                          ? 'Awaiting Materials'
+                          : realWeakCount > 0
+                          ? 'Review Recommended'
+                          : 'Optimal Retention'}
                       </span>
                       <span
                         className={`font-mono text-[11px] font-semibold ${
-                          isBio
+                          realWeakCount > 0
                             ? 'text-[#ffb4ab]'
-                            : isCS
-                            ? 'text-[#e6deff]'
-                            : 'text-[#45dfa4]'
+                            : realTotalItems > 0
+                            ? 'text-[#45dfa4]'
+                            : 'text-stone-400'
                         }`}
                       >
-                        {isBio
-                          ? '2 Gaps Flagged'
-                          : isCS
-                          ? 'High Urgency'
+                        {realTotalItems === 0
+                          ? '0 Cards'
+                          : realWeakCount > 0
+                          ? `${realWeakCount} Gaps Flagged`
                           : 'Optimal'}
                       </span>
                     </div>
                     <p className="font-sans text-xs text-stone-300 leading-normal">
-                      {isBio
-                        ? 'High retention overall, but retrograde endocannabinoid feedback & LTP induction protocols require immediate recalibration.'
-                        : isCS
-                        ? 'Needs attention before next mock test. Primary confusion centers on Raft quorum split-brain mitigation and causality in vector clocks.'
-                        : isMath
-                        ? 'Solid retention across planar graphs and Euler tours. Scheduled for light maintenance flashcards in 5 days to sustain synapse weighting.'
-                        : 'Stable comprehension on Spinoza and Locke. Kant’s transcendental deduction requires one deep-dive active retrieval session.'}
+                      {realSourceCount === 0
+                        ? 'No documents uploaded to this course notebook. Add PDFs, slides, or notes to index concepts and generate interactive flashcards.'
+                        : realTotalItems === 0
+                        ? `${realSourceCount} document source(s) indexed. Open notebook to generate practice flashcards and diagnostic quizzes.`
+                        : `${realTotalItems} active study items generated across ${realSourceCount} document source(s). ${realMasteredCount} mastered, ${realWeakCount} flagged for review.`}
                     </p>
                   </div>
 
@@ -221,7 +244,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                   <div className="grid grid-cols-3 gap-2 pt-1">
                     <div className="p-2.5 rounded-lg bg-[#1f1f27]/60 flex flex-col">
                       <span className="font-mono text-sm font-bold text-stone-100">
-                        {nb.masteredCount}
+                        {realMasteredCount}
                       </span>
                       <span className="font-sans text-[11px] text-[#cac4d4]">
                         Mastered
@@ -230,10 +253,10 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                     <div className="p-2.5 rounded-lg bg-[#1f1f27]/60 flex flex-col">
                       <span
                         className={`font-mono text-sm font-bold ${
-                          nb.weakCount > 5 ? 'text-[#ffb4ab]' : 'text-[#45dfa4]'
+                          realWeakCount > 0 ? 'text-[#ffb4ab]' : 'text-[#45dfa4]'
                         }`}
                       >
-                        {nb.weakCount}
+                        {realWeakCount}
                       </span>
                       <span className="font-sans text-[11px] text-[#cac4d4]">
                         Weak Spots
@@ -241,7 +264,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                     </div>
                     <div className="p-2.5 rounded-lg bg-[#1f1f27]/60 flex flex-col">
                       <span className="font-mono text-sm font-bold text-stone-100">
-                        {nb.sourceCount}
+                        {realSourceCount}
                       </span>
                       <span className="font-sans text-[11px] text-[#cac4d4]">
                         Source Texts

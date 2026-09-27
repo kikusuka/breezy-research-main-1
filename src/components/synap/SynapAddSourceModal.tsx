@@ -55,7 +55,7 @@ export const SynapAddSourceModal: React.FC<SynapAddSourceModalProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Lecture 9 Hippocampal LTP Slides.pdf"
+              placeholder="e.g. Lecture 4 Reading Notes.pdf or Topic Summary"
               className="bg-[#0E0E16] border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
             />
           </div>

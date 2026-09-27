@@ -233,10 +233,9 @@ export default function App() {
   });
 
   // Active Session and Streaming State
-  const currentSession: DebateSession =
+  const currentSession: DebateSession | undefined =
     sessions.find((s) => s.id === activeSessionId) ||
-    sessions[0] ||
-    SEED_SAMPLE_SESSIONS[0];
+    sessions[0];
 
   const [isDeliberating, setIsDeliberating] = useState(false);
   const [activeRound, setActiveRound] = useState<number>(0);
@@ -312,6 +311,18 @@ export default function App() {
     const target = sessions.find((s) => s.id === sessionId);
     if (target) {
       setActiveRound(target.steps?.length || 0);
+    }
+  };
+
+  const handleDeleteSession = (sessionId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const nextSessions = sessions.filter((s) => s.id !== sessionId);
+    setSessions(nextSessions);
+    saveSessions(nextSessions);
+    if (activeSessionId === sessionId) {
+      const nextId = nextSessions.length > 0 ? nextSessions[0].id : null;
+      setActiveSessionId(nextId);
+      saveActiveSessionId(nextId);
     }
   };
 
@@ -694,6 +705,7 @@ export default function App() {
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
+        onDeleteSession={handleDeleteSession}
       />
 
       {/* Main Workspace Stage */}
@@ -714,27 +726,40 @@ export default function App() {
         {/* Content Body Router */}
         <main className="relative pt-14 bg-[#10141a] min-h-screen flex-1 flex flex-col">
           {activeTab === 'chat' && (
-            <ResearchConversationView
-              session={currentSession}
-              isDeliberating={isDeliberating}
-              activeRound={activeRound}
-              streamingRoundText={streamingText}
-              streamingRole={streamingRole}
-              onStartDebate={startDebate}
-              researchEvents={researchEvents}
-              onSaveNote={(title, content) => {
-                const newNoteSession = createNewSession(title, protocol, [], tone);
-                newNoteSession.finalOutput = content;
-                setSessions((prev) => {
-                  const next = [newNoteSession, ...prev];
-                  saveSessions(next);
-                  return next;
-                });
-              }}
-              onExportMarkdown={handleExportMarkdown}
-              keys={keys}
-              onOpenNotes={() => setActiveTab('notes')}
-            />
+            currentSession ? (
+              <ResearchConversationView
+                session={currentSession}
+                isDeliberating={isDeliberating}
+                activeRound={activeRound}
+                streamingRoundText={streamingText}
+                streamingRole={streamingRole}
+                onStartDebate={startDebate}
+                researchEvents={researchEvents}
+                onSaveNote={(title, content) => {
+                  const newNoteSession = createNewSession(title, protocol, [], tone);
+                  newNoteSession.finalOutput = content;
+                  setSessions((prev) => {
+                    const next = [newNoteSession, ...prev];
+                    saveSessions(next);
+                    return next;
+                  });
+                }}
+                onExportMarkdown={handleExportMarkdown}
+                keys={keys}
+                onOpenNotes={() => setActiveTab('notes')}
+              />
+            ) : (
+              <LandingPageView
+                onLaunchWorkspace={(query, depth) => {
+                  if (query) {
+                    startDebate(query, depth);
+                  }
+                  setActiveTab('chat');
+                }}
+                onOpenNotes={() => setActiveTab('notes')}
+                onOpenModels={() => setActiveTab('models')}
+              />
+            )
           )}
 
           {activeTab === 'notes' && (

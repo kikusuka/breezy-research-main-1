@@ -15,20 +15,32 @@ export function loadSessions(): DebateSession[] {
   try {
     const raw = localStorage.getItem(STORAGE_SESSIONS_KEY) || localStorage.getItem('synthexis_debate_sessions_v1');
     if (!raw) {
-      // Seed default sessions
-      saveSessions(SEED_SAMPLE_SESSIONS);
-      return SEED_SAMPLE_SESSIONS;
+      saveSessions([]);
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      // Sort newest first
-      return parsed.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const userSessions = parsed.filter(
+        (s: DebateSession) =>
+          s &&
+          !s.id?.startsWith('sample-') &&
+          !s.id?.startsWith('mock-') &&
+          !['sample-rlhf-session', 'sample-kafka-session', 'sample-moe-session'].includes(s.id) &&
+          !s.prompt?.toLowerCase().includes('sparse attention') &&
+          !s.prompt?.toLowerCase().includes('quantization degradation') &&
+          !s.prompt?.toLowerCase().includes('rlhf alignment') &&
+          !s.prompt?.toLowerCase().includes('kafka streaming') &&
+          !s.prompt?.toLowerCase().includes('moe routing')
+      );
+      // Immediately write back clean list to purge old sample sessions from localStorage
+      saveSessions(userSessions);
+      return userSessions.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
-    saveSessions(SEED_SAMPLE_SESSIONS);
-    return SEED_SAMPLE_SESSIONS;
+    saveSessions([]);
+    return [];
   } catch (err) {
     console.error('Failed to read research sessions from localStorage:', err);
-    return SEED_SAMPLE_SESSIONS;
+    return [];
   }
 }
 

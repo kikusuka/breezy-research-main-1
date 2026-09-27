@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SynapNotebook } from '../../types/synap';
+import { userProfileService } from '../../services/userProfileService';
 
 interface SynapActiveNotebookViewProps {
   notebook: SynapNotebook;
@@ -141,132 +142,79 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
               </h3>
             </div>
             <span className="font-mono text-[11px] text-[#938e9d]">
-              Unit 3: Synaptic
+              {notebook.courseCode || 'Course Topics'}
             </span>
           </div>
 
           <div className="flex flex-col gap-2.5">
-            {notebook.topicTree.map((topic) => {
-              if (topic.isWeakSpot) {
+            {notebook.topicTree.length === 0 ? (
+              <div className="p-4 rounded-xl bg-[#1b1b23] border border-white/5 text-center font-sans text-xs text-[#cac4d4]">
+                No topics indexed yet. Upload notes or ask Synap questions to build concept nodes.
+              </div>
+            ) : (
+              notebook.topicTree.map((topic) => {
+                if (topic.isWeakSpot) {
+                  return (
+                    <button
+                      key={topic.id}
+                      type="button"
+                      onClick={() =>
+                        topic.drillPrompt && insertPrompt(topic.drillPrompt)
+                      }
+                      className="w-full text-left flex flex-col gap-1 p-2.5 rounded-xl bg-[#1b1b23] hover:bg-[#292932] border border-[#ffb4ab]/20 transition-all group shadow-[0_0_12px_rgba(248,113,113,0.08)] cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between font-mono text-xs">
+                        <span className="text-stone-100 font-sans flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
+                          {topic.name}
+                          <span className="material-symbols-outlined text-[#ffb4ab] text-[14px]">
+                            priority_high
+                          </span>
+                        </span>
+                        <span className="text-[#ffb4ab] font-bold">
+                          {topic.progress}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#0d0d15] h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#ffb4ab] h-full rounded-full"
+                          style={{ width: `${topic.progress}%` }}
+                        ></div>
+                      </div>
+                      <span className="font-sans text-[11px] text-[#ccbdff] group-hover:text-white flex items-center gap-1 pt-0.5 opacity-90 transition-opacity">
+                        <span className="material-symbols-outlined text-[13px]">
+                          psychology
+                        </span>
+                        Click to ask Synap to break this down
+                      </span>
+                    </button>
+                  );
+                }
+
                 return (
-                  <button
+                  <div
                     key={topic.id}
-                    type="button"
-                    onClick={() =>
-                      topic.drillPrompt && insertPrompt(topic.drillPrompt)
-                    }
-                    className="w-full text-left flex flex-col gap-1 p-2.5 rounded-xl bg-[#1b1b23] hover:bg-[#292932] border border-[#ffb4ab]/20 transition-all group shadow-[0_0_12px_rgba(248,113,113,0.08)] cursor-pointer"
+                    className="flex flex-col gap-1 p-2.5 rounded-xl bg-[#1b1b23] border border-white/5"
                   >
                     <div className="flex items-center justify-between font-mono text-xs">
                       <span className="text-stone-100 font-sans flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
+                        <span className="w-2 h-2 rounded-full bg-[#45dfa4]"></span>
                         {topic.name}
-                        <span className="material-symbols-outlined text-[#ffb4ab] text-[14px]">
-                          priority_high
-                        </span>
                       </span>
-                      <span className="text-[#ffb4ab] font-bold">
+                      <span className="text-[#45dfa4] font-bold">
                         {topic.progress}%
                       </span>
                     </div>
                     <div className="w-full bg-[#0d0d15] h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-[#ffb4ab] h-full rounded-full"
+                        className="bg-[#45dfa4] h-full rounded-full"
                         style={{ width: `${topic.progress}%` }}
                       ></div>
                     </div>
-                    <span className="font-sans text-[11px] text-[#ccbdff] group-hover:text-white flex items-center gap-1 pt-0.5 opacity-90 transition-opacity">
-                      <span className="material-symbols-outlined text-[13px]">
-                        psychology
-                      </span>
-                      Click to ask Synap to break this down
-                    </span>
-                  </button>
+                  </div>
                 );
-              }
-
-              return (
-                <div
-                  key={topic.id}
-                  className="flex flex-col gap-1 p-2.5 rounded-xl bg-[#1b1b23] border border-white/5"
-                >
-                  <div className="flex items-center justify-between font-mono text-xs">
-                    <span className="text-stone-100 font-sans flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#45dfa4]"></span>
-                      {topic.name}
-                    </span>
-                    <span className="text-[#45dfa4] font-bold">
-                      {topic.progress}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#0d0d15] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#45dfa4] h-full rounded-full"
-                      style={{ width: `${topic.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Synapse Topology Schematic Box */}
-          <div className="mt-1 p-3.5 rounded-xl bg-[#0d0d15] border border-white/5 flex flex-col gap-2">
-            <div className="flex items-center justify-between font-mono text-[10px] text-[#938e9d]">
-              <span>SYNAPSE TOPOLOGY SCHEMATIC</span>
-              <span className="text-[#cabeff]">Ch.12 p.254</span>
-            </div>
-            <div className="w-full h-24 rounded-lg overflow-hidden relative flex items-center justify-center bg-[#292932]/50 border border-white/5">
-              <svg
-                className="w-full h-full text-[#ccbdff]"
-                fill="none"
-                viewBox="0 0 300 110"
-              >
-                <path
-                  d="M10 30 C 70 30, 90 70, 150 70 C 210 70, 230 30, 290 30"
-                  stroke="#484552"
-                  strokeDasharray="4 4"
-                  strokeWidth="2"
-                ></path>
-                {/* Presynaptic Bouton */}
-                <path
-                  d="M 60 10 Q 150 35 240 10"
-                  stroke="#ccbdff"
-                  strokeWidth="2"
-                ></path>
-                <circle cx="100" cy="20" fill="#68fcbf" opacity="0.8" r="4"></circle>
-                <circle cx="120" cy="18" fill="#68fcbf" opacity="0.8" r="4"></circle>
-                <circle cx="140" cy="22" fill="#68fcbf" opacity="0.8" r="4"></circle>
-                <circle cx="160" cy="17" fill="#68fcbf" opacity="0.8" r="4"></circle>
-                <circle cx="180" cy="21" fill="#68fcbf" opacity="0.8" r="4"></circle>
-                {/* Postsynaptic Density */}
-                <path
-                  d="M 50 90 Q 150 75 250 90"
-                  stroke="#ccbdff"
-                  strokeWidth="2.5"
-                ></path>
-                {/* AMPA receptor */}
-                <rect fill="#cabeff" height="18" rx="3" width="16" x="95" y="70"></rect>
-                <text fill="#cac4d4" fontSize="8" x="96" y="65">
-                  AMPA
-                </text>
-                {/* NMDA receptor with Mg2+ cork */}
-                <rect fill="#9d85f2" height="22" rx="4" width="22" x="175" y="68"></rect>
-                <circle cx="186" cy="74" fill="#ffb4ab" r="3.5"></circle>
-                <text fill="#ffb4ab" fontSize="8" x="172" y="62">
-                  NMDA+Mg²⁺
-                </text>
-                {/* Calcium Rush Arrow */}
-                <path
-                  d="M 186 42 L 186 64"
-                  stroke="#45dfa4"
-                  strokeWidth="1.5"
-                ></path>
-              </svg>
-            </div>
-            <span className="text-center font-sans text-[11px] text-[#cac4d4]">
-              Postsynaptic receptor distribution preview
-            </span>
+              })
+            )}
           </div>
         </div>
       </aside>
@@ -295,8 +243,12 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                 </span>
               </div>
               <span className="font-sans text-xs text-[#cac4d4] truncate">
-                Grounded in <span className="text-[#e7deff]">Kandel Ch. 12</span> &{' '}
-                <span className="text-[#e7deff]">Lecture 8 LTP Slides</span>
+                Grounded in{' '}
+                <span className="text-[#e7deff]">
+                  {notebook.sources.length === 0
+                    ? 'no sources yet'
+                    : notebook.sources.map((s) => s.title).slice(0, 2).join(' & ')}
+                </span>
               </span>
             </div>
           </div>
@@ -330,7 +282,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
           <div className="flex items-center gap-4 my-1">
             <div className="flex-1 h-px bg-[#34343d]/40"></div>
             <span className="font-mono text-[10px] uppercase tracking-widest text-[#938e9d]">
-              Session Focus: Coincidence Detection & Voltage-Gated Block
+              Session Focus: {notebook.title}
             </span>
             <div className="flex-1 h-px bg-[#34343d]/40"></div>
           </div>
@@ -348,7 +300,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                       {msg.content}
                     </div>
                     <div className="flex items-center gap-2 font-mono text-[11px] text-[#938e9d] px-1">
-                      <span>Elena</span>
+                      <span>{userProfileService.getProfile().displayName}</span>
                       <span>•</span>
                       <span>{msg.timestamp}</span>
                       <span className="material-symbols-outlined text-[14px] text-[#45dfa4]">
@@ -356,11 +308,9 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                       </span>
                     </div>
                   </div>
-                  <img
-                    alt="Elena"
-                    className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-[#cabeff]/20"
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                  />
+                  <div className="w-8 h-8 rounded-full bg-[#ccbdff]/20 text-[#ccbdff] border border-[#ccbdff]/30 flex items-center justify-center font-bold text-xs shrink-0 ring-1 ring-[#cabeff]/20">
+                    {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
+                  </div>
                 </div>
               );
             }
@@ -440,7 +390,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                         type="button"
                         onClick={() =>
                           insertPrompt(
-                            'Give me the 10-second check on the NMDA magnesium unblock mechanism.'
+                            `Give me a 10-second check on ${notebook.topicTree[0]?.name || notebook.title}.`
                           )
                         }
                         className="px-3 py-1.5 rounded-lg bg-[#292932] hover:bg-[#34343d] text-[#ccbdff] font-sans text-xs font-semibold transition-all border border-white/5 cursor-pointer shrink-0"
@@ -470,7 +420,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                 type="button"
                 onClick={() =>
                   insertPrompt(
-                    'Test me with a hard multiple-choice question on Ca2+ signaling.'
+                    `Test me with a quiz question on ${notebook.topicTree[0]?.name || notebook.title}.`
                   )
                 }
                 className="px-3 py-1 rounded-full bg-[#292932] hover:bg-[#34343d] text-[#cac4d4] hover:text-stone-100 font-sans text-xs transition-all flex items-center gap-1 border border-white/5 cursor-pointer"
@@ -485,7 +435,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                 type="button"
                 onClick={() =>
                   insertPrompt(
-                    'Explain the difference between early-LTP and late-LTP protein synthesis.'
+                    `Explain key mechanisms and conceptual foundations of ${notebook.topicTree[1]?.name || notebook.title}.`
                   )
                 }
                 className="px-3 py-1 rounded-full bg-[#292932] hover:bg-[#34343d] text-[#cac4d4] hover:text-stone-100 font-sans text-xs transition-all flex items-center gap-1 border border-white/5 cursor-pointer"
@@ -493,7 +443,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
                 <span className="material-symbols-outlined text-[#ccbdff] text-[14px]">
                   compare_arrows
                 </span>
-                <span>Compare Early vs Late LTP</span>
+                <span>Break Down Concept</span>
               </button>
             </div>
             <span className="font-mono text-[10px] text-[#938e9d] hidden sm:inline">
@@ -519,7 +469,7 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask a question grounded in your course materials... (e.g. 'Why is CaMKII autonomous?')"
+              placeholder="Ask a question grounded in your course materials..."
               className="w-full bg-transparent px-3 py-2 font-sans text-xs text-stone-100 placeholder:text-[#938e9d] focus:outline-none"
             />
 
@@ -557,10 +507,10 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#45dfa4]"></span>
               <span>
-                Synthesizing from 4 indexed documents • Hallucination Safeguard ON
+                Synthesizing from {notebook.sources.length} indexed document{notebook.sources.length === 1 ? '' : 's'} • Grounded Study
               </span>
             </div>
-            <span>Synap v2.4 • Neuroscience Spec</span>
+            <span>Synap • {notebook.courseCode || 'Course Notebook'}</span>
           </div>
         </div>
       </main>

@@ -111,6 +111,41 @@ export async function handleBackendRequest(
     return createJsonResponse(healthData, 200, req, env);
   }
 
+  // Webhook verification endpoint
+  if (path === '/api/webhook/test' && req.method === 'POST') {
+    try {
+      const body = await req.json().catch(() => ({}));
+      const { webhookUrl, payload } = body;
+      if (!webhookUrl || typeof webhookUrl !== 'string' || !webhookUrl.startsWith('http')) {
+        return createJsonResponse({ success: false, error: 'Valid HTTP(S) webhook URL required' }, 400, req, env);
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const resp = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'BreezyResearch-WebhookVerifier/1.0',
+        },
+        body: JSON.stringify(payload || { text: 'Synthesis Webhook Connection Test' }),
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
+
+      return createJsonResponse({
+        success: resp.ok,
+        status: resp.status,
+        statusText: resp.statusText,
+      }, resp.ok ? 200 : 400, req, env);
+    } catch (err: any) {
+      return createJsonResponse({
+        success: false,
+        error: err.name === 'AbortError' ? 'Webhook request timed out (8s limit)' : err.message || 'Network error',
+      }, 502, req, env);
+    }
+  }
+
   // Rate-limiting check for API endpoints
   if (
     path === '/api/vault/verify-key' ||

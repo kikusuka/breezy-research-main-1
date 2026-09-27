@@ -26,7 +26,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
         <div className="flex flex-col gap-1 max-w-md">
           <span className="font-sans text-base font-bold text-stone-100">No Quiz Questions Available</span>
           <p className="font-sans text-xs text-stone-400 leading-relaxed">
-            Upload notes or lecture materials to your active course notebook, then click &ldquo;Generate Flashcards &amp; Quizzes&rdquo; to build interactive practice sets.
+            Upload notes or lecture materials to your active course notebook to build interactive practice sets.
           </p>
         </div>
       </div>
@@ -57,7 +57,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 animate-in fade-in duration-300">
-      {/* Top Context & Stepper Bar */}
+      {/* Top Context & Dynamic Stepper Bar */}
       <section className="bg-[#1b1b23] rounded-2xl p-6 border border-white/5 shadow-sm flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -72,7 +72,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
             </div>
             <div className="flex items-baseline gap-2">
               <h1 className="font-sans text-xl sm:text-2xl text-stone-100 tracking-tight font-bold">
-                Neurobiology Diagnostic Quiz
+                {item?.topic ? `${item.topic} Practice Quiz` : 'Course Diagnostic Quiz'}
               </h1>
               <span className="font-mono text-xs text-[#ccbdff] font-bold">
                 Question {currentStep + 1} of {quizItems.length}
@@ -96,52 +96,39 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
           </div>
         </div>
 
-        {/* Stepper Indicator */}
-        <div className="flex items-center justify-between gap-2 pt-2">
-          <div className="flex items-center gap-2 w-full">
-            {/* Step 1 */}
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-7 h-7 rounded-full bg-[#45dfa4]/20 text-[#45dfa4] flex items-center justify-center shrink-0 border border-[#45dfa4]/30">
-                <span className="material-symbols-outlined text-[16px]">
-                  check
-                </span>
-              </div>
-              <div className="h-1.5 w-full bg-[#45dfa4]/40 rounded-full"></div>
-            </div>
+        {/* Dynamic Stepper Indicator */}
+        <div className="flex items-center gap-1.5 pt-2 overflow-x-auto">
+          {quizItems.map((_, idx) => {
+            const isCompleted = idx < currentStep;
+            const isCurrent = idx === currentStep;
 
-            {/* Step 2 */}
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-7 h-7 rounded-full bg-[#45dfa4]/20 text-[#45dfa4] flex items-center justify-center shrink-0 border border-[#45dfa4]/30">
-                <span className="material-symbols-outlined text-[16px]">
-                  check
-                </span>
+            return (
+              <div key={idx} className="flex items-center gap-1.5 flex-1 min-w-[28px]">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border font-mono text-xs ${
+                    isCurrent
+                      ? 'bg-[#9d85f2] text-[#331282] font-bold border-[#9d85f2] shadow-md'
+                      : isCompleted
+                      ? 'bg-[#45dfa4]/20 text-[#45dfa4] border-[#45dfa4]/30'
+                      : 'bg-[#292932] text-[#cac4d4] border-white/5'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <span className="material-symbols-outlined text-[15px]">check</span>
+                  ) : (
+                    idx + 1
+                  )}
+                </div>
+                {idx < quizItems.length - 1 && (
+                  <div
+                    className={`h-1.5 w-full rounded-full ${
+                      isCompleted ? 'bg-[#45dfa4]/40' : 'bg-[#34343d]'
+                    }`}
+                  />
+                )}
               </div>
-              <div className="h-1.5 w-full bg-[#ccbdff]/50 rounded-full"></div>
-            </div>
-
-            {/* Step 3 (Active) */}
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-7 h-7 rounded-full bg-[#9d85f2] text-[#331282] font-mono text-xs font-bold shadow-md flex items-center justify-center shrink-0">
-                03
-              </div>
-              <div className="h-1.5 w-full bg-[#34343d] rounded-full"></div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-7 h-7 rounded-full bg-[#292932] text-[#cac4d4] font-mono text-xs flex items-center justify-center shrink-0">
-                04
-              </div>
-              <div className="h-1.5 w-full bg-[#34343d] rounded-full"></div>
-            </div>
-
-            {/* Step 5 */}
-            <div className="flex items-center shrink-0">
-              <div className="w-7 h-7 rounded-full bg-[#292932] text-[#cac4d4] font-mono text-xs flex items-center justify-center">
-                05
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </section>
 
@@ -150,16 +137,11 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-2 z-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#292932] text-[#cabeff] text-xs font-semibold border border-white/5">
             <span className="w-2 h-2 rounded-full bg-[#cabeff]"></span>
-            <span>{item.topic || 'Receptor Electrophysiology'}</span>
-            <span className="text-[#938e9d]">•</span>
-            <span className="text-[#ccbdff]">High-Yield Final Topic</span>
+            <span>{item.topic || 'Target Concept'}</span>
           </div>
 
-          <span className="font-mono text-xs text-[#cac4d4] flex items-center gap-1">
-            <span className="material-symbols-outlined text-[15px] text-[#938e9d]">
-              analytics
-            </span>
-            Historical Cohort Accuracy: 64%
+          <span className="font-mono text-xs text-[#cac4d4]">
+            Item #{currentStep + 1}
           </span>
         </div>
 
@@ -172,7 +154,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
         {/* Options List */}
         <div className="flex flex-col gap-3 z-10">
           {item.options?.map((opt, idx) => {
-            const letters = ['A', 'B', 'C', 'D'];
+            const letters = ['A', 'B', 'C', 'D', 'E'];
             const isSelected = selectedOpt === idx;
             const isTargetCorrect = idx === item.correctIndex;
 
@@ -208,7 +190,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
                       check
                     </span>
                   ) : (
-                    letters[idx]
+                    letters[idx] || `${idx + 1}`
                   )}
                 </div>
 
@@ -221,7 +203,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
                       <span className="material-symbols-outlined text-[13px]">
                         verified
                       </span>{' '}
-                      Selected & Correct Response
+                      Selected &amp; Correct Response
                     </span>
                   )}
                 </div>
@@ -251,10 +233,10 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
                 <span className="font-sans text-sm font-bold text-stone-100">
                   {isCorrect
                     ? 'Correct! Outstanding recall.'
-                    : 'Missed — Let’s review the mechanism.'}
+                    : 'Missed — Let’s review the concept.'}
                 </span>
                 <span className="font-mono text-[10px] text-[#cac4d4]">
-                  Synap Cognitive Coach Rationale
+                  Synap Cognitive Feedback
                 </span>
               </div>
             </div>
@@ -267,11 +249,13 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-8 flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
+            {item.explanation && (
               <p className="font-sans text-xs sm:text-sm text-stone-300 leading-relaxed">
                 {item.explanation}
               </p>
+            )}
+            {item.reference && (
               <div className="flex items-center gap-1.5 pt-1 text-xs text-[#cabeff]">
                 <span className="material-symbols-outlined text-[15px]">
                   menu_book
@@ -280,53 +264,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
                   {item.reference}
                 </span>
               </div>
-            </div>
-
-            {/* Sparkline Plot visual */}
-            <div className="lg:col-span-4 bg-[#1f1f27] p-4 rounded-xl flex flex-col gap-1 border border-white/5">
-              <div className="flex items-center justify-between text-[#cac4d4] font-mono text-[10px]">
-                <span>EPSP AMPLITUDE RESPONSE</span>
-                <span className="text-[#45dfa4]">Baseline maintained</span>
-              </div>
-
-              <div className="w-full h-16 flex items-center justify-center">
-                <svg
-                  className="w-full h-full text-[#938e9d]"
-                  fill="none"
-                  viewBox="0 0 240 60"
-                >
-                  <line
-                    stroke="currentColor"
-                    strokeDasharray="4 4"
-                    strokeOpacity="0.2"
-                    strokeWidth="1"
-                    x1="0"
-                    x2="240"
-                    y1="40"
-                    y2="40"
-                  ></line>
-                  <line
-                    stroke="currentColor"
-                    strokeOpacity="0.3"
-                    strokeWidth="1"
-                    x1="100"
-                    x2="100"
-                    y1="5"
-                    y2="55"
-                  ></line>
-                  <text fill="currentColor" fontSize="8" opacity="0.6" x="104" y="16">
-                    100Hz + APV
-                  </text>
-                  <path
-                    d="M0,40 L60,40 L70,36 L80,42 L95,40 L100,24 L104,40 L160,39 L180,41 L240,40"
-                    stroke="#45dfa4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2.5"
-                  ></path>
-                </svg>
-              </div>
-            </div>
+            )}
           </div>
         </section>
       )}
@@ -337,7 +275,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
           type="button"
           onClick={() =>
             onExplainWithSynap(
-              'Explain the APV NMDA receptor antagonist experiment in CA1 neurons.'
+              `Explain this concept in depth: "${item.prompt}". Key takeaway: ${item.explanation || item.options?.[item.correctIndex ?? 0] || 'Clarify the core mechanism.'}`
             )
           }
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f1f27] hover:bg-[#292932] text-stone-100 font-sans text-xs font-semibold border border-white/5 transition-all cursor-pointer"
@@ -351,16 +289,10 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
         <div className="w-full sm:w-auto flex items-center justify-end gap-3">
           <button
             type="button"
-            className="text-[#cac4d4] hover:text-stone-100 font-sans text-xs px-3 py-2 transition-colors cursor-pointer"
-          >
-            Flag Question
-          </button>
-          <button
-            type="button"
             onClick={handleNext}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-[#ccbdff] hover:bg-white text-[#331282] font-sans text-xs font-bold shadow-md transition-all cursor-pointer"
           >
-            <span>Next Question ({currentStep + 1} of 5)</span>
+            <span>Next Question ({currentStep + 1} of {quizItems.length})</span>
             <span className="material-symbols-outlined text-[18px]">
               arrow_forward
             </span>
