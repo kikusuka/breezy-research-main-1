@@ -34,7 +34,6 @@ import {
   loadActiveSessionId,
   saveActiveSessionId,
   createNewSession,
-  SEED_SAMPLE_SESSIONS,
 } from './services/sessionStorage';
 import { exportConsensusAsMarkdown } from './utils/exportTranscript';
 import { apiClient } from './services/apiClient';

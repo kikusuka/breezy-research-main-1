@@ -258,6 +258,11 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     4: '4 Rounds • Deep Audit',
   };
 
+  const isGoogleConnected = Boolean(googleUser && googleToken);
+  const isGithubConnected = Boolean(githubToken && githubAuthMode !== 'none');
+  const hasIntegrations = isGoogleConnected || isGithubConnected;
+  const isSyncing = isLoadingGoogle || isLoadingGithub;
+
   return (
     <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] pb-24 text-stone-200">
       {/* Toast Notification */}
@@ -276,11 +281,34 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-white/10">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase text-[#7bdb80] tracking-widest bg-white/5 px-2.5 py-1 rounded-full font-semibold">
-                Live Integration Workspace
-              </span>
-              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-              <span className="font-mono text-xs text-stone-450">Active Syncing</span>
+              {isSyncing ? (
+                <>
+                  <span className="font-mono text-[10px] uppercase text-[#7bdb80] tracking-widest bg-[#7bdb80]/10 px-2.5 py-1 rounded-full font-semibold">
+                    Live Integration Workspace
+                  </span>
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="font-mono text-xs text-emerald-400 animate-pulse">Syncing...</span>
+                </>
+              ) : hasIntegrations ? (
+                <>
+                  <span className="font-mono text-[10px] uppercase text-[#7bdb80] tracking-widest bg-white/5 px-2.5 py-1 rounded-full font-semibold">
+                    Live Integration Workspace
+                  </span>
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  <span className="font-mono text-xs text-stone-400">Workspace Connected</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-mono text-[10px] uppercase text-stone-500 tracking-widest bg-white/5 px-2.5 py-1 rounded-full font-semibold">
+                    Workspace Isolated
+                  </span>
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-stone-500"></span>
+                  <span className="font-mono text-xs text-stone-500">No integrations connected</span>
+                </>
+              )}
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-stone-100 tracking-tight font-semibold">
               Workspace Sync & Settings
