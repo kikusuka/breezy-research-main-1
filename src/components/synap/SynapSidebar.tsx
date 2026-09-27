@@ -69,17 +69,15 @@ export const SynapSidebar: React.FC<SynapSidebarProps> = ({
 
           {/* Student Profile Card */}
           <div className="p-3.5 rounded-xl bg-[#1b1b23] border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.06)] flex items-center gap-3">
-            <img
-              alt="Profile"
-              className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-[#9D85F2]/30"
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-            />
+            <div className="w-10 h-10 rounded-full bg-[#9d85f2]/20 text-[#ccbdff] border border-[#9d85f2]/30 flex items-center justify-center font-bold text-sm shrink-0">
+              {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
+            </div>
             <div className="flex flex-col min-w-0">
               <span className="font-sans text-xs font-semibold text-stone-100 truncate">
-                Elena Rostova
+                {userProfileService.getProfile().displayName}
               </span>
               <span className="font-mono text-[11px] text-[#A5B0D6] truncate">
-                Neuroscience & CS
+                {userProfileService.getProfile().roleTitle}
               </span>
             </div>
           </div>

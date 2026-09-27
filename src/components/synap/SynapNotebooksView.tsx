@@ -31,7 +31,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
             <h1 className="font-serif italic text-3xl sm:text-4xl text-stone-100 tracking-tight font-normal">
               Synap Repository
             </h1>
-            <p className="font-mono text-xs text-[#d4ff33] uppercase tracking-wide">
+            <p className="font-mono text-xs text-[#ccbdff] uppercase tracking-wide">
               {notebooks.length === 0
                 ? '0 active notebooks · create your first course repository'
                 : `${notebooks.length} notebook${notebooks.length > 1 ? 's' : ''} loaded · ${notebooks.reduce((acc, n) => acc + n.sources.length, 0)} sources indexed`}
@@ -42,7 +42,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
             <button
               type="button"
               onClick={onNewNotebook}
-              className="group relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#d4ff33] text-black font-sans text-xs font-bold shadow-md hover:bg-[#d4ff33]/90 transition-all duration-300 cursor-pointer"
+              className="group relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#9d85f2] hover:bg-[#8b5cf6] text-[#0d0d15] font-sans text-xs font-bold shadow-[0_4px_20px_-2px_rgba(157,133,242,0.4)] transition-all duration-300 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-90">
                 add
@@ -57,7 +57,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                   onClick={onResumeReview}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f1f27] hover:bg-[#292932] text-stone-100 font-sans text-xs font-semibold border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.08)] hover:-translate-y-0.5 transition-all cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[#d4ff33] text-[18px]">
+                  <span className="material-symbols-outlined text-[#ccbdff] text-[18px]">
                     play_circle
                   </span>
                   <span>Resume Review</span>
@@ -79,7 +79,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
         {/* Empty State when zero notebooks exist */}
         {notebooks.length === 0 ? (
           <div className="p-12 rounded-2xl bg-[#14141e] border border-white/5 text-center flex flex-col items-center justify-center gap-4 mt-8">
-            <div className="w-12 h-12 rounded-full bg-[#d4ff33]/10 text-[#d4ff33] border border-[#d4ff33]/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-[#9d85f2]/10 text-[#ccbdff] border border-[#9d85f2]/20 flex items-center justify-center">
               <span className="material-symbols-outlined text-[24px]">folder_open</span>
             </div>
             <div className="flex flex-col gap-1 max-w-md">
@@ -91,7 +91,7 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
             <button
               type="button"
               onClick={onNewNotebook}
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#d4ff33] text-black font-sans text-xs font-bold hover:bg-[#d4ff33]/90 transition-colors cursor-pointer"
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#9d85f2] hover:bg-[#8b5cf6] text-[#0d0d15] font-sans text-xs font-bold transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">add</span>
               <span>Create First Notebook</span>
@@ -287,59 +287,23 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                   insights
                 </span>
                 <span className="font-mono text-[11px] uppercase tracking-wider text-[#cac4d4]">
-                  Recent Study Pulse
+                  Repository Overview
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-3xl font-bold text-stone-100">
-                  +6%
+                  {notebooks.reduce((acc, n) => acc + n.studyItems.length, 0)}
                 </span>
                 <span className="font-sans text-sm text-[#45dfa4] font-medium">
-                  Readiness Velocity this week
+                  Total Active Flashcards &amp; Quizzes
                 </span>
               </div>
               <p className="font-sans text-xs text-[#cac4d4] leading-relaxed">
-                Yesterday’s late-night flashcard run across{' '}
-                <span className="text-stone-100 font-medium">
-                  Synaptic Transmission
-                </span>{' '}
-                promoted 18 probationary concepts to persistent long-term recall storage.
+                Indexed across {notebooks.length} active notebook{notebooks.length > 1 ? 's' : ''} containing {notebooks.reduce((acc, n) => acc + n.sources.length, 0)} uploaded study document{notebooks.reduce((acc, n) => acc + n.sources.length, 0) !== 1 ? 's' : ''}.
               </p>
-              <div className="flex items-center gap-4 pt-1">
-                <div className="flex items-center gap-1.5 text-xs text-[#cac4d4]">
-                  <span className="w-2 h-2 rounded-full bg-[#45dfa4]"></span>
-                  <span>18 Promoted</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-[#cac4d4]">
-                  <span className="w-2 h-2 rounded-full bg-[#cabeff]"></span>
-                  <span>42 Maintained</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-[#cac4d4]">
-                  <span className="w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
-                  <span>5 Re-queued</span>
-                </div>
-              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0">
-              <div className="p-3.5 rounded-xl bg-[#0d0d15]/80 border border-white/5 shadow-[inset_0_1px_1px_rgba(232,235,255,0.03)] flex items-center gap-4">
-                <div className="w-16 h-10 flex items-end gap-1 px-1">
-                  <div className="w-2 bg-[#34343d] rounded-t h-4"></div>
-                  <div className="w-2 bg-[#cabeff]/50 rounded-t h-6"></div>
-                  <div className="w-2 bg-[#cabeff]/70 rounded-t h-5"></div>
-                  <div className="w-2 bg-[#ccbdff] rounded-t h-8"></div>
-                  <div className="w-2 bg-[#45dfa4] rounded-t h-10"></div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-mono text-[11px] text-[#cac4d4]">
-                    Daily Streak
-                  </span>
-                  <span className="font-mono text-base font-bold text-stone-100">
-                    14 Days
-                  </span>
-                </div>
-              </div>
-
               <button
                 type="button"
                 onClick={onInspectWeakSpots}

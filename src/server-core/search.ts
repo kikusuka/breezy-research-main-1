@@ -238,16 +238,21 @@ export async function performSearchGrounding(
     rawResults = await searchDuckDuckGoKeyless(trimmedQuery);
   }
 
+  let usedEngine = engine;
+  let usedEngineName = engine === 'searxng' ? 'SearXNG Self-Hosted' : engine.toUpperCase();
+
   if (rawResults.length === 0 && engine !== 'duckduckgo') {
     // Fallback to DuckDuckGo keyless
     rawResults = await searchDuckDuckGoKeyless(trimmedQuery);
+    usedEngine = 'duckduckgo';
+    usedEngineName = 'DuckDuckGo Keyless Index (Fallback)';
   }
 
   const deduplicated = deduplicateAndRank(rawResults);
 
   return {
-    engine,
-    engineName: engine === 'searxng' ? 'SearXNG Self-Hosted' : engine.toUpperCase(),
+    engine: usedEngine,
+    engineName: usedEngineName,
     query: trimmedQuery,
     results: deduplicated,
   };

@@ -59,7 +59,9 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
             </button>
           </div>
           <p className="font-sans text-xs text-[#cac4d4]">
-            Indexed against cognitive psychology, electrophysiology, and lecture audio embeddings.
+            {notebook.sources.length === 0
+              ? 'No sources added yet. Upload PDFs or notes to ground your AI assistant.'
+              : `${notebook.sources.length} document source${notebook.sources.length > 1 ? 's' : ''} indexed for grounded search.`}
           </p>
 
           {/* Sources List */}

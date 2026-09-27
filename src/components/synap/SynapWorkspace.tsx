@@ -55,9 +55,10 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   };
 
   const currentNotebook =
-    notebooks.find((n) => n.id === activeNotebookId) || notebooks[0];
+    notebooks.find((n) => n.id === activeNotebookId) ?? notebooks[0] ?? null;
 
   const updateCurrentNotebook = (updater: (nb: SynapNotebook) => SynapNotebook) => {
+    if (!currentNotebook) return;
     setNotebooks((prev) => {
       const next = prev.map((n) =>
         n.id === currentNotebook.id ? updater(n) : n
@@ -79,18 +80,16 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     const newNb: SynapNotebook = {
       id: `nb-${Date.now()}`,
       title,
-      courseCode: 'Bio 405',
-      track: 'Neuroscience Core',
-      examDate: 'June 12',
-      daysLeft: 28,
-      readiness: 45,
-      masteredCount: 12,
-      weakCount: 4,
+      courseCode: 'General',
+      track: 'Course Repository',
+      examDate: 'Unscheduled',
+      daysLeft: 0,
+      readiness: 0,
+      masteredCount: 0,
+      weakCount: 0,
       sourceCount: 0,
       createdAt: new Date().toISOString(),
-      topicTree: [
-        { id: `t-${Date.now()}-1`, name: 'Synaptic Integration', progress: 50 },
-      ],
+      topicTree: [],
       sources: [],
       chat: [],
       studyItems: [],
@@ -248,7 +247,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
       <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
         {/* Top Header */}
         <SynapHeader
-          readinessPercentage={currentNotebook.readiness || 78}
+          readinessPercentage={currentNotebook?.readiness ?? 0}
           productMode={productMode}
           onSelectProductMode={onSelectProductMode}
           onOpenQuickJump={() => setActiveView('weak-spots')}
@@ -259,7 +258,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
 
         {/* View Router */}
         <main className="relative pt-20 w-full min-h-screen px-4 sm:px-8 pb-12 bg-[#0A0A0F]">
-          {activeView === 'notebooks' && (
+          {(activeView === 'notebooks' || !currentNotebook) && (
             <SynapNotebooksView
               notebooks={notebooks}
               onSelectNotebook={handleSelectNotebook}
@@ -270,7 +269,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
             />
           )}
 
-          {activeView === 'active-notebook' && (
+          {activeView === 'active-notebook' && currentNotebook && (
             <SynapActiveNotebookView
               notebook={currentNotebook}
               onSendMessage={handleSendMessage}
@@ -290,7 +289,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
             />
           )}
 
-          {activeView === 'flashcard-review' && (
+          {activeView === 'flashcard-review' && currentNotebook && (
             <SynapFlashcardView
               studyItems={currentNotebook.studyItems}
               onRateCard={handleRateFlashcard}
@@ -302,14 +301,14 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
             />
           )}
 
-          {activeView === 'quiz-mode' && (
+          {activeView === 'quiz-mode' && currentNotebook && (
             <SynapQuizView
               studyItems={currentNotebook.studyItems}
               onAnswerQuestion={(isCorrect) => {
                 showToast(
                   isCorrect
-                    ? 'Correct response! Readiness +3.2%'
-                    : 'Miss recorded. Added to Weak Spots matrix.'
+                    ? 'Correct response! Recorded in history.'
+                    : 'Miss recorded. Added to review history.'
                 );
               }}
               onExplainWithSynap={(prompt) => {

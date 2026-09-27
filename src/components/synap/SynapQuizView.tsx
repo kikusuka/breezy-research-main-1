@@ -44,14 +44,14 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
   };
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < quizItems.length - 1) {
       setCurrentStep((prev) => prev + 1);
       setSelectedOpt(null);
       setIsAnswered(false);
     } else {
       setCurrentStep(0);
-      setSelectedOpt(1);
-      setIsAnswered(true);
+      setSelectedOpt(null);
+      setIsAnswered(false);
     }
   };
 
@@ -75,7 +75,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
                 Neurobiology Diagnostic Quiz
               </h1>
               <span className="font-mono text-xs text-[#ccbdff] font-bold">
-                Question {currentStep + 1} of 5
+                Question {currentStep + 1} of {quizItems.length}
               </span>
             </div>
           </div>
