@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SynapNotebook } from '../../types/synap';
 import { userProfileService } from '../../services/userProfileService';
 
@@ -19,6 +19,76 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
 }) => {
   const [inputVal, setInputVal] = useState('');
   const [isMicActive, setIsMicActive] = useState(false);
+  const [micStatusHint, setMicStatusHint] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+    };
+  }, []);
+
+  const toggleVoiceDictation = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setMicStatusHint('Voice recognition not supported in this browser.');
+      setTimeout(() => setMicStatusHint(null), 3000);
+      return;
+    }
+
+    if (isMicActive) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      setIsMicActive(false);
+      setMicStatusHint(null);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsMicActive(true);
+        setMicStatusHint('Listening... Speak your question now.');
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputVal((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+
+      recognition.onerror = (e: any) => {
+        setIsMicActive(false);
+        setMicStatusHint(e.error === 'not-allowed' ? 'Microphone permission denied.' : 'Voice recognition ended.');
+        setTimeout(() => setMicStatusHint(null), 3000);
+      };
+
+      recognition.onend = () => {
+        setIsMicActive(false);
+        setTimeout(() => setMicStatusHint(null), 2000);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('Speech recognition init error:', err);
+      setIsMicActive(false);
+    }
+  };
 
   const handleSend = () => {
     if (!inputVal.trim()) return;
@@ -476,13 +546,15 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
             <div className="flex items-center gap-1.5 shrink-0 pr-1">
               <button
                 type="button"
-                onClick={() => setIsMicActive(!isMicActive)}
+                onClick={toggleVoiceDictation}
                 className={`w-9 h-9 rounded-lg hover:bg-[#1f1f27] flex items-center justify-center transition-all cursor-pointer ${
-                  isMicActive ? 'text-[#ffb4ab] animate-pulse' : 'text-[#cac4d4] hover:text-white'
+                  isMicActive ? 'text-[#ffb4ab] bg-[#ffb4ab]/10 ring-1 ring-[#ffb4ab] animate-pulse' : 'text-[#cac4d4] hover:text-white'
                 }`}
-                title="Deep Voice Query"
+                title={isMicActive ? 'Stop voice recording' : 'Speak voice inquiry'}
               >
-                <span className="material-symbols-outlined text-[18px]">mic</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  {isMicActive ? 'mic_active' : 'mic'}
+                </span>
               </button>
 
               <button
@@ -502,6 +574,13 @@ export const SynapActiveNotebookView: React.FC<SynapActiveNotebookViewProps> = (
               </button>
             </div>
           </div>
+
+          {micStatusHint && (
+            <div className="text-[11px] font-mono text-[#ccbdff] px-3 py-1 rounded-md bg-[#9d85f2]/10 border border-[#9d85f2]/20 animate-in fade-in flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px]">graphic_eq</span>
+              <span>{micStatusHint}</span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between px-2 font-mono text-[10px] text-[#938e9d]">
             <div className="flex items-center gap-1.5">

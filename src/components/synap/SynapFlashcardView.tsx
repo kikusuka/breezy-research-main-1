@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SynapStudyItem } from '../../types/synap';
 
 interface SynapFlashcardViewProps {
@@ -7,6 +7,8 @@ interface SynapFlashcardViewProps {
   onExit: () => void;
   onAskAiToBreakDown: (concept: string) => void;
 }
+
+const STORAGE_KEY_BOOKMARKS = 'synap:bookmarked_cards';
 
 export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
   studyItems,
@@ -17,6 +19,126 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
   const cards = studyItems.filter((i) => i.type === 'flashcard');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggleBookmark = (cardId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else {
+        next.add(cardId);
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const currentCard = cards[currentIndex % (cards.length || 1)] || null;
+
+  const handleRate = useCallback(
+    (rating: number) => {
+      if (!currentCard) return;
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
+      const isCorrect = rating >= 3;
+      onRateCard(currentCard.id, rating, isCorrect);
+      setIsFlipped(false);
+      setCurrentIndex((prev) => (prev + 1) % cards.length);
+    },
+    [currentCard, cards.length, onRateCard]
+  );
+
+  const speakCard = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!currentCard || !('speechSynthesis' in window)) return;
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const textToSpeak = isFlipped
+      ? `Prompt: ${currentCard.prompt}. Answer: ${currentCard.answer || currentCard.explanation || ''}`
+      : currentCard.prompt;
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Global Keyboard Shortcuts (1-4, Space, Esc, Arrows)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is in an active input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setIsFlipped((prev) => !prev);
+      } else if (e.key === '1') {
+        e.preventDefault();
+        handleRate(1);
+      } else if (e.key === '2') {
+        e.preventDefault();
+        handleRate(2);
+      } else if (e.key === '3') {
+        e.preventDefault();
+        handleRate(3);
+      } else if (e.key === '4') {
+        e.preventDefault();
+        handleRate(4);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        onExit();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        setIsFlipped(false);
+        setCurrentIndex((prev) => (prev + 1) % cards.length);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        setIsFlipped(false);
+        setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  }, [handleRate, onExit, cards.length]);
 
   if (!cards.length) {
     return (
@@ -33,7 +155,7 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
         <button
           type="button"
           onClick={onExit}
-          className="mt-4 px-4 py-2 bg-[#9d85f2] text-[#331282] rounded-xl font-sans text-xs font-bold cursor-pointer"
+          className="mt-4 px-4 py-2 bg-[#9d85f2] text-[#331282] rounded-xl font-sans text-xs font-bold cursor-pointer hover:bg-white transition-all shadow-md"
         >
           Go to Active Notebook
         </button>
@@ -41,18 +163,10 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
     );
   }
 
-  const currentCard = cards[currentIndex % cards.length];
-
   const masteredCount = cards.filter((c) => c.history && c.history.some((h) => h.correct)).length;
   const strugglingCount = cards.filter((c) => c.history && c.history.some((h) => !h.correct)).length;
   const reviewingCount = Math.max(0, cards.length - masteredCount - strugglingCount);
-
-  const handleRate = (rating: number) => {
-    const isCorrect = rating >= 3;
-    onRateCard(currentCard.id, rating, isCorrect);
-    setIsFlipped(false);
-    setCurrentIndex((prev) => (prev + 1) % cards.length);
-  };
+  const isBookmarked = currentCard ? bookmarkedIds.has(currentCard.id) : false;
 
   return (
     <div className="relative w-full max-w-5xl mx-auto flex flex-col items-center animate-in fade-in duration-300">
@@ -75,7 +189,7 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
               </span>
               <span className="text-[#938e9d]">•</span>
               <span className="truncate">
-                {currentCard.topic || 'Active Concept'}
+                {currentCard?.topic || 'Active Concept'}
               </span>
             </div>
           </div>
@@ -100,7 +214,10 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
 
           <button
             type="button"
-            onClick={onExit}
+            onClick={() => {
+              if (window.speechSynthesis) window.speechSynthesis.cancel();
+              onExit();
+            }}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1b1b23] hover:bg-[#292932] text-[#cac4d4] hover:text-stone-100 transition-all font-sans text-xs border border-white/5 cursor-pointer shadow-[inset_0_1px_0_rgba(232,235,255,0.04)]"
           >
             <span className="material-symbols-outlined text-[15px]">
@@ -165,20 +282,30 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
             <div className="flex items-center gap-1 text-[#cac4d4]">
               <button
                 type="button"
-                className="w-8 h-8 rounded-full hover:bg-[#292932] flex items-center justify-center transition-colors"
-                title="Audio"
+                onClick={speakCard}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                  isSpeaking
+                    ? 'bg-[#ccbdff] text-[#331282] ring-2 ring-[#9d85f2] animate-pulse'
+                    : 'hover:bg-[#292932] text-[#cac4d4] hover:text-white'
+                }`}
+                title={isSpeaking ? 'Stop speaking' : 'Read card aloud (TTS)'}
               >
                 <span className="material-symbols-outlined text-[18px]">
-                  volume_up
+                  {isSpeaking ? 'volume_off' : 'volume_up'}
                 </span>
               </button>
               <button
                 type="button"
-                className="w-8 h-8 rounded-full hover:bg-[#292932] flex items-center justify-center transition-colors"
-                title="Bookmark"
+                onClick={(e) => toggleBookmark(currentCard.id, e)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                  isBookmarked
+                    ? 'bg-[#9d85f2]/20 text-[#ccbdff]'
+                    : 'hover:bg-[#292932] text-[#cac4d4] hover:text-white'
+                }`}
+                title={isBookmarked ? 'Remove bookmark' : 'Bookmark concept'}
               >
                 <span className="material-symbols-outlined text-[18px]">
-                  bookmark_border
+                  {isBookmarked ? 'bookmark' : 'bookmark_border'}
                 </span>
               </button>
             </div>
@@ -229,7 +356,7 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
               </>
             ) : (
               <div className="py-12 text-center text-[#938e9d] font-sans text-xs">
-                Click to flip and reveal answer
+                Click or press Space to flip and reveal answer
               </div>
             )}
           </div>

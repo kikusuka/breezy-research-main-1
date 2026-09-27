@@ -5,29 +5,140 @@ interface SynapQuizViewProps {
   studyItems: SynapStudyItem[];
   onAnswerQuestion: (isCorrect: boolean) => void;
   onExplainWithSynap: (prompt: string) => void;
+  onGoToNotebook?: () => void;
 }
 
 export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
   studyItems,
   onAnswerQuestion,
   onExplainWithSynap,
+  onGoToNotebook,
 }) => {
   const quizItems = studyItems.filter((i) => i.type === 'quiz');
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
+  const [sessionResults, setSessionResults] = useState<{ isCorrect: boolean; topic: string }[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   if (quizItems.length === 0) {
     return (
       <div className="w-full max-w-4xl mx-auto p-12 rounded-2xl bg-[#14141e] border border-white/5 text-center flex flex-col items-center justify-center gap-4 animate-in fade-in duration-300">
-        <div className="w-12 h-12 rounded-full bg-[#d4ff33]/10 text-[#d4ff33] border border-[#d4ff33]/20 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full bg-[#ccbdff]/10 text-[#ccbdff] border border-[#ccbdff]/20 flex items-center justify-center">
           <span className="material-symbols-outlined text-[24px]">quiz</span>
         </div>
         <div className="flex flex-col gap-1 max-w-md">
-          <span className="font-sans text-base font-bold text-stone-100">No Quiz Questions Available</span>
+          <span className="font-sans text-base font-bold text-stone-100">No Quiz Questions in Active Course</span>
           <p className="font-sans text-xs text-stone-400 leading-relaxed">
-            Upload notes or lecture materials to your active course notebook to build interactive practice sets.
+            Upload notes or lecture materials in your active course notebook to generate customized practice sets.
           </p>
+        </div>
+        {onGoToNotebook && (
+          <button
+            type="button"
+            onClick={onGoToNotebook}
+            className="px-4 py-2 bg-[#9d85f2] text-[#331282] rounded-xl font-sans text-xs font-bold hover:bg-white transition-all cursor-pointer shadow-md"
+          >
+            Open Active Notebook
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Quiz Completion Screen
+  if (isCompleted) {
+    const totalAnswered = sessionResults.length;
+    const correctCount = sessionResults.filter((r) => r.isCorrect).length;
+    const percentage = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0;
+    const missedTopics = sessionResults.filter((r) => !r.isCorrect).map((r) => r.topic);
+
+    return (
+      <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
+        <div className="bg-[#1b1b23] rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col items-center text-center gap-6">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+            percentage >= 70
+              ? 'bg-[#45dfa4]/20 text-[#45dfa4] border border-[#45dfa4]/30'
+              : 'bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/30'
+          }`}>
+            <span className="material-symbols-outlined text-[36px]">
+              {percentage >= 70 ? 'emoji_events' : 'psychology'}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-xs uppercase tracking-widest text-[#ccbdff] font-bold">
+              Diagnostic Complete
+            </span>
+            <h1 className="font-sans text-2xl sm:text-3xl font-bold text-stone-100">
+              {percentage >= 90
+                ? 'Mastery Level: Exceptional!'
+                : percentage >= 70
+                ? 'Solid Grasp • Ready to Review'
+                : 'Concept Gaps Identified'}
+            </h1>
+            <p className="font-sans text-xs sm:text-sm text-stone-400 max-w-md mx-auto mt-1">
+              Your responses have been recorded in the Synap Mastery index to guide exam readiness.
+            </p>
+          </div>
+
+          {/* Performance Stats */}
+          <div className="grid grid-cols-3 gap-3 w-full max-w-md pt-2">
+            <div className="p-4 rounded-2xl bg-[#14141e] border border-white/5 flex flex-col items-center">
+              <span className="font-mono text-2xl font-bold text-stone-100">{percentage}%</span>
+              <span className="font-mono text-[10px] text-stone-400 uppercase tracking-wider mt-0.5">Accuracy</span>
+            </div>
+            <div className="p-4 rounded-2xl bg-[#14141e] border border-white/5 flex flex-col items-center">
+              <span className="font-mono text-2xl font-bold text-[#45dfa4]">{correctCount}</span>
+              <span className="font-mono text-[10px] text-stone-400 uppercase tracking-wider mt-0.5">Correct</span>
+            </div>
+            <div className="p-4 rounded-2xl bg-[#14141e] border border-white/5 flex flex-col items-center">
+              <span className="font-mono text-2xl font-bold text-[#ffb4ab]">{totalAnswered - correctCount}</span>
+              <span className="font-mono text-[10px] text-stone-400 uppercase tracking-wider mt-0.5">Missed</span>
+            </div>
+          </div>
+
+          {missedTopics.length > 0 && (
+            <div className="w-full max-w-md p-4 rounded-2xl bg-[#292932]/60 border border-white/5 text-left flex flex-col gap-2">
+              <span className="font-mono text-[11px] text-[#ffb4ab] uppercase font-bold flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px]">flag</span>
+                Topics for Targeted Review:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {Array.from(new Set(missedTopics)).map((topic, i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-lg bg-black/40 text-stone-300 font-sans text-xs border border-white/5">
+                    {topic || 'Core Concept'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentStep(0);
+                setSelectedOpt(null);
+                setIsAnswered(false);
+                setSessionResults([]);
+                setIsCompleted(false);
+              }}
+              className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#ccbdff] to-[#9d85f2] text-[#331282] font-sans text-xs font-bold hover:brightness-110 shadow-lg cursor-pointer transition-all"
+            >
+              Retake Diagnostic Quiz
+            </button>
+            {onGoToNotebook && (
+              <button
+                type="button"
+                onClick={onGoToNotebook}
+                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#292932] hover:bg-[#34343d] text-stone-200 font-sans text-xs font-semibold border border-white/5 cursor-pointer transition-all"
+              >
+                Back to Notebook
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -40,7 +151,12 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
     if (isAnswered) return;
     setSelectedOpt(index);
     setIsAnswered(true);
-    onAnswerQuestion(index === item.correctIndex);
+    const correct = index === item.correctIndex;
+    onAnswerQuestion(correct);
+    setSessionResults((prev) => [
+      ...prev,
+      { isCorrect: correct, topic: item.topic || 'Concept Review' },
+    ]);
   };
 
   const handleNext = () => {
@@ -49,9 +165,7 @@ export const SynapQuizView: React.FC<SynapQuizViewProps> = ({
       setSelectedOpt(null);
       setIsAnswered(false);
     } else {
-      setCurrentStep(0);
-      setSelectedOpt(null);
-      setIsAnswered(false);
+      setIsCompleted(true);
     }
   };
 

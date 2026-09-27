@@ -370,6 +370,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
                 setActiveView('active-notebook');
                 handleSendMessage(prompt);
               }}
+              onGoToNotebook={() => setActiveView('active-notebook')}
             />
           )}
 

@@ -55,12 +55,17 @@ print(json.dumps(dataset, indent=2))
     <button onclick="triggerAlert()" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-bold text-xs transition-all shadow-[0_4px_16px_rgba(56,189,248,0.3)] cursor-pointer">
       Test Interactive Action
     </button>
+    <div id="notice" class="hidden mt-4 p-3 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs font-mono"></div>
   </div>
 
   <script>
     function triggerAlert() {
       console.log('Interactive button clicked successfully!');
-      alert('Hello from Breezy Sandbox Live Preview!');
+      const el = document.getElementById('notice');
+      if (el) {
+        el.innerText = 'Hello from Breezy Sandbox Live Preview!';
+        el.classList.remove('hidden');
+      }
     }
     console.log('Breezy Live Preview script initialized and running.');
   </script>
@@ -165,8 +170,19 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Selected File States
-  const [selectedFilePath, setSelectedFilePath] = useState<string>(TEMPLATES[0].filename);
-  const [editorContent, setEditorContent] = useState<string>(TEMPLATES[0].content);
+  const [selectedFilePath, setSelectedFilePath] = useState<string>(() => {
+    const injected = localStorage.getItem('breezy_ide_active_code');
+    if (injected) return 'research_synthesis.py';
+    return TEMPLATES[0].filename;
+  });
+  const [editorContent, setEditorContent] = useState<string>(() => {
+    const injected = localStorage.getItem('breezy_ide_active_code');
+    if (injected) {
+      localStorage.removeItem('breezy_ide_active_code');
+      return injected;
+    }
+    return TEMPLATES[0].content;
+  });
   const [fileSha, setFileSha] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>('Refactor codebase via Breezy IDE');
@@ -226,13 +242,14 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     return previewLogs.filter((log) => log.toLowerCase().includes(q));
   }, [previewLogs, logSearchQuery]);
 
-  // Handle Terminal Shortcuts (Cmd+K / Ctrl+K and Cmd+Shift+Down)
+  // Handle Terminal Shortcuts (Cmd+K / Ctrl+K inside Terminal tab and Cmd+Shift+Down)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modKey = isMac ? e.metaKey : e.ctrlKey;
 
-      if (modKey && e.key.toLowerCase() === 'k') {
+      // Only hijack Cmd+K / Ctrl+K if currently on the terminal tab, leaving it available for Command Palette elsewhere
+      if (modKey && e.key.toLowerCase() === 'k' && activeWorkspaceTab === 'terminal') {
         e.preventDefault();
         handleClearLogs();
       }
@@ -247,7 +264,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeWorkspaceTab]);
 
   // Determine language for Prism highlighting
   const prismLanguage = useMemo(() => {

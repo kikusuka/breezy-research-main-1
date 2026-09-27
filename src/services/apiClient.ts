@@ -197,9 +197,9 @@ class ApiClient {
     options: RequestInit = {},
     onFailoverNotice?: (msg: string) => void
   ): Promise<Response> {
-    // Before dispatching, check if primary edge backend recovered
+    // Non-blocking opportunistic check for primary recovery
     if (this.currentEndpointIndex !== 0) {
-      await this.probePrimaryRecovery().catch(() => {});
+      this.probePrimaryRecovery().catch(() => {});
     }
 
     const attempts = this.endpoints.length;

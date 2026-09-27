@@ -5,7 +5,7 @@
 
 import type { ChatMessage, ModelConfig } from '../types';
 
-const DEFAULT_OLLAMA_BASE_URL = 'http://localhost:11434';
+const DEFAULT_OLLAMA_BASE_URL = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '/api/ollama' : 'http://localhost:11434';
 
 export interface OllamaModel {
   name: string;

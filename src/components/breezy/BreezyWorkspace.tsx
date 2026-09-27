@@ -240,24 +240,45 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
     }
   };
 
+  const recognitionRef = useRef<any>(null);
+
   const handleMicToggle = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      toast('Speech recognition not supported in this browser.');
+      toast('Speech recognition is not supported in this browser.');
       return;
     }
     if (isMicActive) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
       setIsMicActive(false);
     } else {
-      const rec = new SR();
-      rec.lang = 'en-US';
-      rec.onstart = () => setIsMicActive(true);
-      rec.onend = () => setIsMicActive(false);
-      rec.onresult = (e: any) => {
-        const text = e.results[0][0].transcript;
-        setInputVal(text);
-      };
-      rec.start();
+      try {
+        const rec = new SR();
+        rec.lang = 'en-US';
+        rec.continuous = false;
+        rec.interimResults = false;
+        rec.onstart = () => setIsMicActive(true);
+        rec.onend = () => setIsMicActive(false);
+        rec.onerror = (e: any) => {
+          setIsMicActive(false);
+          toast(e.error === 'not-allowed' ? 'Microphone permission denied.' : 'Voice recognition ended.');
+        };
+        rec.onresult = (e: any) => {
+          const text = e.results?.[0]?.[0]?.transcript;
+          if (text) {
+            setInputVal((prev) => (prev ? `${prev} ${text}` : text));
+          }
+        };
+        recognitionRef.current = rec;
+        rec.start();
+      } catch (err) {
+        setIsMicActive(false);
+        console.warn('Speech recognition init error:', err);
+      }
     }
   };
 

@@ -27,7 +27,7 @@ export const SynapAddSourceModal: React.FC<SynapAddSourceModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#181824] rounded-2xl border border-white/10 p-6 shadow-2xl flex flex-col gap-4 text-stone-100">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#181824] rounded-2xl border border-white/10 p-6 shadow-2xl flex flex-col gap-4 text-stone-100">
         <div className="flex items-center justify-between pb-2 border-b border-white/5">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#ccbdff] text-[22px]">

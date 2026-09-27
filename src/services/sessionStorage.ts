@@ -3,10 +3,46 @@ import { DebateSession, DebateStep, DebateTone } from '../types';
 // Storage key constants
 export const STORAGE_SESSIONS_KEY = 'breezy_research_sessions_v1';
 export const STORAGE_ACTIVE_ID_KEY = 'breezy_active_session_id_v1';
+const DB_NAME = 'breezy_storage_db';
+const STORE_NAME = 'research_sessions';
 
 export const SEED_SAMPLE_SESSIONS: DebateSession[] = [];
-
 export const SEED_SAMPLE_SESSION: DebateSession | null = null;
+
+// IndexedDB asynchronous fallback manager
+function openDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      return reject(new Error('IndexedDB not supported'));
+    }
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Async IndexedDB background sync for large session graphs
+ */
+export async function syncSessionsToIDB(sessions: DebateSession[]): Promise<void> {
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    for (const session of sessions) {
+      store.put(session);
+    }
+  } catch (err) {
+    // Non-blocking background sync warning
+    console.debug('IndexedDB sync background note:', err);
+  }
+}
 
 /**
  * Load all saved research sessions from LocalStorage.
@@ -45,14 +81,35 @@ export function loadSessions(): DebateSession[] {
 }
 
 /**
- * Save array of sessions to LocalStorage. Limits to 40 most recent to prevent quota limits.
+ * Save array of sessions to LocalStorage and IndexedDB.
  */
 export function saveSessions(sessions: DebateSession[]): void {
+  // Sync to IndexedDB for unlimited capacity
+  syncSessionsToIDB(sessions || []);
+
   try {
-    const trimmed = sessions.slice(0, 40);
+    const trimmed = (sessions || []).slice(0, 40);
     localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(trimmed));
   } catch (err) {
-    console.error('Failed to save research sessions to localStorage:', err);
+    console.warn('Failed to save research sessions directly; attempting pruned compression:', err);
+    try {
+      const pruned = (sessions || []).slice(0, 20).map((s) => ({
+        ...s,
+        steps: (s.steps || []).map((st) => ({
+          ...st,
+          content: st.content && st.content.length > 25000 ? st.content.slice(0, 25000) + '... [Transcript Truncated for Storage]' : st.content,
+        })),
+        evidenceGraph: s.evidenceGraph ? {
+          ...s.evidenceGraph,
+          claims: (s.evidenceGraph.claims || []).slice(0, 15),
+          sourcesConsulted: (s.evidenceGraph.sourcesConsulted || []).slice(0, 15),
+          contradictions: (s.evidenceGraph.contradictions || []).slice(0, 10),
+        } : undefined,
+      }));
+      localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(pruned));
+    } catch (retryErr) {
+      console.error('Critical quota error when saving research sessions:', retryErr);
+    }
   }
 }
 

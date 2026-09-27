@@ -15,6 +15,8 @@ interface ResearchConversationViewProps {
   keys: ProviderKeyConfig;
   researchEvents?: string[];
   onOpenNotes?: () => void;
+  onExportToSynap?: (session: DebateSession) => void;
+  onOpenInIde?: (session: DebateSession) => void;
 }
 
 export const ResearchConversationView: React.FC<ResearchConversationViewProps> = ({
@@ -29,6 +31,8 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   keys,
   researchEvents = [],
   onOpenNotes,
+  onExportToSynap,
+  onOpenInIde,
 }) => {
   const [inputText, setInputText] = useState('');
   const [researchDepth, setResearchDepth] = useState<'solo' | 'standard' | 'deep'>('standard');
@@ -38,9 +42,15 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollEndRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const isUserTyping = inputText.trim().length > 0;
 
@@ -67,7 +77,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
     const isGithubRepoOp = /push to repo|commit to repo|open pull request|create pull request|mount github repo/i.test(prompt);
     const hasGithub = Boolean(localStorage.getItem('synthexis_github_token') || localStorage.getItem('breezy_github_token'));
     if (isGithubRepoOp && !hasGithub) {
-      alert("GitHub Integration Required: Direct repository commits require a connected GitHub Personal Access Token in Settings.");
+      showToast("GitHub Token Required: Direct repository commits require a Personal Access Token in Settings.");
       return;
     }
 
@@ -451,6 +461,43 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               )}
             </article>
 
+            {/* Action Bridge: Turn Research Insights into Actions */}
+            {session?.finalOutput && !isDeliberating && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-emerald-500/10 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg my-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-stone-200 shrink-0">
+                    <span className="material-symbols-outlined text-[20px]">hub</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-stone-100">Action Bridge</span>
+                    <span className="text-[11px] text-stone-400">Export verified insights into active workspaces</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                  {onExportToSynap && (
+                    <button
+                      type="button"
+                      onClick={() => onExportToSynap(session)}
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-[#ccbdff] hover:bg-white text-[#331282] font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">school</span>
+                      <span>Study in Synap</span>
+                    </button>
+                  )}
+                  {onOpenInIde && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenInIde(session)}
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">terminal</span>
+                      <span>Open in Breezy IDE</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Points of Contention block */}
             {contradictions.length > 0 && (
               <section className="p-5 rounded-xl bg-amber-500/[0.02] border border-amber-500/10">
@@ -753,6 +800,14 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Inline Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-24 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[16px] text-amber-400">warning</span>
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

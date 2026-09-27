@@ -55,7 +55,20 @@ export const synapService = {
     try {
       localStorage.setItem(STORAGE_KEY_NOTEBOOKS, JSON.stringify(notebooks));
     } catch (e) {
-      console.warn('Failed to save Synap notebooks:', e);
+      console.warn('Failed to save Synap notebooks directly; attempting compression/pruning to protect storage quota:', e);
+      try {
+        const pruned = (notebooks || []).map((nb) => ({
+          ...nb,
+          chat: (nb.chat || []).slice(-30),
+          sources: (nb.sources || []).map((src) => ({
+            ...src,
+            text: src.text && src.text.length > 35000 ? src.text.slice(0, 35000) + '... [Indexed Content Truncated for Quota]' : src.text,
+          })),
+        }));
+        localStorage.setItem(STORAGE_KEY_NOTEBOOKS, JSON.stringify(pruned));
+      } catch (err) {
+        console.error('Critical quota error when saving notebooks:', err);
+      }
     }
   },
 
@@ -65,6 +78,52 @@ export const synapService = {
 
   setActiveNotebookId(id: string): void {
     localStorage.setItem(STORAGE_KEY_ACTIVE_NB, id);
+  },
+
+  getActiveNotebook(): SynapNotebook | null {
+    const nbs = this.loadNotebooks();
+    const activeId = this.getActiveNotebookId();
+    if (activeId) {
+      const found = nbs.find((n) => n.id === activeId);
+      if (found) return found;
+    }
+    if (nbs.length > 0) return nbs[0];
+
+    // Create a default Course Study Notebook if none exist yet
+    const newNb: SynapNotebook = {
+      id: `nb-${Date.now()}`,
+      title: 'Research Study Notebook',
+      courseCode: 'RESEARCH-101',
+      track: 'General Academic',
+      examDate: 'Final Review',
+      daysLeft: 14,
+      readiness: 85,
+      masteredCount: 0,
+      weakCount: 0,
+      sourceCount: 0,
+      createdAt: new Date().toISOString(),
+      sources: [],
+      studyItems: [],
+      chat: [],
+      topicTree: [],
+    };
+    this.saveNotebooks([newNb]);
+    this.setActiveNotebookId(newNb.id);
+    return newNb;
+  },
+
+  addStudyItems(notebookId: string, items: SynapStudyItem[]): void {
+    const nbs = this.loadNotebooks();
+    const updated = nbs.map((nb) => {
+      if (nb.id === notebookId) {
+        return {
+          ...nb,
+          studyItems: [...(nb.studyItems || []), ...items],
+        };
+      }
+      return nb;
+    });
+    this.saveNotebooks(updated);
   },
 
   getProvider(): SynapProviderConfig {

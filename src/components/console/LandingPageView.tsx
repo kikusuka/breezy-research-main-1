@@ -18,6 +18,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [researchDepth, setResearchDepth] = useState<'solo' | 'standard' | 'deep'>('standard');
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
   const [showModelSetup, setShowModelSetup] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const [config, setConfig] = useState(() => providerConfigService.getConfig());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +79,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     const isGithubRepoOp = /push to repo|commit to repo|open pull request|create pull request|mount github repo/i.test(fullPrompt);
     const hasGithub = Boolean(localStorage.getItem('synthexis_github_token') || localStorage.getItem('breezy_github_token'));
     if (isGithubRepoOp && !hasGithub) {
-      alert("GitHub Integration Required: Direct repository commits require a connected GitHub Personal Access Token in Settings.");
+      showToast("GitHub Token Required: Direct repository commits require a Personal Access Token in Settings.");
       return;
     }
 
@@ -417,6 +423,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Inline Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[16px] text-amber-400">warning</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

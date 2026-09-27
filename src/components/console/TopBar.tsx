@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ConsoleTab } from './Sidebar';
 import { apiClient, BackendState } from '../../services/apiClient';
 import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
@@ -30,6 +30,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const [backendState, setBackendState] = useState<BackendState>(() => apiClient.getState());
   const [showBackendMenu, setShowBackendMenu] = useState(false);
+  const backendMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = apiClient.subscribe((state) => {
@@ -37,6 +38,30 @@ export const TopBar: React.FC<TopBarProps> = ({
     });
     return () => unsub();
   }, []);
+
+  // Dismiss backend dropdown on outside click or Escape key
+  useEffect(() => {
+    if (!showBackendMenu) return;
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (backendMenuRef.current && !backendMenuRef.current.contains(e.target as Node)) {
+        setShowBackendMenu(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowBackendMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showBackendMenu]);
   return (
     <header className={`fixed top-0 left-0 lg:left-64 right-0 h-14 backdrop-blur-md border-b z-40 flex items-center justify-between px-4 sm:px-6 transition-colors ${
       theme === 'light'
@@ -105,7 +130,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* Zone 2: Primary Actions (Backend Status, Theme Toggle & Quick Jump) */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Backend Indicator Chip */}
-        <div className="relative">
+        <div className="relative" ref={backendMenuRef}>
           <button
             type="button"
             onClick={() => setShowBackendMenu(!showBackendMenu)}

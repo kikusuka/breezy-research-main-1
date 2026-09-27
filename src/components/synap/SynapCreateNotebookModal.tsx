@@ -57,7 +57,7 @@ export const SynapCreateNotebookModal: React.FC<SynapCreateNotebookModalProps> =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-[#14141e] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-5 text-stone-200">
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-[#14141e] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-5 text-stone-200">
         <div className="flex items-center justify-between pb-3 border-b border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#9d85f2]/20 text-[#ccbdff] border border-[#9d85f2]/30 flex items-center justify-center font-bold text-sm">

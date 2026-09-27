@@ -111,13 +111,87 @@ export async function handleBackendRequest(
     return createJsonResponse(healthData, 200, req, env);
   }
 
-  // Webhook verification endpoint
+  // Helper for SSRF safety check on external webhook URLs
+  const validatePublicWebhookUrl = (rawUrl: string): { safe: boolean; error?: string } => {
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return { safe: false, error: 'Only HTTP and HTTPS protocols are allowed.' };
+      }
+      const hostname = parsed.hostname.toLowerCase();
+      
+      // Disallow local loopback, 0.0.0.0, link-local, internal domains
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '0.0.0.0' ||
+        hostname === '::1' ||
+        hostname === '[::1]' ||
+        hostname.endsWith('.localhost') ||
+        hostname.endsWith('.local') ||
+        hostname.endsWith('.internal') ||
+        hostname.endsWith('.onion')
+      ) {
+        return { safe: false, error: 'Internal and loopback network addresses are strictly prohibited.' };
+      }
+
+      // Disallow cloud instance metadata endpoints
+      if (
+        hostname === '169.254.169.254' ||
+        hostname.includes('metadata.google') ||
+        hostname.includes('169.254')
+      ) {
+        return { safe: false, error: 'Access to cloud metadata endpoints is prohibited.' };
+      }
+
+      // Disallow private IPv4 subnets (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 100.64.0.0/10)
+      const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+      const match = hostname.match(ipv4Regex);
+      if (match) {
+        const o1 = Number(match[1]);
+        const o2 = Number(match[2]);
+        if (o1 === 10 || o1 === 127 || o1 === 0) {
+          return { safe: false, error: 'Private IP addresses are prohibited.' };
+        }
+        if (o1 === 172 && o2 >= 16 && o2 <= 31) {
+          return { safe: false, error: 'Private IP addresses are prohibited.' };
+        }
+        if (o1 === 192 && o2 === 168) {
+          return { safe: false, error: 'Private IP addresses are prohibited.' };
+        }
+        if (o1 === 169 && o2 === 254) {
+          return { safe: false, error: 'Link-local addresses are prohibited.' };
+        }
+      }
+
+      return { safe: true };
+    } catch {
+      return { safe: false, error: 'Malformed or unparseable webhook URL.' };
+    }
+  };
+
+  // Webhook verification endpoint with SSRF safety checks
   if (path === '/api/webhook/test' && req.method === 'POST') {
+    const rateCheck = checkServerRateLimit(clientIp, 10, 60000);
+    if (!rateCheck.allowed) {
+      return createJsonResponse(
+        { success: false, error: 'Webhook test rate limit exceeded (10 requests/min). Please wait.' },
+        429,
+        req,
+        env
+      );
+    }
+
     try {
       const body = await req.json().catch(() => ({}));
       const { webhookUrl, payload } = body;
       if (!webhookUrl || typeof webhookUrl !== 'string' || !webhookUrl.startsWith('http')) {
         return createJsonResponse({ success: false, error: 'Valid HTTP(S) webhook URL required' }, 400, req, env);
+      }
+
+      const ssrfCheck = validatePublicWebhookUrl(webhookUrl);
+      if (!ssrfCheck.safe) {
+        return createJsonResponse({ success: false, error: ssrfCheck.error || 'Invalid webhook target address' }, 403, req, env);
       }
 
       const controller = new AbortController();
@@ -158,6 +232,32 @@ export async function handleBackendRequest(
       return createJsonResponse(
         { error: 'Rate limit exceeded (20 requests per minute). Please wait a moment.' },
         429,
+        req,
+        env
+      );
+    }
+  }
+
+  // Ollama Secure Proxy (bridges localhost to HTTPS web environments)
+  if (path.startsWith('/api/ollama/')) {
+    const subpath = path.replace('/api/ollama', '');
+    const ollamaUrl = env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+    try {
+      const targetUrl = `${ollamaUrl.replace(/\/$/, '')}${subpath}`;
+      const forwardBody = req.method !== 'GET' && req.method !== 'HEAD' ? await req.text() : undefined;
+      const ollamaRes = await fetch(targetUrl, {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: forwardBody,
+      });
+      const data = await ollamaRes.json();
+      return createJsonResponse(data, ollamaRes.status, req, env);
+    } catch (e: any) {
+      return createJsonResponse(
+        { error: 'Ollama is unreachable on local server. Ensure Ollama service is running.', details: e.message },
+        503,
         req,
         env
       );

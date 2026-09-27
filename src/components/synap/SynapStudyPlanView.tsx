@@ -131,37 +131,44 @@ export const SynapStudyPlanView: React.FC<SynapStudyPlanViewProps> = ({
             </p>
           </div>
         </div>
-      ) : (
-        <div className="p-6 rounded-2xl bg-[#1b1b23] border border-white/5 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-sans text-sm font-bold text-stone-100">
-              Scheduled Items for {days[activeDayOffset].weekdayStr} ({days[activeDayOffset].dateStr})
-            </h3>
-            <button
-              type="button"
-              onClick={onStartFlashcards}
-              className="px-4 py-2 rounded-xl bg-[#9d85f2] hover:bg-[#8b5cf6] text-[#0d0d15] font-sans text-xs font-bold transition-colors cursor-pointer"
-            >
-              Start Review Session
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {allStudyItems.slice(0, 4).map((item) => (
-              <div
-                key={item.id}
-                className="p-4 rounded-xl bg-[#14141e] border border-white/5 flex flex-col gap-1"
+      ) : (() => {
+        const itemsPerDay = Math.max(1, Math.ceil(allStudyItems.length / 5));
+        const startIdx = activeDayOffset * itemsPerDay;
+        const dayItems = allStudyItems.slice(startIdx, startIdx + itemsPerDay);
+        const displayItems = dayItems.length > 0 ? dayItems : allStudyItems.slice(0, itemsPerDay);
+
+        return (
+          <div className="p-6 rounded-2xl bg-[#1b1b23] border border-white/5 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-sans text-sm font-bold text-stone-100">
+                Scheduled Items for {days[activeDayOffset].weekdayStr} ({days[activeDayOffset].dateStr}) — {displayItems.length} Target Item{displayItems.length === 1 ? '' : 's'}
+              </h3>
+              <button
+                type="button"
+                onClick={onStartFlashcards}
+                className="px-4 py-2 rounded-xl bg-[#9d85f2] hover:bg-[#8b5cf6] text-[#0d0d15] font-sans text-xs font-bold transition-colors cursor-pointer shadow-md"
               >
-                <span className="font-mono text-[10px] text-[#ccbdff]">
-                  {item.courseCode || 'Course'} · {item.notebookTitle}
-                </span>
-                <span className="font-sans text-xs font-medium text-stone-200">
-                  {item.prompt}
-                </span>
-              </div>
-            ))}
+                Start Review Session
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {displayItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl bg-[#14141e] border border-white/5 flex flex-col gap-1"
+                >
+                  <span className="font-mono text-[10px] text-[#ccbdff]">
+                    {item.courseCode || 'Course'} · {item.notebookTitle}
+                  </span>
+                  <span className="font-sans text-xs font-medium text-stone-200">
+                    {item.prompt}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

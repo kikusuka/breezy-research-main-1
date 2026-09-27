@@ -39,6 +39,7 @@ import {
 import { exportConsensusAsMarkdown } from './utils/exportTranscript';
 import { apiClient } from './services/apiClient';
 import { providerConfigService } from './services/providerConfigService';
+import { synapService } from './services/synapService';
 
 // Storage key constants
 const STORAGE_KEYS = 'breezy_byok_keys';
@@ -191,6 +192,17 @@ export default function App() {
     setAppToast(msg);
     setTimeout(() => setAppToast(null), 3500);
   };
+
+  // Dynamically calculate overall mastery across all user course notebooks
+  const synapNotebooks = synapService.loadNotebooks();
+  const totalStudyItems = synapNotebooks.reduce((acc, n) => acc + (n.studyItems?.length || 0), 0);
+  const totalMastered = synapNotebooks.reduce(
+    (acc, n) =>
+      acc +
+      (n.studyItems || []).filter((i) => i.history && i.history.some((h) => h.correct)).length,
+    0
+  );
+  const aggregatedReadiness = totalStudyItems > 0 ? Math.round((totalMastered / totalStudyItems) * 100) : 0;
 
   const handleSaveKeys = (newKeys: ProviderKeyConfig) => {
     setKeys(newKeys);
@@ -656,7 +668,7 @@ export default function App() {
         <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
           {/* Top Bar showing overall study readiness progress & product mode pill */}
           <SynapHeader
-            readinessPercentage={81}
+            readinessPercentage={aggregatedReadiness}
             productMode={productMode}
             onSelectProductMode={setProductMode}
             onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
@@ -761,6 +773,39 @@ export default function App() {
                 onExportMarkdown={handleExportMarkdown}
                 keys={keys}
                 onOpenNotes={() => setActiveTab('notes')}
+                onExportToSynap={(s) => {
+                  const notebook = synapService.getActiveNotebook();
+                  if (notebook) {
+                    synapService.addStudyItems(notebook.id, [
+                      {
+                        id: `item-${Date.now()}-1`,
+                        type: 'flashcard',
+                        prompt: `Key Finding: ${s.prompt.slice(0, 80)}`,
+                        answer: s.finalOutput?.slice(0, 300) || s.prompt,
+                        topic: s.prompt.slice(0, 30),
+                        history: [],
+                      },
+                      {
+                        id: `item-${Date.now()}-2`,
+                        type: 'flashcard',
+                        prompt: `Constraints & Considerations: ${s.prompt.slice(0, 50)}`,
+                        answer: s.steps.find((st) => st.role === 'skeptic')?.content?.slice(0, 300) || 'Operational and scaling considerations audited.',
+                        topic: s.prompt.slice(0, 30),
+                        history: [],
+                      },
+                    ]);
+                  }
+                  setProductMode('synap');
+                }}
+                onOpenInIde={(s) => {
+                  const codeMatch = s.finalOutput?.match(/```(?:python|javascript|typescript|html|bash|json)?\n([\s\S]*?)```/);
+                  const codeContent = codeMatch
+                    ? codeMatch[1]
+                    : `# Research Output\n# Topic: ${s.prompt}\n\n"""\n${s.finalOutput?.slice(0, 600) || ''}\n"""\n`;
+                  localStorage.setItem('breezy_ide_active_code', codeContent);
+                  setProductMode('breezy');
+                  setBreezyTab('ide');
+                }}
               />
             ) : (
               <LandingPageView
@@ -819,6 +864,7 @@ export default function App() {
         sessions={sessions}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewDebate}
+        onSelectProductMode={setProductMode}
       />
 
       <ProfileSettingsModal
