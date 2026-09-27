@@ -6,9 +6,6 @@ export const STORAGE_ACTIVE_ID_KEY = 'breezy_active_session_id_v1';
 const DB_NAME = 'breezy_storage_db';
 const STORE_NAME = 'research_sessions';
 
-export const SEED_SAMPLE_SESSIONS: DebateSession[] = [];
-export const SEED_SAMPLE_SESSION: DebateSession | null = null;
-
 // IndexedDB asynchronous fallback manager
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

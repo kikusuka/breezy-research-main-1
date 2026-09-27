@@ -19,8 +19,12 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
   };
 
   const copyCitation = (title: string, protocol?: string) => {
-    const isSolo = protocol === 'solo';
-    const label = isSolo ? 'Solo Model Inquiry' : 'Verified Multi-Model Consensus';
+    const label =
+      protocol === 'solo'
+        ? 'Solo Model Inquiry'
+        : protocol === 'quad'
+          ? 'Verified Quad-Model Research'
+          : 'Multi-Model Research';
     navigator.clipboard.writeText(`Breezy Research Archive: "${title}" (${label})`);
     showToast('Citation reference copied to clipboard');
   };
