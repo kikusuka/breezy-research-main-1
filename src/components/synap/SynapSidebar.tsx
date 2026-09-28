@@ -24,6 +24,7 @@ export const SynapSidebar: React.FC<SynapSidebarProps> = ({
     { id: 'flashcard-review', label: 'Flashcard Review', icon: 'style' },
     { id: 'quiz-mode', label: 'Quiz Mode', icon: 'psychology_alt' },
     { id: 'study-plan', label: 'Study Plan', icon: 'event_upcoming' },
+    { id: 'explain', label: 'Explain It Back', icon: 'record_voice_over' },
   ];
 
   return (

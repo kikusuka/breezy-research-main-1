@@ -213,6 +213,107 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Pyodide local WASM states
+  const [pyodideInstance, setPyodideInstance] = useState<any>(null);
+  const [isPyodideLoading, setIsPyodideLoading] = useState<boolean>(false);
+
+  const loadPyodideRuntime = (): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).loadPyodide) {
+        resolve((window as any).loadPyodide);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+      script.onload = () => {
+        resolve((window as any).loadPyodide);
+      };
+      script.onerror = () => {
+        reject(new Error('Failed to load Pyodide WebAssembly script from CDN.'));
+      };
+      document.head.appendChild(script);
+    });
+  };
+
+  const handleRunCodeLocally = async () => {
+    if (selectedFilePath.endsWith('.py')) {
+      setActiveWorkspaceTab('terminal');
+      setTerminalHistory((prev) => [
+        ...prev,
+        `\u001b[36m[Python WASM Runtime]\u001b[0m Launching Pyodide local sandbox...`,
+      ]);
+      
+      try {
+        let loadFn = (window as any).loadPyodide;
+        if (!loadFn) {
+          setIsPyodideLoading(true);
+          loadFn = await loadPyodideRuntime();
+        }
+        
+        let py = pyodideInstance;
+        if (!py) {
+          setTerminalHistory((prev) => [
+            ...prev,
+            `\u001b[90m[WebAssembly] Downloading WebAssembly Python binaries (~6MB)...`
+          ]);
+          py = await loadFn({
+            indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/'
+          });
+          setPyodideInstance(py);
+        }
+        
+        setIsPyodideLoading(false);
+        setTerminalHistory((prev) => [
+          ...prev,
+          `\u001b[32m[WASM System] Pyodide initialized. Executing Python locally...`,
+          `--------------------------------------------------`
+        ]);
+
+        // Intercept Python stdout & stderr
+        py.setStdout({
+          write: (text: string) => {
+            const trimmed = text.replace(/\n$/, '');
+            if (trimmed) {
+              setTerminalHistory((prev) => [...prev, trimmed]);
+            }
+            return text.length;
+          }
+        });
+        py.setStderr({
+          write: (text: string) => {
+            const trimmed = text.replace(/\n$/, '');
+            if (trimmed) {
+              setTerminalHistory((prev) => [...prev, `\u001b[31m${trimmed}\u001b[0m`]);
+            }
+            return text.length;
+          }
+        });
+
+        const startTime = performance.now();
+        await py.runPythonAsync(editorContent);
+        const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+
+        setTerminalHistory((prev) => [
+          ...prev,
+          `--------------------------------------------------`,
+          `\u001b[1m\u001b[32m[Execution Success]\u001b[0m Python script finished in ${duration}s.`
+        ]);
+        showToast('Python executed locally via WASM!');
+      } catch (err: any) {
+        setIsPyodideLoading(false);
+        setTerminalHistory((prev) => [
+          ...prev,
+          `\u001b[31m❌ [Python Error]\u001b[0m ${err.message || err}`
+        ]);
+        showToast('Python execution failed.');
+      }
+    } else {
+      // For HTML / JS Counter
+      setActiveWorkspaceTab('preview');
+      showToast('Live preview updated instantly!');
+    }
+  };
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -466,6 +567,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   // Listen for console messages from iframe preview
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
       if (event.data && event.data.type === 'BREEZY_CONSOLE') {
         const prefix = event.data.logType === 'error' ? '\u001b[31m❌ [preview error]\u001b[0m' : event.data.logType === 'warn' ? '\u001b[33m⚠️ [preview warn]\u001b[0m' : '\u001b[36mℹ️ [preview log]\u001b[0m';
         setPreviewLogs((prev) => [...prev, `${prefix} ${event.data.message}`]);
@@ -780,6 +882,26 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
                 <span className="hidden sm:inline">ANSI Terminal ({previewLogs.length})</span>
                 <span className="sm:hidden">Terminal</span>
               </button>
+
+              <button
+                type="button"
+                onClick={handleRunCodeLocally}
+                disabled={isPyodideLoading}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-sans text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md ml-3 shrink-0"
+                title="Run Python script via WebAssembly or update Live Preview sandbox"
+              >
+                {isPyodideLoading ? (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] font-bold">play_arrow</span>
+                    <span>Run Code</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Terminal Search Filter & Controls */}
@@ -876,7 +998,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
               srcDoc={previewSrcDoc}
               title="Breezy Live Preview Runner"
               className="flex-1 w-full h-full border-0 bg-white"
-              sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
+              sandbox="allow-scripts allow-modals allow-forms"
             />
           </div>
 

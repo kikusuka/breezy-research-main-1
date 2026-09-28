@@ -6,6 +6,7 @@ interface EvidenceGraphViewProps {
   researchMetrics?: ResearchMetrics;
   sessionTitle?: string;
   isCompact?: boolean;
+  onUpdateContradictionResolution?: (id: string, resolution: string) => void;
 }
 
 export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
@@ -13,6 +14,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
   researchMetrics,
   sessionTitle = 'Research Evidence Trail',
   isCompact = false,
+  onUpdateContradictionResolution,
 }) => {
   const claims = evidenceGraph?.claims || [];
   const contradictions = evidenceGraph?.contradictions || [];
@@ -22,6 +24,11 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
   const [selectedClaimId, setSelectedClaimId] = useState<string>(
     claims.length > 0 ? claims[0].id : 'none'
   );
+
+  // Custom User / Auditor reconciliation overrides
+  const [editingContraId, setEditingContraId] = useState<string | null>(null);
+  const [draftResolution, setDraftResolution] = useState<string>('');
+  const [localResolutions, setLocalResolutions] = useState<Record<string, string>>({});
 
   // If selectedClaimId is out of sync or claims change
   const activeClaim: ResearchClaim | undefined =
@@ -248,39 +255,122 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
       {/* Discovered Contradictions Section */}
       {contradictions.length > 0 && (
         <div className="rounded-xl bg-white/[0.02] border border-white/10 p-5">
-          <span className="text-xs font-semibold text-stone-200 block mb-3">
-            Where Sources or Arguments Disagreed ({contradictions.length})
-          </span>
+          <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/5">
+            <span className="text-xs font-semibold text-stone-200">
+              Where Sources or Arguments Disagreed ({contradictions.length})
+            </span>
+            <span className="text-[10px] uppercase font-mono text-stone-400">
+              Human Auditor Decisions Override AI Synthesis
+            </span>
+          </div>
           <div className="flex flex-col gap-3">
-            {contradictions.map((contra, i) => (
-              <div
-                key={contra.id || i}
-                className="p-3.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between text-amber-400 font-medium">
-                  <span>Point of Tension #{i + 1}</span>
-                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
-                    {contra.resolutionStatus}
-                  </span>
+            {contradictions.map((contra, i) => {
+              const isEditing = editingContraId === contra.id;
+              const hasAuditorDecision = !!localResolutions[contra.id];
+              const resolutionToShow = localResolutions[contra.id] || contra.reconciledResolution;
+              const statusToShow = hasAuditorDecision ? 'audited & verified' : contra.resolutionStatus;
+
+              return (
+                <div
+                  key={contra.id || i}
+                  className={`p-4 rounded-xl border text-xs flex flex-col gap-3 transition-colors ${
+                    hasAuditorDecision
+                      ? 'bg-purple-500/5 border-purple-500/20'
+                      : 'bg-amber-500/5 border-amber-500/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-medium">
+                    <span className={hasAuditorDecision ? 'text-purple-400' : 'text-amber-400'}>
+                      Point of Tension #{i + 1}
+                    </span>
+                    <span className={`text-[9px] uppercase px-2 py-0.5 rounded font-bold border ${
+                      hasAuditorDecision
+                        ? 'text-purple-300 bg-purple-500/15 border-purple-500/30'
+                        : 'text-amber-300 bg-amber-500/15 border-amber-500/30'
+                    }`}>
+                      {statusToShow}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-300">
+                    <div className="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                      <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wider block mb-1">Perspective A</span>
+                      <p className="leading-relaxed">{contra.claimA}</p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                      <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wider block mb-1">Perspective B</span>
+                      <p className="leading-relaxed">{contra.claimB}</p>
+                    </div>
+                  </div>
+
+                  {isEditing ? (
+                    <div className="flex flex-col gap-2 p-3 rounded-lg bg-black/40 border border-white/10">
+                      <span className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">
+                        Auditor Resolution Verdict Notes
+                      </span>
+                      <textarea
+                        value={draftResolution}
+                        onChange={(e) => setDraftResolution(e.target.value)}
+                        placeholder="Explain the resolution, correct the tension, or override the findings based on evidence..."
+                        className="w-full bg-[#050811] text-stone-100 border border-white/15 rounded-lg p-2.5 text-xs focus:border-purple-400 outline-none resize-none leading-relaxed min-h-[70px]"
+                      />
+                      <div className="flex items-center justify-end gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setEditingContraId(null)}
+                          className="px-2.5 py-1.5 rounded-md text-[11px] text-stone-400 hover:text-stone-200 hover:bg-white/5 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (draftResolution.trim()) {
+                              setLocalResolutions((prev) => ({
+                                ...prev,
+                                [contra.id]: draftResolution.trim(),
+                              }));
+                              if (onUpdateContradictionResolution) {
+                                onUpdateContradictionResolution(contra.id, draftResolution.trim());
+                              }
+                              setEditingContraId(null);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold cursor-pointer transition-colors shadow-md"
+                        >
+                          Apply Auditor Decision
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {resolutionToShow && (
+                        <div className="pt-2 border-t border-white/5 text-stone-300">
+                          <span className="text-stone-400 font-bold uppercase tracking-wider text-[9px] block mb-1">
+                            {hasAuditorDecision ? '⚖️ Reconciled Auditor Verdict (Final Override)' : 'Relation & Synthesis'}
+                          </span>
+                          <p className="leading-relaxed">{resolutionToShow}</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingContraId(contra.id);
+                            setDraftResolution(resolutionToShow || '');
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-[11px] text-stone-200 font-medium transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[13px] text-purple-400">gavel</span>
+                          <span>Arbitrate Verdict</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-300">
-                  <div className="p-2 rounded bg-black/20 border border-white/5">
-                    <span className="text-[10px] text-stone-400 block">Perspective A</span>
-                    <span>{contra.claimA}</span>
-                  </div>
-                  <div className="p-2 rounded bg-black/20 border border-white/5">
-                    <span className="text-[10px] text-stone-400 block">Perspective B</span>
-                    <span>{contra.claimB}</span>
-                  </div>
-                </div>
-                {contra.reconciledResolution && (
-                  <div className="pt-1.5 border-t border-amber-500/10 text-stone-300">
-                    <span className="text-stone-400 font-medium mr-1.5">How the sources relate:</span>
-                    <span>{contra.reconciledResolution}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import React from 'react';
 import { DebateSession } from '../../types';
 import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
+import { PWAInstallButton } from './PWAInstallButton';
 
 export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing';
 
@@ -210,6 +211,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
           </div>
+        </div>
+
+        {/* PWA In-App Install Prompt Banner */}
+        <div className="px-3 pb-2 pt-1.5 border-t border-white/5">
+          <PWAInstallButton />
         </div>
 
         {/* Footer: Unified Profile Settings Card */}

@@ -150,7 +150,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   const getSubtleResearchState = () => {
     if (activeRound === 1) return 'Exploring primary premises and establishing theoretical baseline...';
     if (activeRound === 2) return 'Challenging assumptions and investigating boundary failures...';
-    if (activeRound === 3) return 'Verifying statements against crawled publications and primary datasets...';
+    if (activeRound === 3) return 'Cross-referencing arguments against discovered source excerpts and dialectical critique...';
     if (activeRound >= 4) return 'Analyzing divergent guidelines and resolving point of tension...';
     return 'Conducting multi-model research...';
   };

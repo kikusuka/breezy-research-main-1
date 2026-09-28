@@ -7,6 +7,7 @@ import { SynapWeakSpotsView } from './SynapWeakSpotsView';
 import { SynapFlashcardView } from './SynapFlashcardView';
 import { SynapQuizView } from './SynapQuizView';
 import { SynapStudyPlanView } from './SynapStudyPlanView';
+import { SynapExplainItBackView } from './SynapExplainItBackView';
 import { SynapProviderModal } from './SynapProviderModal';
 import { SynapAddSourceModal } from './SynapAddSourceModal';
 import { SynapCreateNotebookModal } from './SynapCreateNotebookModal';
@@ -15,8 +16,11 @@ import {
   SynapNotebook,
   SynapProviderConfig,
   SynapChatMessage,
+  SynapStudyItem,
 } from '../../types/synap';
 import { synapService } from '../../services/synapService';
+import { runStorageMigration } from '../../services/synapDatabase';
+import { scheduleItem, computeNotebookReadiness } from '../../services/scheduler';
 import { ProductMode } from '../console/TopBar';
 
 interface SynapWorkspaceProps {
@@ -35,12 +39,9 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   onToggleTheme,
 }) => {
   const [activeView, setActiveView] = useState<SynapNavView>('notebooks');
-  const [notebooks, setNotebooks] = useState<SynapNotebook[]>(() =>
-    synapService.loadNotebooks()
-  );
-  const [activeNotebookId, setActiveNotebookId] = useState<string>(() =>
-    synapService.getActiveNotebookId()
-  );
+  const [notebooks, setNotebooks] = useState<SynapNotebook[]>([]);
+  const [activeNotebookId, setActiveNotebookId] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
   const [providerConfig, setProviderConfig] = useState<SynapProviderConfig>(() =>
     synapService.getProvider()
   );
@@ -52,40 +53,55 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function initDB() {
+      try {
+        await runStorageMigration();
+        const list = await synapService.loadNotebooks();
+        setNotebooks(list);
+        const activeId = synapService.getActiveNotebookId() || (list[0] ? list[0].id : '');
+        setActiveNotebookId(activeId);
+      } catch (err) {
+        console.error('Failed to initialize Synap IndexedDB workspace:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    initDB();
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const totalStudyItems = notebooks.reduce((acc, n) => acc + n.studyItems.length, 0);
-  const totalMastered = notebooks.reduce(
-    (acc, n) =>
-      acc +
-      n.studyItems.filter((i) => i.history && i.history.some((h) => h.correct)).length,
-    0
-  );
-  const overallReadiness =
-    totalStudyItems > 0 ? Math.round((totalMastered / totalStudyItems) * 100) : 0;
+  // Compute overall readiness across notebooks using scheduler prediction
+  let validReadinessSum = 0;
+  let validCount = 0;
+  for (const nb of notebooks) {
+    const res = computeNotebookReadiness(nb.studyItems, nb.examDate);
+    if (res) {
+      validReadinessSum += res.readiness;
+      validCount++;
+    }
+  }
+  const overallReadiness = validCount > 0 ? Math.round(validReadinessSum / validCount) : 0;
 
   const currentNotebook =
     notebooks.find((n) => n.id === activeNotebookId) ?? notebooks[0] ?? null;
 
-  const updateCurrentNotebook = (updater: (nb: SynapNotebook) => SynapNotebook) => {
+  const updateCurrentNotebook = async (updater: (nb: SynapNotebook) => SynapNotebook) => {
     if (!currentNotebook) return;
-    setNotebooks((prev) => {
-      const next = prev.map((n) =>
-        n.id === currentNotebook.id ? updater(n) : n
-      );
-      synapService.saveNotebooks(next);
-      return next;
-    });
+    const updated = updater(currentNotebook);
+    await synapService.saveNotebook(updated);
+    setNotebooks((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
   };
 
-  const handleDeleteNotebook = (id: string, e: React.MouseEvent) => {
+  const handleDeleteNotebook = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const next = notebooks.filter((n) => n.id !== id);
+    await synapService.deleteNotebook(id);
+    const next = await synapService.loadNotebooks();
     setNotebooks(next);
-    synapService.saveNotebooks(next);
     if (activeNotebookId === id) {
       const nextId = next.length > 0 ? next[0].id : '';
       setActiveNotebookId(nextId);
@@ -94,9 +110,11 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     showToast('Course notebook deleted.');
   };
 
-  const handleConfirmClearWorkspace = () => {
+  const handleConfirmClearWorkspace = async () => {
+    for (const nb of notebooks) {
+      await synapService.deleteNotebook(nb.id);
+    }
     setNotebooks([]);
-    synapService.saveNotebooks([]);
     setActiveNotebookId('');
     synapService.setActiveNotebookId('');
     setIsResetConfirmOpen(false);
@@ -109,46 +127,28 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     setActiveView('active-notebook');
   };
 
-  const handleCreateNotebook = (
+  const handleCreateNotebook = async (
     data: Partial<SynapNotebook>,
     initialSourceText?: string,
     initialSourceTitle?: string
   ) => {
-    const initialSources = initialSourceText
-      ? [
-          {
-            id: `src-${Date.now()}`,
-            title: initialSourceTitle || `${data.title} - Initial Notes`,
-            text: initialSourceText,
-            type: 'notes' as const,
-            addedAt: 'Just now',
-            wordCount: `${initialSourceText.split(/\s+/).length} words`,
-            badge: 'User Notes',
-          },
-        ]
-      : [];
+    const newNb = await synapService.createNotebook(
+      data.title || 'Untitled Course',
+      data.courseCode || 'GEN-ST',
+      data.examDate
+    );
 
-    const newNb: SynapNotebook = {
-      id: `nb-${Date.now()}`,
-      title: data.title || 'Untitled Course',
-      courseCode: data.courseCode || 'General',
-      track: data.track || 'Course Repository',
-      examDate: data.examDate || 'Unscheduled',
-      daysLeft: data.daysLeft || 0,
-      readiness: 0,
-      masteredCount: 0,
-      weakCount: 0,
-      sourceCount: initialSources.length,
-      createdAt: new Date().toISOString(),
-      topicTree: [],
-      sources: initialSources,
-      chat: [],
-      studyItems: [],
-    };
+    if (initialSourceText) {
+      await synapService.addSourceToNotebook(
+        newNb.id,
+        initialSourceTitle || `${newNb.title} - Initial Notes`,
+        'notes',
+        initialSourceText
+      );
+    }
 
-    const next = [newNb, ...notebooks];
-    setNotebooks(next);
-    synapService.saveNotebooks(next);
+    const list = await synapService.loadNotebooks();
+    setNotebooks(list);
     setActiveNotebookId(newNb.id);
     synapService.setActiveNotebookId(newNb.id);
     setActiveView('active-notebook');
@@ -156,6 +156,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   };
 
   const handleSendMessage = async (text: string) => {
+    if (!currentNotebook) return;
     const userMsg: SynapChatMessage = {
       id: `msg-${Date.now()}`,
       role: 'user',
@@ -163,15 +164,15 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
       timestamp: 'Just now',
     };
 
-    updateCurrentNotebook((nb) => ({
+    await updateCurrentNotebook((nb) => ({
       ...nb,
       chat: [...nb.chat, userMsg],
     }));
 
     try {
       const answer = await synapService.queryGroundedAI(
-        text,
-        currentNotebook.sources
+        currentNotebook.id,
+        text
       );
       const assistantMsg: SynapChatMessage = {
         id: `msg-ai-${Date.now()}`,
@@ -182,7 +183,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
           ? [`${currentNotebook.sources[0].title}`]
           : undefined,
       };
-      updateCurrentNotebook((nb) => ({
+      await updateCurrentNotebook((nb) => ({
         ...nb,
         chat: [...nb.chat, assistantMsg],
       }));
@@ -193,7 +194,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
         content: `Synap Coach: Grounded in your materials — ${e.message}`,
         timestamp: 'Just now',
       };
-      updateCurrentNotebook((nb) => ({
+      await updateCurrentNotebook((nb) => ({
         ...nb,
         chat: [...nb.chat, errorMsg],
       }));
@@ -201,13 +202,14 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   };
 
   const handleMakeFlashcards = async () => {
+    if (!currentNotebook) return;
     showToast('Generating flashcards from course sources...');
     try {
       const items = await synapService.generateItems(
-        currentNotebook,
+        currentNotebook.id,
         'flashcard'
       );
-      updateCurrentNotebook((nb) => ({
+      await updateCurrentNotebook((nb) => ({
         ...nb,
         studyItems: [...nb.studyItems, ...items],
       }));
@@ -218,48 +220,48 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     }
   };
 
-  const handleAddSource = (title: string, text: string) => {
-    const newSource = {
-      id: `src-${Date.now()}`,
+  const handleAddSource = async (title: string, text: string) => {
+    if (!currentNotebook) return;
+    await synapService.addSourceToNotebook(
+      currentNotebook.id,
       title,
-      text,
-      type: 'notes' as const,
-      addedAt: 'Just now',
-      wordCount: `${text.split(' ').length} words`,
-      badge: 'User Notes',
-    };
-    updateCurrentNotebook((nb) => ({
-      ...nb,
-      sources: [newSource, ...nb.sources],
-      sourceCount: nb.sources.length + 1,
-    }));
+      'notes',
+      text
+    );
+    const list = await synapService.loadNotebooks();
+    setNotebooks(list);
     showToast(`Added source "${title}".`);
   };
 
-  const handleRateFlashcard = (
+  const handleRateFlashcard = async (
     cardId: string,
     rating: number,
     isCorrect: boolean
   ) => {
-    updateCurrentNotebook((nb) => {
-      const nextItems = nb.studyItems.map((item) => {
-        if (item.id === cardId) {
-          return {
-            ...item,
-            history: [
-              ...item.history,
-              {
-                timestamp: new Date().toISOString(),
-                correct: isCorrect,
-                rating,
-              },
-            ],
-          };
-        }
-        return item;
-      });
-      return { ...nb, studyItems: nextItems };
+    if (!currentNotebook) return;
+    const nextItems = currentNotebook.studyItems.map((item) => {
+      if (item.id === cardId) {
+        // Apply SuperMemo-2 (SM-2) scheduling update
+        const sm2State = scheduleItem(item, rating);
+        return {
+          ...item,
+          ...sm2State,
+          history: [
+            ...item.history,
+            {
+              timestamp: new Date().toISOString(),
+              correct: isCorrect,
+              rating,
+            },
+          ],
+        };
+      }
+      return item;
     });
+
+    const updatedNb = { ...currentNotebook, studyItems: nextItems };
+    await synapService.saveNotebook(updatedNb);
+    setNotebooks((prev) => prev.map((n) => (n.id === updatedNb.id ? updatedNb : n)));
     showToast(`Recall recorded (${rating === 4 ? 'Easy' : rating === 3 ? 'Good' : rating === 2 ? 'Hard' : 'Again'})`);
   };
 
@@ -268,6 +270,17 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
     synapService.saveProvider(cfg);
     showToast('Provider settings updated.');
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0A0A0F] text-stone-300 font-sans">
+        <div className="flex items-center gap-3">
+          <span className="w-5 h-5 rounded-full border-2 border-purple-500/20 border-t-purple-400 animate-spin"></span>
+          <span className="text-xs font-mono uppercase tracking-widest">Loading Synap IndexedDB Storage...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex bg-[#0A0A0F] text-[#e4e1ed] min-h-screen font-sans antialiased overflow-x-hidden">
@@ -307,7 +320,7 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
           theme={theme}
           onToggleTheme={onToggleTheme}
           activeNotebookTitle={currentNotebook?.title}
-          activeDaysLeft={currentNotebook?.daysLeft}
+          activeDaysLeft={currentNotebook?.examDate ? Math.max(0, Math.ceil((new Date(currentNotebook.examDate).getTime() - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24))) : undefined}
         />
 
         {/* View Router */}
@@ -358,21 +371,21 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
             />
           )}
 
-          {activeView === 'quiz-mode' && currentNotebook && (
-            <SynapQuizView
-              studyItems={currentNotebook.studyItems}
-              onAnswerQuestion={(isCorrect) => {
-                showToast(
-                  isCorrect
-                    ? 'Correct response! Recorded in history.'
-                    : 'Miss recorded. Added to review history.'
-                );
+          {activeView === 'explain' && currentNotebook && (
+            <SynapExplainItBackView
+              notebook={currentNotebook}
+              onAddStudyItems={async (items) => {
+                await updateCurrentNotebook((nb) => ({
+                  ...nb,
+                  studyItems: [...nb.studyItems, ...items],
+                }));
               }}
-              onExplainWithSynap={(prompt) => {
-                setActiveView('active-notebook');
-                handleSendMessage(prompt);
+              onUpdateNotebook={async (nb) => {
+                await synapService.saveNotebook(nb);
+                setNotebooks((prev) => prev.map((n) => (n.id === nb.id ? nb : n)));
               }}
-              onGoToNotebook={() => setActiveView('active-notebook')}
+              toast={showToast}
+              theme={theme}
             />
           )}
 

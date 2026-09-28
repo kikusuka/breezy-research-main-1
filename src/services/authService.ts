@@ -13,7 +13,21 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
+let firebaseConfig: any = {
+  apiKey: "AIzaSyPlaceholder-MockKeyForBuild",
+  authDomain: "placeholder.firebaseapp.com",
+  projectId: "placeholder-database-id",
+  storageBucket: "placeholder.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef"
+};
+
+try {
+  // @ts-ignore
+  firebaseConfig = (await import('../../firebase-applet-config.json')).default;
+} catch (e) {
+  // Fallback to placeholder config when config file is not present
+}
 
 // Initialize Firebase with exact applet config
 const app = initializeApp(firebaseConfig);

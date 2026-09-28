@@ -23,12 +23,12 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onSelectProductMode,
 }) => {
   const [query, setQuery] = useState('');
-  const [notebooks, setNotebooks] = useState(() => synapService.loadNotebooks());
+  const [notebooks, setNotebooks] = useState(() => synapService.loadNotebooksSync());
 
   useEffect(() => {
     if (isOpen) {
       setQuery('');
-      setNotebooks(synapService.loadNotebooks());
+      setNotebooks(synapService.loadNotebooksSync());
     }
   }, [isOpen]);
 

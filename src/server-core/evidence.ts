@@ -143,7 +143,40 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       ? parsed.researchPlan
       : [];
 
-    const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
+    let claims = Array.isArray(parsed.claims) ? parsed.claims : [];
+    
+    // Rigorous Code-Level Source Verification against discoveredSources (Fixes model grading its own work)
+    const validUrls = new Set(discoveredSources.map((s) => s.url).filter(Boolean));
+    const combinedSnippets = discoveredSources.map((s) => (s.snippet || '').toLowerCase()).join(' ');
+
+    claims = claims.map((c: any) => {
+      let verifiedSources = (c.supportingSources || []).map((src: any) => {
+        const urlMatch = src.url && validUrls.has(src.url);
+        const snippetMatch = src.snippet && combinedSnippets.includes(src.snippet.toLowerCase().slice(0, 30));
+        const isVerified = Boolean(urlMatch || snippetMatch);
+        return {
+          ...src,
+          verified: isVerified,
+        };
+      });
+
+      const hasVerifiedSource = verifiedSources.some((s: any) => s.verified);
+      let status = c.status;
+      let confidence = typeof c.confidence === 'number' ? c.confidence : 70;
+
+      if (!hasVerifiedSource && discoveredSources.length > 0) {
+        status = 'unverified';
+        confidence = Math.min(confidence, 45);
+      }
+
+      return {
+        ...c,
+        status,
+        confidence,
+        supportingSources: verifiedSources,
+      };
+    });
+
     const contradictions = Array.isArray(parsed.contradictions) ? parsed.contradictions : [];
 
     const claimsIdentified = claims.length;

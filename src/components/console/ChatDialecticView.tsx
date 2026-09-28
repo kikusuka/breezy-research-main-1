@@ -13,6 +13,7 @@ interface ChatDialecticViewProps {
   onStartDebate: (prompt: string) => void;
   onSaveNote?: (title: string, content: string) => void;
   onExportMarkdown?: () => void;
+  onStudyInSynap?: (prompt: string, output: string) => void;
   onOpenModelsTab: () => void;
   keys: ProviderKeyConfig;
 }
@@ -26,6 +27,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
   onStartDebate,
   onSaveNote,
   onExportMarkdown,
+  onStudyInSynap,
   onOpenModelsTab,
   keys,
 }) => {
@@ -138,6 +140,18 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {session.status === 'completed' && onStudyInSynap && (
+            <button
+              type="button"
+              onClick={() => onStudyInSynap(session.prompt, session.finalOutput || '')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-semibold border border-emerald-500/20"
+              title="Create a study notebook with flashcards based on this research session"
+            >
+              <span className="material-symbols-outlined text-[16px] text-emerald-400">school</span>
+              <span>Study in Synap</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleSaveToNotesClick}

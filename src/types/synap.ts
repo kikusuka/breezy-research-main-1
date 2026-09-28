@@ -74,7 +74,8 @@ export type SynapNavView =
   | 'weak-spots'
   | 'flashcard-review'
   | 'quiz-mode'
-  | 'study-plan';
+  | 'study-plan'
+  | 'explain';
 
 export interface SynapProviderConfig {
   type: 'gemini' | 'openai' | 'anthropic';

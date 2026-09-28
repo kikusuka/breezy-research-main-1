@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SynapNotebook } from '../../types/synap';
+import { computePredictedRecall, getSM2State } from '../../services/scheduler';
 
 interface SynapWeakSpotsViewProps {
   notebooks?: SynapNotebook[];
@@ -15,15 +16,25 @@ export const SynapWeakSpotsView: React.FC<SynapWeakSpotsViewProps> = ({
   const [filter, setFilter] = useState<'all' | 'resolved'>('all');
 
   const allStudyItems = notebooks.flatMap((n) =>
-    n.studyItems.map((item) => ({ ...item, notebookTitle: n.title, courseCode: n.courseCode }))
+    n.studyItems.map((item) => ({ ...item, examDate: n.examDate, notebookTitle: n.title, courseCode: n.courseCode }))
   );
 
-  const weakItems = allStudyItems.filter(
-    (i) => i.history && i.history.some((h) => !h.correct)
-  );
-  const resolvedItems = allStudyItems.filter(
-    (i) => i.history && i.history.some((h) => h.correct) && !i.history.some((h) => !h.correct)
-  );
+  // Derive weak and mastered items from predicted recall on exam date & lapses
+  const weakItems = allStudyItems.filter((i) => {
+    const state = getSM2State(i);
+    const recall = i.examDate ? computePredictedRecall(i, i.examDate) : 0.5;
+    const isReviewed = state.repetitions > 0 || state.interval > 0;
+    // Weak: reviewed AND (lapses > 1 OR predicted recall < 60%)
+    return isReviewed && (state.lapses > 1 || recall < 0.60);
+  });
+
+  const resolvedItems = allStudyItems.filter((i) => {
+    const state = getSM2State(i);
+    const recall = i.examDate ? computePredictedRecall(i, i.examDate) : 0.5;
+    const isReviewed = state.repetitions > 0 || state.interval > 0;
+    // Mastered / Resolved: predicted recall >= 75%
+    return isReviewed && recall >= 0.75;
+  });
 
   return (
     <div className="flex flex-col w-full max-w-[1240px] mx-auto animate-in fade-in duration-300 space-y-8">

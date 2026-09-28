@@ -88,6 +88,12 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
           </div>
         )}
 
+        {/* Glowing Beta Badge in SynapHeader */}
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold select-none shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.08)]">
+          <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>BETA RELEASE</span>
+        </div>
+
         {/* Exam Readiness Badges - ONLY shown for Synap mode */}
         {productMode === 'synap' && (
           <div className="hidden md:flex items-center gap-3 border-l border-white/10 pl-3">

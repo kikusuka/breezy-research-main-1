@@ -20,6 +20,7 @@ import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
 import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace';
 import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
 import { SynapHeader } from './components/synap/SynapHeader';
+import { computeNotebookReadiness } from './services/scheduler';
 
 import {
   ProviderKeyConfig,
@@ -192,16 +193,18 @@ export default function App() {
     setTimeout(() => setAppToast(null), 3500);
   };
 
-  // Dynamically calculate overall mastery across all user course notebooks
-  const synapNotebooks = synapService.loadNotebooks();
-  const totalStudyItems = synapNotebooks.reduce((acc, n) => acc + (n.studyItems?.length || 0), 0);
-  const totalMastered = synapNotebooks.reduce(
-    (acc, n) =>
-      acc +
-      (n.studyItems || []).filter((i) => i.history && i.history.some((h) => h.correct)).length,
-    0
-  );
-  const aggregatedReadiness = totalStudyItems > 0 ? Math.round((totalMastered / totalStudyItems) * 100) : 0;
+  // Dynamically calculate overall readiness across all user course notebooks
+  const synapNotebooks = synapService.loadNotebooksSync();
+  let validReadinessSum = 0;
+  let validCount = 0;
+  for (const nb of synapNotebooks) {
+    const res = computeNotebookReadiness(nb.studyItems, nb.examDate);
+    if (res) {
+      validReadinessSum += res.readiness;
+      validCount++;
+    }
+  }
+  const aggregatedReadiness = validCount > 0 ? Math.round(validReadinessSum / validCount) : 0;
 
   const handleSaveKeys = (newKeys: ProviderKeyConfig) => {
     setKeys(newKeys);
@@ -776,30 +779,9 @@ export default function App() {
                 onExportMarkdown={handleExportMarkdown}
                 keys={keys}
                 onOpenNotes={() => setActiveTab('notes')}
-                onExportToSynap={(s) => {
-                  let notebook = synapService.getActiveNotebook();
-                  if (!notebook) {
-                    const promptTitle = s.prompt.slice(0, 40).trim() || 'Research Synthesis';
-                    notebook = synapService.createNotebook(promptTitle, 'RESEARCH');
-                  }
-                  synapService.addStudyItems(notebook.id, [
-                    {
-                      id: `item-${Date.now()}-1`,
-                      type: 'flashcard',
-                      prompt: `Key Finding: ${s.prompt.slice(0, 80)}`,
-                      answer: s.finalOutput?.slice(0, 300) || s.prompt,
-                      topic: s.prompt.slice(0, 30),
-                      history: [],
-                    },
-                    {
-                      id: `item-${Date.now()}-2`,
-                      type: 'flashcard',
-                      prompt: `Constraints & Considerations: ${s.prompt.slice(0, 50)}`,
-                      answer: s.steps.find((st) => st.role === 'skeptic')?.content?.slice(0, 300) || 'Operational and scaling considerations audited.',
-                      topic: s.prompt.slice(0, 30),
-                      history: [],
-                    },
-                  ]);
+                onExportToSynap={async (s) => {
+                  const notebook = await synapService.exportResearchSession(s.prompt, s.finalOutput || '');
+                  synapService.setActiveNotebookId(notebook.id);
                   setProductMode('synap');
                 }}
                 onOpenInIde={(s) => {

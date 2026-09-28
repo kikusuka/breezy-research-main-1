@@ -1,5 +1,6 @@
 import React from 'react';
 import { SynapNotebook } from '../../types/synap';
+import { computeNotebookReadiness, computePredictedRecall, getSM2State } from '../../services/scheduler';
 
 interface SynapNotebooksViewProps {
   notebooks: SynapNotebook[];
@@ -128,17 +129,27 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {notebooks.map((nb) => {
             const realTotalItems = nb.studyItems.length;
-            const realMasteredCount = nb.studyItems.filter(
-              (i) => i.history && i.history.some((h) => h.correct)
-            ).length;
-            const realWeakCount = nb.studyItems.filter(
-              (i) => i.history && i.history.some((h) => !h.correct)
-            ).length;
             const realSourceCount = nb.sources.length;
-            const computedReadiness =
-              realTotalItems > 0
-                ? Math.round((realMasteredCount / realTotalItems) * 100)
-                : 0;
+
+            const readinessResult = computeNotebookReadiness(nb.studyItems, nb.examDate);
+            const computedReadiness = readinessResult ? readinessResult.readiness : 0;
+            const unreviewedCount = readinessResult ? readinessResult.unreviewedCount : realTotalItems;
+
+            // Mastered (predicted recall >= 75%)
+            const realMasteredCount = nb.studyItems.filter((i) => {
+              const state = getSM2State(i);
+              const isReviewed = state.repetitions > 0 || state.interval > 0;
+              const recall = nb.examDate ? computePredictedRecall(i, nb.examDate) : 0.5;
+              return isReviewed && recall >= 0.75;
+            }).length;
+
+            // Weak Spots (reviewed AND (lapses > 1 OR predicted recall < 60%))
+            const realWeakCount = nb.studyItems.filter((i) => {
+              const state = getSM2State(i);
+              const isReviewed = state.repetitions > 0 || state.interval > 0;
+              const recall = nb.examDate ? computePredictedRecall(i, nb.examDate) : 0.5;
+              return isReviewed && (state.lapses > 1 || recall < 0.60);
+            }).length;
 
             const strokeColor =
               computedReadiness >= 75
@@ -190,19 +201,19 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                           cy="36"
                           fill="none"
                           r="30"
-                          stroke={strokeColor}
+                          stroke={readinessResult ? strokeColor : '#34343d'}
                           strokeDasharray="188.5"
-                          strokeDashoffset={dashOffset}
+                          strokeDashoffset={readinessResult ? dashOffset : 188.5}
                           strokeLinecap="round"
                           strokeWidth="4.5"
                         />
                       </svg>
                       <div className="absolute flex flex-col items-center justify-center">
-                        <span className="font-mono text-sm text-stone-100 font-bold leading-none">
-                          {computedReadiness}%
+                        <span className="font-mono text-xs text-stone-100 font-bold leading-none text-center">
+                          {readinessResult ? `${computedReadiness}%` : 'N/A'}
                         </span>
-                        <span className="font-mono text-[8px] text-[#cac4d4] uppercase tracking-tighter mt-0.5">
-                          Readiness
+                        <span className="font-mono text-[7px] text-[#cac4d4] uppercase tracking-tighter mt-1">
+                          {readinessResult ? 'Readiness' : 'No Data'}
                         </span>
                       </div>
                     </div>
@@ -227,6 +238,11 @@ export const SynapNotebooksView: React.FC<SynapNotebooksViewProps> = ({
                           ? 'Review Recommended'
                           : 'Optimal Retention'}
                       </span>
+                      {unreviewedCount > 0 && (
+                        <span className="font-mono text-[9px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold select-none">
+                          {unreviewedCount} unreviewed
+                        </span>
+                      )}
                       <span
                         className={`font-mono text-[11px] font-semibold ${
                           realWeakCount > 0

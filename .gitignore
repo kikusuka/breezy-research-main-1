@@ -100,4 +100,8 @@ coverage.xml
 .pytest_cache/
 .pydevproject
 .vscode/settings.json
+
+# Firebase Local Config Credentials
+firebase-applet-config.json
+firebase_applet_config.xml
 ```
