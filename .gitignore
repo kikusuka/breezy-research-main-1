@@ -1,4 +1,3 @@
-```
 # Dependencies
 node_modules/
 
@@ -9,6 +8,7 @@ node_modules/
 .env
 .env.local
 .env.*
+!.env.example
 
 # IDE files
 .vscode/
@@ -98,10 +98,3 @@ coverage.xml
 *.sublime-project
 *.sublime-workspace
 .pytest_cache/
-.pydevproject
-.vscode/settings.json
-
-# Firebase Local Config Credentials
-firebase-applet-config.json
-firebase_applet_config.xml
-```

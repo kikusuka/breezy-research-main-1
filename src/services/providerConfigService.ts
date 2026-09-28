@@ -182,8 +182,6 @@ export const providerConfigService = {
   saveConfig(config: CanonicalWorkspaceConfig): void {
     try {
       localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(config));
-      localStorage.setItem('breezy_byok_keys', JSON.stringify(config.keys));
-      localStorage.setItem('breezy_provider_keys', JSON.stringify(config.keys));
     } catch (e) {
       console.warn('Failed to persist provider config:', e);
     }

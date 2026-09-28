@@ -73,15 +73,15 @@ describe('Synap Exam Readiness Computations', () => {
 });
 
 describe('Quote Verbatim Verification', () => {
-  it('should return true for strict verbatim matches ignoring whitespace', () => {
-    const chunk = "Breezy Research Suite operates a local-first memory cache.";
+  it('should return true for whitespace and case-insensitive matches', () => {
+    const chunk = "Breezy Research Suite\noperates a local-first memory cache.";
     expect(verifyQuoteVerbatim("Breezy Research Suite", chunk)).toBe(true);
-    expect(verifyQuoteVerbatim(" local-first memory ", chunk)).toBe(true);
+    expect(verifyQuoteVerbatim("LOCAL-FIRST MEMORY", chunk)).toBe(true);
+    expect(verifyQuoteVerbatim("suite\noperates a", chunk)).toBe(true);
   });
 
   it('should return false for modified quotes or non-matches', () => {
     const chunk = "Breezy Research Suite operates a local-first memory cache.";
     expect(verifyQuoteVerbatim("Breezy Suite operates", chunk)).toBe(false); // skipped word
-    expect(verifyQuoteVerbatim("local-first memory CACHE", chunk)).toBe(false); // different casing
   });
 });

@@ -100,7 +100,7 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#1b1b23] border border-white/5 shadow-[inset_0_1px_1px_0_rgba(232,235,255,0.06)]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#45dfa4] shadow-[0_0_8px_rgba(69,223,164,0.6)]"></span>
               <span className="font-sans text-[11px] text-[#cac4d4]">
-                Overall Exam Readiness
+                Estimated Retention (Rough Est.)
               </span>
               <span className="font-mono text-xs text-[#68fcbf] font-bold">
                 {readinessPercentage}%

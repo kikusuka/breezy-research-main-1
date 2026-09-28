@@ -150,7 +150,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   const getSubtleResearchState = () => {
     if (activeRound === 1) return 'Exploring primary premises and establishing theoretical baseline...';
     if (activeRound === 2) return 'Challenging assumptions and investigating boundary failures...';
-    if (activeRound === 3) return 'Cross-referencing arguments against discovered source excerpts and dialectical critique...';
+    if (activeRound === 3) return 'Reviewing Analyst and Critic output for unsupported claims and math errors...';
     if (activeRound >= 4) return 'Analyzing divergent guidelines and resolving point of tension...';
     return 'Conducting multi-model research...';
   };
@@ -327,7 +327,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 How Synthexis Works
               </span>
               <p className="text-xs text-stone-400 leading-relaxed mb-8">
-                Synthexis translates technical questions into distinct research angles, cross-references arguments against discovered source excerpts and dialectical critique, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
+                Synthexis translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
               </p>
 
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">

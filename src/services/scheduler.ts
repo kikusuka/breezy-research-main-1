@@ -219,7 +219,7 @@ export function deriveWeakSpotTopics(
  */
 export function verifyQuoteVerbatim(quote: string, chunkText: string): boolean {
   if (!quote || !chunkText) return false;
-  const cleanQuote = quote.replace(/\s+/g, ' ').trim();
-  const cleanChunk = chunkText.replace(/\s+/g, ' ').trim();
+  const cleanQuote = quote.replace(/\s+/g, ' ').trim().toLowerCase();
+  const cleanChunk = chunkText.replace(/\s+/g, ' ').trim().toLowerCase();
   return cleanChunk.includes(cleanQuote);
 }
