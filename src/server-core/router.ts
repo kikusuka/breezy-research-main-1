@@ -836,6 +836,7 @@ Structure in clean Markdown with clear headings.`;
             sendEvent('token', { round: 1, token: chunk });
           },
           env,
+          signal: req.signal,
         });
 
         await sendEvent('status', { message: 'Condensing Analyst proposal for model context...' });
@@ -892,6 +893,7 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
             sendEvent('token', { round: 2, token: chunk });
           },
           env,
+          signal: req.signal,
         });
 
         await sendEvent('status', { message: 'Condensing Critic review for model context...' });
@@ -954,6 +956,7 @@ Perform rigorous empirical and constraint verification on these analyses.`;
                 sendEvent('token', { round: verifierRoundNum, token: chunk });
               },
               env,
+              signal: req.signal,
             });
           } catch (err: any) {
             const errMsg = err?.message || 'API error or connection timeout';
@@ -1029,6 +1032,7 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
             sendEvent('token', { round: finalRoundNum, token: chunk });
           },
           env,
+          signal: req.signal,
         });
 
         await sendEvent('round_complete', {

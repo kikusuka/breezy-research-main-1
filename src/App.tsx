@@ -148,6 +148,9 @@ export default function App() {
   // Sessions and debate states
   const [sessions, setSessions] = useState<DebateSession[]>(() => loadSessions() || [createNewSession('First Inquiry', 'trio', [], 'balanced')]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => loadActiveSessionId() || sessions[0]?.id || null);
+  const [consensusMode, setConsensusMode] = useState(true);
+
+  const handleToggleConsensusMode = () => setConsensusMode((prev) => !prev);
 
   useEffect(() => {
     saveSessions(sessions);
@@ -479,8 +482,8 @@ export default function App() {
         activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewDebate}
-        consensusMode={true}
-        onToggleConsensusMode={() => {}}
+        consensusMode={consensusMode}
+        onToggleConsensusMode={handleToggleConsensusMode}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
