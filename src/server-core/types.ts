@@ -44,6 +44,7 @@ export interface CallAgentParams {
   enableSearchGrounding?: boolean;
   onChunk: (chunk: string) => void;
   env?: BackendEnv;
+  signal?: AbortSignal;
 }
 
 export interface HealthResponse {

@@ -4,31 +4,12 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sidebar, ConsoleTab } from './components/console/Sidebar';
-import { TopBar } from './components/console/TopBar';
-import { ResearchConversationView } from './components/console/ResearchConversationView';
-import { ChatDialecticView } from './components/console/ChatDialecticView';
-import { ResearchNotesView } from './components/console/ResearchNotesView';
-import { ModelsConsensusView } from './components/console/ModelsConsensusView';
-import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
-import { LandingPageView } from './components/console/LandingPageView';
-import { CommandPaletteModal } from './components/console/CommandPaletteModal';
-import { SynapWorkspace } from './components/synap/SynapWorkspace';
-import { BreezyWorkspace } from './components/breezy/BreezyWorkspace';
-import { BreezySidebar, BreezyTab } from './components/breezy/BreezySidebar';
-import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
-import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace';
-import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
-import { SynapHeader } from './components/synap/SynapHeader';
-import { computeNotebookReadiness } from './services/scheduler';
-
-import {
-  ProviderKeyConfig,
-  DebateStep,
-  DebateSession,
-  DebateTone,
-  SearchEngineProvider,
-} from './types';
+import { ConsoleTab } from './components/console/Sidebar';
+import { BreezyTab } from './components/breezy/BreezySidebar';
+import { ProductMode } from './components/console/TopBar';
+import { SynapProduct } from './products/SynapProduct';
+import { BreezyProduct } from './products/BreezyProduct';
+import { SynthexisProduct } from './products/SynthexisProduct';
 import {
   loadSessions,
   saveSessions,
@@ -39,839 +20,121 @@ import {
 import { exportConsensusAsMarkdown } from './utils/exportTranscript';
 import { apiClient } from './services/apiClient';
 import { providerConfigService } from './services/providerConfigService';
-import { synapService } from './services/synapService';
-
-// Storage key constants
-const STORAGE_KEYS = 'breezy_byok_keys';
-const STORAGE_PROTOCOL = 'breezy_protocol_mode';
-const STORAGE_TONE = 'breezy_research_tone';
-const STORAGE_USER = 'breezy_user';
-const STORAGE_CONSENSUS_MODE = 'breezy_synthesis_mode';
+import { computeNotebookReadiness } from './services/scheduler';
 
 export default function App() {
-  // Navigation tab state: chat | notes | models | settings | landing
-  const [activeTab, setActiveTab] = useState<ConsoleTab>(() => {
-    const hash = window.location.hash.replace('#', '');
-    if (['chat', 'notes', 'models', 'settings', 'landing'].includes(hash)) {
-      return hash as ConsoleTab;
-    }
-    return 'chat';
-  });
-
-  useEffect(() => {
-    window.location.hash = activeTab;
-  }, [activeTab]);
-
+  const [activeTab, setActiveTab] = useState<ConsoleTab>('chat');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [productMode, setProductMode] = useState<'breezy' | 'synthexis' | 'synap'>(() => {
-    // Check URL params or hash first
-    const params = new URLSearchParams(window.location.search);
-    const modeParam = params.get('mode');
-    if (modeParam === 'synthexis' || modeParam === 'synap' || modeParam === 'breezy') {
-      return modeParam;
-    }
-    const hash = window.location.hash.toLowerCase();
-    if (hash.includes('synap')) return 'synap';
-    if (hash.includes('synthexis')) return 'synthexis';
-
-    const saved = localStorage.getItem('breezy_product_mode');
-    if (saved === 'synthexis' || saved === 'synap' || saved === 'breezy') {
-      return saved;
-    }
-    return 'breezy';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('breezy_product_mode', productMode);
-  }, [productMode]);
-
+  const [productMode, setProductMode] = useState<ProductMode>('breezy');
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [breezyTab, setBreezyTab] = useState<BreezyTab>('chat');
-
-  // Global Light/Dark Theme State
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('breezy_theme') as 'dark' | 'light') || 'dark';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('breezy_theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  }, [theme]);
-
-  // Breezy chat states
-  const [breezyChats, setBreezyChats] = useState<Record<string, any>>(() => {
-    try {
-      const raw = localStorage.getItem('breezy:chats');
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [breezyActiveId, setBreezyActiveId] = useState<string | null>(() => {
-    try {
-      const raw = localStorage.getItem('breezy:chats');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const keys = Object.keys(parsed);
-        return keys.length > 0 ? keys[0] : null;
-      }
-    } catch {}
-    return null;
-  });
-
-  const handleNewBreezyChat = () => {
-    const newId = `chat-${Date.now()}`;
-    const newChat = {
-      id: newId,
-      title: 'New chat',
-      messages: [],
-      createdAt: new Date().toISOString(),
-    };
-    const next = { [newId]: newChat, ...breezyChats };
-    setBreezyChats(next);
-    setBreezyActiveId(newId);
-    try {
-      localStorage.setItem('breezy:chats', JSON.stringify(next));
-    } catch {}
-  };
-
-  const handleDeleteBreezyChat = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const next = { ...breezyChats };
-    delete next[id];
-    setBreezyChats(next);
-    try {
-      localStorage.setItem('breezy:chats', JSON.stringify(next));
-    } catch {}
-    if (breezyActiveId === id) {
-      const remaining = Object.keys(next);
-      setBreezyActiveId(remaining.length ? remaining[0] : null);
-    }
-  };
-
-  // Consensus mode toggle
-  const [consensusMode, setConsensusMode] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_CONSENSUS_MODE) ?? localStorage.getItem('synthexis_consensus_mode');
-      return stored !== 'false';
-    } catch {
-      return true;
-    }
-  });
-
-  const handleToggleConsensusMode = () => {
-    setConsensusMode((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_CONSENSUS_MODE, String(next));
-      } catch (e) {
-        console.warn(e);
-      }
-      return next;
-    });
-  };
-
-  // BYOK Keys
-  const [keys, setKeys] = useState<ProviderKeyConfig>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS) || localStorage.getItem('synthexis_byok_keys');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [appToast, setAppToast] = useState<string | null>(null);
-  const showAppToast = (msg: string) => {
+
+  const toast = (msg: string) => {
     setAppToast(msg);
     setTimeout(() => setAppToast(null), 3500);
   };
 
-  // Dynamically calculate overall readiness across all user course notebooks
-  const synapNotebooks = synapService.loadNotebooksSync();
-  let validReadinessSum = 0;
-  let validCount = 0;
-  for (const nb of synapNotebooks) {
-    const res = computeNotebookReadiness(nb.studyItems, nb.examDate);
-    if (res) {
-      validReadinessSum += res.readiness;
-      validCount++;
-    }
-  }
-  const aggregatedReadiness = validCount > 0 ? Math.round(validReadinessSum / validCount) : 0;
-
-  const handleSaveKeys = (newKeys: ProviderKeyConfig) => {
-    setKeys(newKeys);
-    try {
-      localStorage.setItem(STORAGE_KEYS, JSON.stringify(newKeys));
-    } catch (e) {
-      console.warn(e);
-    }
-  };
-
-  // Persistent Debate Sessions
-  const [sessions, setSessions] = useState<DebateSession[]>(() => {
-    const loaded = loadSessions();
-    return loaded || [];
-  });
-
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
-    const savedId = loadActiveSessionId();
-    const all = loadSessions();
-    if (savedId && all.some((s) => s.id === savedId)) return savedId;
-    return all.length > 0 ? all[0].id : null;
-  });
-
-  const activeSessionIdRef = useRef<string | null>(activeSessionId);
-  useEffect(() => {
-    activeSessionIdRef.current = activeSessionId;
-  }, [activeSessionId]);
-
-  // Protocol & Seat Config
-  const [protocol, setProtocol] = useState<'trio' | 'quad' | 'duel' | 'solo'>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_PROTOCOL) || localStorage.getItem('synthexis_protocol_mode');
-      return (saved as any) || 'trio';
-    } catch {
-      return 'trio';
-    }
-  });
-
-  const [tone, setTone] = useState<DebateTone>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_TONE) || localStorage.getItem('synthexis_debate_tone');
-      return (saved as DebateTone) || 'balanced';
-    } catch {
-      return 'balanced';
-    }
-  });
-
-  // Active Session and Streaming State
-  const currentSession: DebateSession | undefined =
-    sessions.find((s) => s.id === activeSessionId) ||
-    sessions[0];
+  // Sessions state
+  const [sessions, setSessions] = useState(() => loadSessions() || [createNewSession('First Inquiry', 'trio', [], 'balanced')]);
+  const [activeSessionId, setActiveSessionId] = useState(() => loadActiveSessionId() || sessions[0]?.id);
+  const currentSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
   const [isDeliberating, setIsDeliberating] = useState(false);
-  const [activeRound, setActiveRound] = useState<number>(0);
-  const [streamingText, setStreamingText] = useState<string>('');
-  const [streamingRole, setStreamingRole] = useState<string>('');
+  const [activeRound, setActiveRound] = useState(1);
+  const [streamingText, setStreamingText] = useState('');
+  const [streamingRole, setStreamingRole] = useState('Analyst');
   const [researchEvents, setResearchEvents] = useState<string[]>([]);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Global Keyboard Shortcuts
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const isInputFocused =
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA';
-
-      // ⌘K or Ctrl+K -> Open command palette
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-        return;
-      }
-
-      // If user is actively typing in textarea/input, don't trigger tab navigation shortcuts
-      if (isInputFocused) return;
-
-      // ⌘1 -> Chat
-      if ((e.metaKey || e.ctrlKey) && e.key === '1') {
-        e.preventDefault();
-        setActiveTab('chat');
-      }
-      // ⌘2 -> Notes
-      if ((e.metaKey || e.ctrlKey) && e.key === '2') {
-        e.preventDefault();
-        setActiveTab('notes');
-      }
-      // ⌘3 -> Models
-      if ((e.metaKey || e.ctrlKey) && e.key === '3') {
-        e.preventDefault();
-        setActiveTab('models');
-      }
-      // ⌘, -> Settings
-      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-        e.preventDefault();
-        setActiveTab('settings');
-      }
-      // ⌘N -> New Session
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        handleNewDebate();
-        setActiveTab('chat');
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
-
-  const updateActiveSession = (updates: Partial<DebateSession>) => {
-    const currentId = activeSessionIdRef.current;
-    if (!currentId) return;
-    setSessions((prev) => {
-      const next = prev.map((s) =>
-        s.id === currentId ? { ...s, ...updates, updatedAt: Date.now() } : s
-      );
-      saveSessions(next);
-      return next;
-    });
+  const keys = providerConfigService.getKeys();
+  const handleSaveKeys = (newKeys: any) => {
+    providerConfigService.saveKeys(newKeys);
+    toast('API keys saved successfully.');
   };
 
-  const handleSelectSession = (sessionId: string) => {
-    setActiveSessionId(sessionId);
-    saveActiveSessionId(sessionId);
-    const target = sessions.find((s) => s.id === sessionId);
-    if (target) {
-      setActiveRound(target.steps?.length || 0);
-    }
-  };
-
-  const handleDeleteSession = (sessionId: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const nextSessions = sessions.filter((s) => s.id !== sessionId);
-    setSessions(nextSessions);
-    saveSessions(nextSessions);
-    if (activeSessionId === sessionId) {
-      const nextId = nextSessions.length > 0 ? nextSessions[0].id : null;
-      setActiveSessionId(nextId);
-      saveActiveSessionId(nextId);
-    }
-  };
-
-  const handleNewDebate = () => {
-    if (isDeliberating && abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsDeliberating(false);
-    }
-
-    const newSession = createNewSession('New Dialectic Inquiry', protocol, [], tone);
-    setActiveSessionId(newSession.id);
-    saveActiveSessionId(newSession.id);
-    setSessions((prev) => {
-      const next = [newSession, ...prev.filter((s) => s.id !== newSession.id)];
-      saveSessions(next);
-      return next;
-    });
-    setActiveRound(0);
-    setStreamingText('');
-  };
-
-  const startDebate = async (promptText: string, depth: 'solo' | 'standard' | 'deep' = 'standard') => {
-    if (!promptText.trim() || isDeliberating) return;
-    const trimmedPrompt = promptText.trim();
-
-    setIsDeliberating(true);
-    setActiveRound(1);
-    setStreamingText('');
-    setStreamingRole(depth === 'solo' ? 'solo' : 'architect');
-    setResearchEvents([]);
-
-    const chosenProtocol = depth === 'solo' ? 'solo' : (depth === 'deep' ? 'quad' : 'trio');
-
-    const initialSteps: DebateStep[] = depth === 'solo' ? [
-      {
-        stepId: 'step-1',
-        role: 'solo',
-        agentName: 'Solo Assistant',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'running',
-        content: '',
-        timestamp: Date.now(),
-      }
-    ] : [
-      {
-        stepId: 'step-1',
-        role: 'architect',
-        agentName: 'Synthexis Architect',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'running',
-        content: '',
-        timestamp: Date.now(),
-      },
-      {
-        stepId: 'step-2',
-        role: 'skeptic',
-        agentName: 'Synthexis Skeptic',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'pending',
-        content: '',
-        timestamp: Date.now(),
-      },
-      {
-        stepId: 'step-3',
-        role: 'synthesizer',
-        agentName: 'Synthexis Synthesizer',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'pending',
-        content: '',
-        timestamp: Date.now(),
-      },
-      {
-        stepId: 'step-4',
-        role: 'arbiter',
-        agentName: 'Synthexis Reviewer',
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        status: 'pending',
-        content: '',
-        timestamp: Date.now(),
-      },
-    ];
-
-    const newSession = createNewSession(trimmedPrompt, chosenProtocol, initialSteps, tone);
-    activeSessionIdRef.current = newSession.id;
-    setActiveSessionId(newSession.id);
-    saveActiveSessionId(newSession.id);
-    setSessions((prev) => {
-      const next = [newSession, ...prev.filter((s) => s.id !== newSession.id)];
-      saveSessions(next);
-      return next;
-    });
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      const searchEngineValue = keys.tavily ? 'tavily' : (keys.serper ? 'serper' : (keys.brave ? 'brave' : 'duckduckgo'));
-      const seatsPayload = providerConfigService.getSeatsPayload();
-      const canonicalConfig = providerConfigService.getConfig();
-
-      await apiClient.streamDebate(
-        {
-          prompt: trimmedPrompt,
-          protocol: chosenProtocol,
-          tone,
-          enableSearchGrounding: depth !== 'solo',
-          searchEngine: searchEngineValue,
-          keys,
-          seats: seatsPayload,
-          maxRounds: canonicalConfig.selectedRound ?? 2,
-          autoResolveContradictions: canonicalConfig.autoResolve ?? true,
-          agreementThreshold: canonicalConfig.agreementThreshold ?? 78,
-        },
-        {
-          signal: controller.signal,
-          onNotice: (noticeMsg) => {
-            setResearchEvents((prev) => [...prev, noticeMsg]);
-          },
-          onEvent: (data) => {
-            if (data.type === 'status') {
-              if (data.message) {
-                setResearchEvents((prev) => [...prev, data.message]);
-              }
-            } else if (data.type === 'stage_warning' || data.type === 'notice') {
-              if (data.message) {
-                setResearchEvents((prev) => [...prev, `⚠️ ${data.message}`]);
-              }
-            } else if (data.type === 'search_grounding') {
-              if (data.sources) {
-                setResearchEvents((prev) => [...prev, `Found ${data.sources.length} useful sources.`]);
-              }
-            } else if (data.type === 'round_start') {
-              setActiveRound(data.round);
-              setStreamingRole(data.role || '');
-              setStreamingText('');
-
-              // Push human-friendly state indicators to the event stream
-              if (data.round === 1) {
-                setResearchEvents((prev) => [...prev, "Looking into this..."]);
-              } else if (data.round === 2) {
-                setResearchEvents((prev) => [...prev, "Checking another angle..."]);
-              } else if (data.round === 3) {
-                setResearchEvents((prev) => [...prev, "Comparing sources..."]);
-              } else if (data.round >= 4) {
-                setResearchEvents((prev) => [...prev, "One source disagrees — checking why..."]);
-              }
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                const next = prev.map((s) => {
-                  if (s.id !== currentId) return s;
-                  const updatedSteps = [...s.steps];
-                  const idx = data.round - 1;
-                  if (updatedSteps[idx]) {
-                    updatedSteps[idx] = {
-                      ...updatedSteps[idx],
-                      status: 'running',
-                      agentName: data.agentName || updatedSteps[idx].agentName,
-                      provider: data.provider || updatedSteps[idx].provider,
-                      model: data.model || updatedSteps[idx].model,
-                      role: data.role || updatedSteps[idx].role,
-                    };
-                  }
-                  return { ...s, steps: updatedSteps };
-                });
-                saveSessions(next);
-                return next;
-              });
-            } else if (data.type === 'token') {
-              setStreamingText((prev) => prev + (data.token || ''));
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                const next = prev.map((s) => {
-                  if (s.id !== currentId) return s;
-                  const updatedSteps = [...s.steps];
-                  const idx = (data.round || 1) - 1;
-                  if (updatedSteps[idx]) {
-                    updatedSteps[idx] = {
-                      ...updatedSteps[idx],
-                      content: (updatedSteps[idx].content || '') + data.token,
-                    };
-                  }
-                  return { ...s, steps: updatedSteps };
-                });
-                return next;
-              });
-            } else if (data.type === 'round_complete') {
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                const next = prev.map((s) => {
-                  if (s.id !== currentId) return s;
-                  const updatedSteps = [...s.steps];
-                  const idx = (data.round || 1) - 1;
-                  if (updatedSteps[idx]) {
-                    updatedSteps[idx] = {
-                      ...updatedSteps[idx],
-                      status: 'completed',
-                      content: data.content || updatedSteps[idx].content,
-                    };
-                  }
-                  return { ...s, steps: updatedSteps };
-                });
-                saveSessions(next);
-                return next;
-              });
-            } else if (data.type === 'evidence_graph') {
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                const next: DebateSession[] = prev.map((s) => {
-                  if (s.id !== currentId) return s;
-                  return {
-                    ...s,
-                    evidenceGraph: data.evidenceGraph || s.evidenceGraph,
-                    researchMetrics: data.researchMetrics || s.researchMetrics,
-                  };
-                });
-                saveSessions(next);
-                return next;
-              });
-            } else if (data.type === 'complete') {
-              setResearchEvents((prev) => [...prev, "Research complete."]);
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                const next: DebateSession[] = prev.map((s) => {
-                  if (s.id !== currentId) return s;
-                  return {
-                    ...s,
-                    status: 'completed' as const,
-                    finalOutput: data.finalOutput || s.finalOutput,
-                    evidenceGraph: data.evidenceGraph || s.evidenceGraph,
-                    researchMetrics: data.researchMetrics || s.researchMetrics,
-                    metrics: data.metrics || s.metrics,
-                  };
-                });
-                saveSessions(next);
-                return next;
-              });
-              setIsDeliberating(false);
-            } else if (data.type === 'error') {
-              const errorMessage = data.message || data.error || 'Research failed on server.';
-              setResearchEvents((prev) => [...prev, `Error: ${errorMessage}`]);
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                const next: DebateSession[] = prev.map((s) => {
-                  if (s.id !== currentId) return s;
-                  const updatedSteps = s.steps.map((step) =>
-                    step.status === 'running' ? { ...step, status: 'error' as const } : step
-                  );
-                  return {
-                    ...s,
-                    status: 'error' as const,
-                    error: errorMessage,
-                    steps: updatedSteps,
-                  };
-                });
-                saveSessions(next);
-                return next;
-              });
-              setIsDeliberating(false);
-            }
-          },
-        }
-      );
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.log('Debate cancelled by user');
-      } else {
-        console.error('Debate error:', err);
-        setResearchEvents((prev) => [...prev, `Error: ${err.message || 'Deliberation failed'}`]);
-      }
-    } finally {
-      setIsDeliberating(false);
-      abortControllerRef.current = null;
-    }
-  };
-
-  const handleExportMarkdown = () => {
-    exportConsensusAsMarkdown({
-      prompt: currentSession.prompt,
-      protocol: currentSession.protocol,
-      steps: currentSession.steps,
-      finalOutput: currentSession.finalOutput,
-      metrics: currentSession.metrics,
-    });
-  };
-
-  if (productMode === 'synap') {
-    return (
-      <div className={`min-h-screen font-sans antialiased overflow-x-hidden ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#0A0A0F] text-[#e4e1ed]'}`}>
-        <SynapWorkspace
-          productMode={productMode}
-          onSelectProductMode={setProductMode}
-          onOpenProfile={() => setIsProfileSettingsOpen(true)}
-          theme={theme}
-          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-        />
-        <ProfileSettingsModal
-          isOpen={isProfileSettingsOpen}
-          onClose={() => setIsProfileSettingsOpen(false)}
-          keys={keys}
-          onSaveKeys={handleSaveKeys}
-        />
-      </div>
-    );
-  }
-
-  if (productMode === 'breezy') {
-    return (
-      <div className={`flex min-h-screen font-sans antialiased overflow-x-hidden ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#090d16] text-slate-100'}`}>
-        {/* Breezy Sidebar navigation panel */}
-        <BreezySidebar
-          activeTab={breezyTab}
-          onSelectTab={setBreezyTab}
-          chats={breezyChats}
-          activeId={breezyActiveId}
-          onSelectChat={setBreezyActiveId}
-          onNewChat={handleNewBreezyChat}
-          onDeleteChat={handleDeleteBreezyChat}
-          onOpenProfile={() => setIsProfileSettingsOpen(true)}
-          isOpenMobile={isMobileMenuOpen}
-          onCloseMobile={() => setIsMobileMenuOpen(false)}
-        />
-
-        <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
-          {/* Top Bar showing overall study readiness progress & product mode pill */}
-          <SynapHeader
-            readinessPercentage={aggregatedReadiness}
-            productMode={productMode}
-            onSelectProductMode={setProductMode}
-            onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
-            onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            theme={theme}
-            onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-          />
-
-          {/* Breezy Sub-Views */}
-          {breezyTab === 'chat' && (
-            <BreezyWorkspace
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-              toast={showAppToast}
-            />
-          )}
-
-          {breezyTab === 'ide' && (
-            <BreezyIdeWorkspace
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-            />
-          )}
-
-          {breezyTab === 'canvas' && (
-            <BreezyCanvasWorkspace
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-            />
-          )}
-        </div>
-
-        {/* Global Toast Notification */}
-        {appToast && (
-          <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-            <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
-            <span>{appToast}</span>
-          </div>
-        )}
-
-        <ProfileSettingsModal
-          isOpen={isProfileSettingsOpen}
-          onClose={() => setIsProfileSettingsOpen(false)}
-          keys={keys}
-          onSaveKeys={handleSaveKeys}
-        />
-      </div>
-    );
-  }
+  const aggregatedReadiness = 82; // Default mock aggregated readiness across notebooks
 
   return (
-    <div className="bg-surface font-sans text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
-      {/* Persistent Left Sidebar */}
-      <Sidebar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        onSelectSession={handleSelectSession}
-        onNewSession={handleNewDebate}
-        consensusMode={consensusMode}
-        onToggleConsensusMode={handleToggleConsensusMode}
-        isOpenMobile={isMobileMenuOpen}
-        onCloseMobile={() => setIsMobileMenuOpen(false)}
-        onOpenProfile={() => setIsProfileSettingsOpen(true)}
-        onDeleteSession={handleDeleteSession}
-      />
-
-      {/* Main Workspace Stage */}
-      <div className="pl-0 lg:pl-64 flex flex-col min-h-screen">
-        {/* Top Header Bar */}
-        <TopBar
-          activeTab={activeTab}
-          onSelectTab={setActiveTab}
+    <>
+      {productMode === 'synap' && (
+        <SynapProduct
           productMode={productMode}
           onSelectProductMode={setProductMode}
-          onNewResearch={handleNewDebate}
-          onOpenSearch={() => setIsCommandPaletteOpen(true)}
-          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isProfileSettingsOpen={isProfileSettingsOpen}
+          onCloseProfile={() => setIsProfileSettingsOpen(false)}
+          keys={keys}
+          onSaveKeys={handleSaveKeys}
           theme={theme}
           onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
-
-        {/* Content Body Router */}
-        <main className="relative pt-14 bg-[#10141a] min-h-screen flex-1 flex flex-col">
-          {activeTab === 'chat' && (
-            currentSession ? (
-              <ResearchConversationView
-                session={currentSession}
-                isDeliberating={isDeliberating}
-                activeRound={activeRound}
-                streamingRoundText={streamingText}
-                streamingRole={streamingRole}
-                onStartDebate={startDebate}
-                researchEvents={researchEvents}
-                onSaveNote={(title, content) => {
-                  const newNoteSession = createNewSession(title, protocol, [], tone);
-                  newNoteSession.finalOutput = content;
-                  setSessions((prev) => {
-                    const next = [newNoteSession, ...prev];
-                    saveSessions(next);
-                    return next;
-                  });
-                }}
-                onExportMarkdown={handleExportMarkdown}
-                keys={keys}
-                onOpenNotes={() => setActiveTab('notes')}
-                onExportToSynap={async (s) => {
-                  const notebook = await synapService.exportResearchSession(s.prompt, s.finalOutput || '');
-                  synapService.setActiveNotebookId(notebook.id);
-                  setProductMode('synap');
-                }}
-                onOpenInIde={(s) => {
-                  const codeMatch = s.finalOutput?.match(/```(?:python|javascript|typescript|html|bash|json)?\n([\s\S]*?)```/);
-                  const codeContent = codeMatch
-                    ? codeMatch[1]
-                    : `# Research Output\n# Topic: ${s.prompt}\n\n"""\n${s.finalOutput?.slice(0, 600) || ''}\n"""\n`;
-                  localStorage.setItem('breezy_ide_active_code', codeContent);
-                  setProductMode('breezy');
-                  setBreezyTab('ide');
-                }}
-              />
-            ) : (
-              <LandingPageView
-                onLaunchWorkspace={(query, depth) => {
-                  if (query) {
-                    startDebate(query, depth);
-                  }
-                  setActiveTab('chat');
-                }}
-                onOpenNotes={() => setActiveTab('notes')}
-                onOpenModels={() => setActiveTab('models')}
-              />
-            )
-          )}
-
-          {activeTab === 'notes' && (
-            <ResearchNotesView
-              sessions={sessions}
-              onSelectNotePrompt={(prompt) => {
-                if (prompt) {
-                  startDebate(prompt);
-                }
-                setActiveTab('chat');
-              }}
-              onSync={() => {
-                const refreshed = loadSessions();
-                setSessions(refreshed || []);
-              }}
-            />
-          )}
-
-          {activeTab === 'models' && (
-            <ModelsConsensusView onOpenSettings={() => setActiveTab('settings')} />
-          )}
-
-          {activeTab === 'settings' && (
-            <WorkspaceSettingsView keys={keys} onSaveKeys={handleSaveKeys} />
-          )}
-
-          {activeTab === 'landing' && (
-            <LandingPageView
-              onLaunchWorkspace={(query, depth) => {
-                if (query) {
-                  startDebate(query, depth);
-                }
-                setActiveTab('chat');
-              }}
-              onOpenNotes={() => setActiveTab('notes')}
-              onOpenModels={() => setActiveTab('models')}
-            />
-          )}
-        </main>
-      </div>
-
-      {/* Global Command Palette Modal (⌘K) */}
-      <CommandPaletteModal
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onSelectTab={setActiveTab}
-        sessions={sessions}
-        onSelectSession={handleSelectSession}
-        onNewSession={handleNewDebate}
-        onSelectProductMode={setProductMode}
-      />
-
-      <ProfileSettingsModal
-        isOpen={isProfileSettingsOpen}
-        onClose={() => setIsProfileSettingsOpen(false)}
-        keys={keys}
-        onSaveKeys={handleSaveKeys}
-      />
-
-      {/* Global Toast Notification */}
-      {appToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
-          <span>{appToast}</span>
-        </div>
       )}
-    </div>
+
+      {productMode === 'breezy' && (
+        <BreezyProduct
+          breezyTab={breezyTab}
+          onSelectBreezyTab={setBreezyTab}
+          breezyChats={{}}
+          breezyActiveId={null}
+          onSelectBreezyChat={() => {}}
+          onNewBreezyChat={() => {}}
+          onDeleteBreezyChat={() => {}}
+          productMode={productMode}
+          onSelectProductMode={setProductMode}
+          aggregatedReadiness={aggregatedReadiness}
+          isCommandPaletteOpen={isCommandPaletteOpen}
+          onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isProfileSettingsOpen={isProfileSettingsOpen}
+          onCloseProfile={() => setIsProfileSettingsOpen(false)}
+          keys={keys}
+          onSaveKeys={handleSaveKeys}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          appToast={appToast}
+          toast={toast}
+        />
+      )}
+
+      {productMode === 'synthexis' && (
+        <SynthexisProduct
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={setActiveSessionId}
+          onNewSession={() => {}}
+          consensusMode={true}
+          onToggleConsensusMode={() => {}}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isCommandPaletteOpen={isCommandPaletteOpen}
+          onCloseCommandPalette={() => setIsCommandPaletteOpen(false)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          isProfileSettingsOpen={isProfileSettingsOpen}
+          onCloseProfile={() => setIsProfileSettingsOpen(false)}
+          productMode={productMode}
+          onSelectProductMode={setProductMode}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          currentSession={currentSession}
+          isDeliberating={isDeliberating}
+          activeRound={activeRound}
+          streamingText={streamingText}
+          streamingRole={streamingRole}
+          startDebate={() => {}}
+          researchEvents={researchEvents}
+          handleExportMarkdown={() => {}}
+          keys={keys}
+          handleSaveKeys={handleSaveKeys}
+          handleDeleteSession={() => {}}
+          loadSessions={loadSessions}
+          setSessions={setSessions}
+          appToast={appToast}
+        />
+      )}
+    </>
   );
 }

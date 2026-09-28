@@ -1,6 +1,6 @@
 /**
  * Firebase Authentication Service
- * Provides real Google OAuth authentication with Workspace scopes
+ * Provides real Google and GitHub OAuth authentication with incremental and narrow scopes
  */
 
 import { initializeApp } from 'firebase/app';
@@ -13,6 +13,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
+
 let firebaseConfig: any = {
   apiKey: "AIzaSyPlaceholder-MockKeyForBuild",
   authDomain: "placeholder.firebaseapp.com",
@@ -32,16 +33,9 @@ try {
 // Initialize Firebase with exact applet config
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Google provider with basic profile scopes only upfront
 const googleProvider = new GoogleAuthProvider();
-
-// Add Workspace scopes for live integrations
-googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/documents.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-
-// Configure Google provider
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
@@ -59,7 +53,7 @@ let cachedAccessToken: string | null = null;
 
 export const authService = {
   /**
-   * Sign in with Google popup and retrieve access token
+   * Sign in with Google popup (basic profile scopes only)
    */
   async signInWithGoogle(): Promise<{ user: AuthUser; accessToken: string } | null> {
     try {
@@ -68,7 +62,6 @@ export const authService = {
       const credential = GoogleAuthProvider.credentialFromResult(result);
       cachedAccessToken = credential?.accessToken || null;
       
-      // Store in sessionStorage to persist across session reloads (safe preview behavior)
       if (cachedAccessToken) {
         sessionStorage.setItem('synthexis_g_token', cachedAccessToken);
       }
@@ -92,6 +85,31 @@ export const authService = {
   },
 
   /**
+   * Request incremental Google Workspace scopes (Drive, Gmail, Calendar, Docs, Sheets) when the user opens the feature
+   */
+  async requestWorkspaceScopes(scopes: string[]): Promise<string | null> {
+    try {
+      const incrementalProvider = new GoogleAuthProvider();
+      for (const scope of scopes) {
+        incrementalProvider.addScope(scope);
+      }
+      incrementalProvider.setCustomParameters({ prompt: 'consent' });
+
+      const result = await signInWithPopup(auth, incrementalProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken || null;
+      if (token) {
+        cachedAccessToken = token;
+        sessionStorage.setItem('synthexis_g_token', token);
+      }
+      return token;
+    } catch (error: any) {
+      console.error('Incremental scope request error:', error);
+      return null;
+    }
+  },
+
+  /**
    * Sign out current user
    */
   async signOut(): Promise<void> {
@@ -110,7 +128,6 @@ export const authService = {
    */
   onAuthChange(callback: (user: AuthUser | null, token: string | null) => void): () => void {
     return onAuthStateChanged(auth, (firebaseUser) => {
-      // Restore token from sessionStorage if present
       if (!cachedAccessToken) {
         cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
       }
@@ -168,12 +185,12 @@ export const authService = {
   },
 
   /**
-   * Sign in with GitHub popup and retrieve access token
+   * Sign in with GitHub popup using the narrowest scope (public_repo instead of full repo)
    */
   async signInWithGithub(): Promise<{ user: AuthUser; accessToken: string } | null> {
     try {
       const githubProvider = new GithubAuthProvider();
-      githubProvider.addScope('repo');
+      githubProvider.addScope('public_repo');
       githubProvider.addScope('read:user');
       
       const result = await signInWithPopup(auth, githubProvider);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scheduleItem, computeNotebookReadiness, verifyQuoteVerbatim } from '../src/services/scheduler';
+import { scheduleItem, computeNotebookReadiness, computePredictedRecall, verifyQuoteVerbatim } from '../src/services/scheduler';
 import { SynapStudyItem } from '../src/types/synap';
 
 describe('Synap SM-2 Scheduler', () => {
@@ -51,7 +51,7 @@ describe('Synap SM-2 Scheduler', () => {
   });
 });
 
-describe('Synap Exam Readiness Computations', () => {
+describe('Synap Exam Readiness & Recall Computations', () => {
   it('should return null if there are no cards or no exam date', () => {
     expect(computeNotebookReadiness([], '2026-10-15')).toBeNull();
     expect(computeNotebookReadiness([{ id: '1', type: 'flashcard', prompt: 'Q', history: [] }], '')).toBeNull();
@@ -69,6 +69,50 @@ describe('Synap Exam Readiness Computations', () => {
     expect(res).not.toBeNull();
     expect(res!.readiness).toBe(0);
     expect(res!.unreviewedCount).toBe(1);
+  });
+
+  it('should score a card rated Again once below 0.15 and compare Good x3 vs Good x1', () => {
+    const examDate = '2026-12-31';
+    const failedCard: SynapStudyItem = {
+      id: 'failed',
+      type: 'flashcard',
+      prompt: 'Q',
+      answer: 'A',
+      repetitions: 0,
+      lapses: 1,
+      interval: 1,
+      dueDate: '2026-10-01',
+      history: [],
+    } as any;
+
+    const recallFailed = computePredictedRecall(failedCard, examDate);
+    expect(recallFailed).toBeLessThan(0.15);
+
+    const goodOnceCard: SynapStudyItem = {
+      id: 'good1',
+      type: 'flashcard',
+      prompt: 'Q',
+      answer: 'A',
+      repetitions: 1,
+      interval: 1,
+      dueDate: '2026-10-01',
+      history: [],
+    } as any;
+
+    const goodThriceCard: SynapStudyItem = {
+      id: 'good3',
+      type: 'flashcard',
+      prompt: 'Q',
+      answer: 'A',
+      repetitions: 3,
+      interval: 15,
+      dueDate: '2026-10-01',
+      history: [],
+    } as any;
+
+    const recallGood1 = computePredictedRecall(goodOnceCard, examDate);
+    const recallGood3 = computePredictedRecall(goodThriceCard, examDate);
+    expect(recallGood3).toBeGreaterThan(recallGood1);
   });
 });
 

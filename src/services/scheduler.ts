@@ -19,6 +19,22 @@ export function toLocalDateString(d: Date = new Date()): string {
 }
 
 /**
+ * Parses a YYYY-MM-DD date string as a local date (preventing UTC shift)
+ */
+export function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    return new Date(y, m, d, 0, 0, 0, 0);
+  }
+  const date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+/**
  * Initializes or returns standard SM-2 scheduling attributes on a study item
  */
 export function getSM2State(item: SynapStudyItem): SM2State {
@@ -38,11 +54,6 @@ export function getSM2State(item: SynapStudyItem): SM2State {
 
 /**
  * Apply SuperMemo-2 (SM-2) algorithm updating ease, repetitions, interval, and next due date
- * Ratings:
- * 1: Again (reset repetitions, interval = 1, decrease ease, increment lapses)
- * 2: Hard (marginal recall: repetitions stay unchanged, interval increases slightly, ease decreases)
- * 3: Good (standard repeat: repetitions++, interval scales by ease factor)
- * 4: Easy (ease increases, interval scales by ease factor + bonus)
  */
 export function scheduleItem(item: SynapStudyItem, rating: number): SM2State {
   const state = getSM2State(item);
@@ -97,8 +108,8 @@ export function scheduleItem(item: SynapStudyItem, rating: number): SM2State {
 
 /**
  * Computes estimated retention probability (R) for a study item on a target exam date.
- * Factoring in memory stability (interval * ease), repetition history, and elapsed days.
- * Prevents inflation by ensuring single-review cards decay appropriately over time.
+ * Cards whose last rating was Again (repetitions === 0, lapses > 0) score near 0.
+ * Successful reviews (repetitions > 0) drive the retention curve.
  */
 export function computePredictedRecall(item: SynapStudyItem, examDateStr?: string): number {
   if (!examDateStr) return 0;
@@ -108,14 +119,16 @@ export function computePredictedRecall(item: SynapStudyItem, examDateStr?: strin
     return 0; // Unreviewed counts as 0
   }
 
+  // If repetitions is 0 but lapses > 0 (last rating was Again), score near 0
+  if (state.repetitions === 0 && state.lapses > 0) {
+    return 0.05;
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const examDate = new Date(examDateStr);
-  examDate.setHours(0, 0, 0, 0);
-
-  const dueDate = new Date(state.dueDate);
-  dueDate.setHours(0, 0, 0, 0);
+  const examDate = parseLocalDate(examDateStr);
+  const dueDate = parseLocalDate(state.dueDate);
 
   const daysToExam = Math.max(0, Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
   const daysToDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -123,7 +136,7 @@ export function computePredictedRecall(item: SynapStudyItem, examDateStr?: strin
   // Memory stability factor based on interval, ease, and lapse penalties
   const stability = Math.max(1, state.interval) * Math.max(1.2, state.ease) * Math.max(0.4, 1.0 - 0.15 * state.lapses);
 
-  // If exam is on or before due date, retention is strong but bounded by repetition count
+  // If exam is on or before due date, retention is strong but bounded by successful repetition count
   if (daysToExam <= daysToDue) {
     const baseMastery = Math.min(0.95, 0.5 + 0.1 * state.repetitions);
     return Math.max(0.1, baseMastery);
@@ -132,14 +145,13 @@ export function computePredictedRecall(item: SynapStudyItem, examDateStr?: strin
   // Elapsed days past due date until exam
   const t = daysToExam - daysToDue;
   
-  // Real-world empirical decay model factoring in stability
+  // Real-world empirical decay model factoring in stability and successful repetitions
   const retention = Math.exp(-0.25 * (t / stability)) * Math.min(1.0, 0.5 + 0.1 * state.repetitions);
   return Math.max(0.0, Math.min(1.0, retention));
 }
 
 /**
  * Computes total notebook exam readiness as the average predicted recall across ALL cards.
- * Returns null if there are no cards or no exam date is supplied.
  */
 export function computeNotebookReadiness(
   items: SynapStudyItem[],
@@ -215,7 +227,7 @@ export function deriveWeakSpotTopics(
 }
 
 /**
- * Checks if a string appears verbatim in a reference chunk, normalizing excess whitespace/newlines while respecting case sensitivity.
+ * Checks if a string appears verbatim in a reference chunk, normalizing excess whitespace/newlines and comparing case-insensitively.
  */
 export function verifyQuoteVerbatim(quote: string, chunkText: string): boolean {
   if (!quote || !chunkText) return false;
