@@ -8,9 +8,10 @@ import { providerConfigService } from '../../services/providerConfigService';
 interface WorkspaceSettingsViewProps {
   keys: ProviderKeyConfig;
   onSaveKeys: (newKeys: ProviderKeyConfig) => void;
+  onConnectWorkspace: (scopeType: string) => Promise<void>;
 }
 
-export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ keys, onSaveKeys }) => {
+export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ keys, onSaveKeys, onConnectWorkspace }) => {
   const canonical = providerConfigService.getConfig();
   const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthesis' | 'integrations' | 'team' | 'billing'>('integrations');
   const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
@@ -564,6 +565,12 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                       <p className="text-xs text-stone-500 mt-1 leading-relaxed">
                         Authorize Synthexis to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
                       </p>
+                      <button
+                        onClick={() => onConnectWorkspace(googleSubTab)}
+                        className="mt-4 px-4 py-2 bg-sky-600 hover:bg-sky-500 rounded text-xs text-white font-medium transition-colors"
+                      >
+                        Authorize {googleSubTab.charAt(0).toUpperCase() + googleSubTab.slice(1)}
+                      </button>
                     </div>
                   </div>
                 )}

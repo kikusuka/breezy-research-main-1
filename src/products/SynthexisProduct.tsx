@@ -44,6 +44,7 @@ interface SynthexisProductProps {
   loadSessions: () => DebateSession[];
   setSessions: React.Dispatch<React.SetStateAction<DebateSession[]>>;
   appToast: string | null;
+  onConnectWorkspace: (scopeType: string) => Promise<void>;
 }
 
 export const SynthexisProduct: React.FC<SynthexisProductProps> = ({
@@ -80,6 +81,7 @@ export const SynthexisProduct: React.FC<SynthexisProductProps> = ({
   loadSessions,
   setSessions,
   appToast,
+  onConnectWorkspace,
 }) => {
   return (
     <div className="bg-surface font-sans text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
@@ -166,7 +168,7 @@ export const SynthexisProduct: React.FC<SynthexisProductProps> = ({
           )}
 
           {activeTab === 'settings' && (
-            <WorkspaceSettingsView keys={keys} onSaveKeys={handleSaveKeys} />
+            <WorkspaceSettingsView keys={keys} onSaveKeys={handleSaveKeys} onConnectWorkspace={onConnectWorkspace} />
           )}
 
           {activeTab === 'landing' && (

@@ -108,20 +108,15 @@ export function scheduleItem(item: SynapStudyItem, rating: number): SM2State {
 
 /**
  * Computes estimated retention probability (R) for a study item on a target exam date.
- * Cards whose last rating was Again (repetitions === 0, lapses > 0) score near 0.
- * Successful reviews (repetitions > 0) drive the retention curve.
+ * Cards with repetitions === 0 (unreviewed, Again, or Hard with 0 reps) score near 0 (0.05).
+ * Successful graduated reviews (repetitions > 0) drive the retention curve.
  */
 export function computePredictedRecall(item: SynapStudyItem, examDateStr?: string): number {
   if (!examDateStr) return 0;
   
   const state = getSM2State(item);
-  if (state.repetitions === 0 && state.interval === 0) {
-    return 0; // Unreviewed counts as 0
-  }
-
-  // If repetitions is 0 but lapses > 0 (last rating was Again), score near 0
-  if (state.repetitions === 0 && state.lapses > 0) {
-    return 0.05;
+  if (state.repetitions === 0) {
+    return 0.05; // 0 repetitions (unreviewed, Again, or Hard) scores near 0
   }
 
   const today = new Date();

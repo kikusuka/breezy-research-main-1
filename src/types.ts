@@ -150,7 +150,7 @@ export interface SessionSnapshot {
   sessionId: string;
   name: string;
   prompt: string;
-  protocol: 'trio' | 'quad' | 'duel' | 'solo';
+  protocol: 'trio' | 'quad' | 'duel' | 'solo' | 'deep';
   steps: DebateStep[];
   finalOutput?: string;
   timestamp: number;

@@ -510,6 +510,7 @@ export async function handleBackendRequest(
           fullAnswer += chunk;
         },
         env,
+        signal: req.signal,
       });
 
       return createJsonResponse({ text: fullAnswer || 'Synthesis completed.' }, 200, req, env);
@@ -556,6 +557,7 @@ Analyze this deliberation and output the JSON object.`;
         temperature: 0.2,
         onChunk: () => {},
         env,
+        signal: req.signal,
       });
 
       let summary = '';

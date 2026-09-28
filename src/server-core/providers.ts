@@ -34,8 +34,9 @@ export async function streamGeminiREST(opts: {
   temperature?: number;
   enableSearchGrounding?: boolean;
   onChunk: (chunk: string) => void;
+  signal?: AbortSignal;
 }): Promise<string> {
-  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk } = opts;
+  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, signal } = opts;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
 
@@ -68,6 +69,7 @@ export async function streamGeminiREST(opts: {
       'User-Agent': 'breezy-research-engine',
     },
     body: JSON.stringify(bodyPayload),
+    signal,
   });
 
   if (!response.ok) {
@@ -131,8 +133,9 @@ export async function streamOpenAICompatible(opts: {
   userPrompt: string;
   temperature?: number;
   onChunk: (chunk: string) => void;
+  signal?: AbortSignal;
 }): Promise<string> {
-  const { endpoint, apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk } = opts;
+  const { endpoint, apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk, signal } = opts;
 
   const messages: any[] = [];
   if (systemInstruction) {
@@ -152,6 +155,7 @@ export async function streamOpenAICompatible(opts: {
       temperature,
       messages,
     }),
+    signal,
   });
 
   if (!res.ok) {
@@ -209,8 +213,9 @@ export async function streamAnthropicREST(opts: {
   userPrompt: string;
   temperature?: number;
   onChunk: (chunk: string) => void;
+  signal?: AbortSignal;
 }): Promise<string> {
-  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk } = opts;
+  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk, signal } = opts;
   const targetModel = model?.trim() || 'claude-3-5-sonnet-20241022';
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -228,6 +233,7 @@ export async function streamAnthropicREST(opts: {
       stream: true,
       temperature,
     }),
+    signal,
   });
 
   if (!res.ok) {
@@ -277,7 +283,7 @@ export async function streamAnthropicREST(opts: {
  * Universal agent caller with graceful model cascades
  */
 export async function callAgentWithStream(params: CallAgentParams): Promise<string> {
-  const { provider, model, apiKey, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, env = {} } = params;
+  const { provider, model, apiKey, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, env = {}, signal } = params;
 
   // 1. Google Gemini
   if (provider === 'gemini') {
@@ -318,68 +324,43 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
                 announcedFallback = true;
               }
               fullText += chunk;
-              onChunk(chunk);
             },
+            signal,
           });
 
-          if (fullText && fullText.trim().length > 0) {
-            return fullText;
-          }
+          return fullText;
         } catch (err: any) {
           lastError = err;
-          const errDesc = err?.message || String(err);
-          const isOverloadedOrQuota =
-            errDesc.includes('429') ||
-            errDesc.includes('503') ||
-            errDesc.includes('quota') ||
-            errDesc.includes('resource_exhausted') ||
-            errDesc.includes('high demand');
-
-          if (isOverloadedOrQuota) {
+          const msg = err?.message || String(err);
+          if (msg.includes('429') || msg.includes('Quota') || msg.includes('RESOURCE_EXHAUSTED')) {
             hadRateLimit = true;
+            if (attempt === 1) {
+              await new Promise((r) => setTimeout(r, 1200));
+              continue;
+            }
           }
-
-          if (attempt === 1 && isOverloadedOrQuota) {
-            await new Promise((r) => setTimeout(r, 600));
-          } else {
-            break;
-          }
+          break;
         }
       }
-      await new Promise((r) => setTimeout(r, 250));
     }
 
-    let errorMsg = lastError?.message || 'Failed to generate response across all Gemini model fallbacks.';
-    try {
-      const parsed = JSON.parse(errorMsg);
-      if (parsed?.error?.message) {
-        errorMsg = parsed.error.message;
-      }
-    } catch {}
-
-    if (hadRateLimit) {
-      throw new Error(
-        `Gemini API is currently experiencing peak traffic / temporary rate limits. Please try again in a few moments, or configure a custom API key in Settings.`
-      );
-    }
-
-    throw new Error(errorMsg);
+    throw new Error(lastError?.message || (hadRateLimit ? 'Gemini API rate limit or quota exceeded across all fallback models.' : 'Gemini agent stream failed.'));
   }
 
-  // 2. Anthropic (Claude)
+  // 2. Anthropic
   if (provider === 'anthropic') {
     const keyToUse = apiKey?.trim() || env.ANTHROPIC_API_KEY || '';
     if (!keyToUse) {
-      throw new Error('Anthropic API Key is required for Claude models. Add your key in Settings.');
+      throw new Error('No Anthropic API key configured.');
     }
-    const targetModel = model?.trim() || 'claude-3-5-sonnet-20241022';
-    return await streamAnthropicREST({
+    return streamAnthropicREST({
       apiKey: keyToUse,
-      model: targetModel,
+      model: model || 'claude-3-5-sonnet-20241022',
       systemInstruction,
       userPrompt,
       temperature,
       onChunk,
+      signal,
     });
   }
 
@@ -387,17 +368,17 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
   if (provider === 'groq') {
     const keyToUse = apiKey?.trim() || env.GROQ_API_KEY || '';
     if (!keyToUse) {
-      throw new Error('Groq API Key is required for Groq models. Add your key in Settings.');
+      throw new Error('No Groq API key configured.');
     }
-    const targetModel = model?.trim() || 'llama-3.3-70b-versatile';
-    return await streamOpenAICompatible({
+    return streamOpenAICompatible({
       endpoint: 'https://api.groq.com/openai/v1/chat/completions',
       apiKey: keyToUse,
-      model: targetModel,
+      model: model || 'llama-3.3-70b-versatile',
       systemInstruction,
       userPrompt,
       temperature,
       onChunk,
+      signal,
     });
   }
 
@@ -405,17 +386,17 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
   if (provider === 'sambanova') {
     const keyToUse = apiKey?.trim() || env.SAMBANOVA_API_KEY || '';
     if (!keyToUse) {
-      throw new Error('SambaNova API Key is required. Add your key in Settings.');
+      throw new Error('No SambaNova API key configured.');
     }
-    const targetModel = model?.trim() || 'Meta-Llama-3.3-70B-Instruct';
-    return await streamOpenAICompatible({
+    return streamOpenAICompatible({
       endpoint: 'https://api.sambanova.ai/v1/chat/completions',
       apiKey: keyToUse,
-      model: targetModel,
+      model: model || 'Meta-Llama-3.3-70B-Instruct',
       systemInstruction,
       userPrompt,
       temperature,
       onChunk,
+      signal,
     });
   }
 
@@ -423,17 +404,17 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
   if (provider === 'openrouter') {
     const keyToUse = apiKey?.trim() || env.OPENROUTER_API_KEY || '';
     if (!keyToUse) {
-      throw new Error('OpenRouter API Key is required. Add your key in Settings.');
+      throw new Error('No OpenRouter API key configured.');
     }
-    const targetModel = model?.trim() || 'meta-llama/llama-3.3-70b-instruct';
-    return await streamOpenAICompatible({
+    return streamOpenAICompatible({
       endpoint: 'https://openrouter.ai/api/v1/chat/completions',
       apiKey: keyToUse,
-      model: targetModel,
+      model: model || 'meta-llama/llama-3.3-70b-instruct',
       systemInstruction,
       userPrompt,
       temperature,
       onChunk,
+      signal,
     });
   }
 
