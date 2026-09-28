@@ -30,14 +30,14 @@ if (!firebaseConfig.apiKey) {
     const fileConfig = (await import('../../firebase-applet-config.json')).default;
     firebaseConfig = { ...firebaseConfig, ...fileConfig };
   } catch (e) {
-    // Use fallback placeholder configs so initializeApp doesn't crash on import
+    // Left unconfigured (empty strings) rather than loading faked placeholders
     firebaseConfig = {
-      apiKey: "AIzaSyPlaceholder-MockKeyForBuild",
-      authDomain: "placeholder.firebaseapp.com",
-      projectId: "placeholder-database-id",
-      storageBucket: "placeholder.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcdef"
+      apiKey: "",
+      authDomain: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
     };
   }
 }
@@ -49,9 +49,24 @@ export const isFirebaseConfigured = !!(
   !firebaseConfig.apiKey.includes('MockKey')
 );
 
-// Initialize Firebase with exact applet config
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Initialize Firebase only if config is real and available
+let app: any = null;
+let auth: any = null;
+
+if (isFirebaseConfigured) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+} else {
+  // Safe mock auth interface to prevent crashes when other pages/scripts import/reference auth
+  auth = {
+    currentUser: null,
+    onAuthStateChanged: (callback: any) => {
+      callback(null);
+      return () => {};
+    },
+    signOut: async () => {}
+  };
+}
 
 // Google provider with basic profile scopes only upfront
 const googleProvider = new GoogleAuthProvider();
@@ -75,6 +90,9 @@ export const authService = {
    * Sign in with Google popup (basic profile scopes only)
    */
   async signInWithGoogle(): Promise<{ user: AuthUser; accessToken: string } | null> {
+    if (!isFirebaseConfigured) {
+      throw new Error('Firebase Authentication is unconfigured.');
+    }
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -82,7 +100,7 @@ export const authService = {
       cachedAccessToken = credential?.accessToken || null;
       
       if (cachedAccessToken) {
-        sessionStorage.setItem('synthexis_g_token', cachedAccessToken);
+        sessionStorage.setItem('consensus_g_token', cachedAccessToken);
       }
 
       return {
@@ -107,6 +125,9 @@ export const authService = {
    * Request incremental Google Workspace scopes (Drive, Gmail, Calendar, Docs, Sheets) when the user opens the feature
    */
   async requestWorkspaceScopes(scopes: string[]): Promise<string | null> {
+    if (!isFirebaseConfigured) {
+      return null;
+    }
     try {
       const incrementalProvider = new GoogleAuthProvider();
       for (const scope of scopes) {
@@ -119,7 +140,7 @@ export const authService = {
       const token = credential?.accessToken || null;
       if (token) {
         cachedAccessToken = token;
-        sessionStorage.setItem('synthexis_g_token', token);
+        sessionStorage.setItem('consensus_g_token', token);
       }
       return token;
     } catch (error: any) {
@@ -132,10 +153,15 @@ export const authService = {
    * Sign out current user
    */
   async signOut(): Promise<void> {
+    if (!isFirebaseConfigured) {
+      cachedAccessToken = null;
+      sessionStorage.removeItem('consensus_g_token');
+      return;
+    }
     try {
       await signOut(auth);
       cachedAccessToken = null;
-      sessionStorage.removeItem('synthexis_g_token');
+      sessionStorage.removeItem('consensus_g_token');
     } catch (error: any) {
       console.error('Sign-out error:', error);
       throw new Error('Failed to sign out');
@@ -146,9 +172,13 @@ export const authService = {
    * Listen for auth state changes
    */
   onAuthChange(callback: (user: AuthUser | null, token: string | null) => void): () => void {
+    if (!isFirebaseConfigured) {
+      callback(null, null);
+      return () => {};
+    }
     return onAuthStateChanged(auth, (firebaseUser) => {
       if (!cachedAccessToken) {
-        cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
+        cachedAccessToken = sessionStorage.getItem('consensus_g_token');
       }
 
       if (firebaseUser) {
@@ -170,7 +200,7 @@ export const authService = {
    */
   getAccessToken(): string | null {
     if (!cachedAccessToken) {
-      cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
+      cachedAccessToken = sessionStorage.getItem('consensus_g_token');
     }
     return cachedAccessToken;
   },
@@ -181,9 +211,9 @@ export const authService = {
   setAccessToken(token: string | null) {
     cachedAccessToken = token;
     if (token) {
-      sessionStorage.setItem('synthexis_g_token', token);
+      sessionStorage.setItem('consensus_g_token', token);
     } else {
-      sessionStorage.removeItem('synthexis_g_token');
+      sessionStorage.removeItem('consensus_g_token');
     }
   },
 
@@ -191,6 +221,9 @@ export const authService = {
    * Get current user synchronously
    */
   getCurrentUser(): AuthUser | null {
+    if (!isFirebaseConfigured) {
+      return null;
+    }
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
     
@@ -207,6 +240,9 @@ export const authService = {
    * Sign in with GitHub popup using the narrowest scope (public_repo instead of full repo)
    */
   async signInWithGithub(): Promise<{ user: AuthUser; accessToken: string } | null> {
+    if (!isFirebaseConfigured) {
+      throw new Error('Firebase Authentication is unconfigured.');
+    }
     try {
       const githubProvider = new GithubAuthProvider();
       githubProvider.addScope('public_repo');

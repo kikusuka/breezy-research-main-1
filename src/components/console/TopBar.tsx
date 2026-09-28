@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ConsoleTab } from './Sidebar';
 import { apiClient, BackendState } from '../../services/apiClient';
-import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
+import { BreezyLogoIcon, ConsensusLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
 
 export type ProductMode = 'breezy' | 'synthexis' | 'synap';
 
@@ -108,7 +108,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            <SynthexisLogoIcon className="w-4 h-4" />
+            <ConsensusLogoIcon className="w-4 h-4" />
             <span>Consensus</span>
           </button>
 

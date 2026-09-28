@@ -100,7 +100,7 @@ export const gitHubService = {
     path: string,
     content: string,
     sha: string,
-    message: string = 'Update file via Synthexis IDE Workspace'
+    message: string = 'Update file via Consensus IDE Workspace'
   ): Promise<any> {
     try {
       const url = `https://api.github.com/repos/${repoFullName}/contents/${path}`;

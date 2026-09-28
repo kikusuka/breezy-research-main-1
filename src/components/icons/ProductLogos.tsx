@@ -13,7 +13,7 @@ export const BreezyLogoIcon: React.FC<{ className?: string }> = ({ className = '
   </svg>
 );
 
-export const SynthexisLogoIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+export const ConsensusLogoIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="50" y1="28" x2="26" y2="72" stroke="#3b82f6" strokeWidth="7" strokeLinecap="round" />
     <line x1="26" y1="72" x2="74" y2="72" stroke="#10b981" strokeWidth="7" strokeLinecap="round" />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { DebateSession } from '../../types';
-import { SynthexisLogoIcon } from '../icons/ProductLogos';
+import { ConsensusLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               className="text-left flex items-center gap-2"
             >
-              <SynthexisLogoIcon className="w-5 h-5" />
+              <ConsensusLogoIcon className="w-5 h-5" />
               <span className="font-serif text-base font-medium tracking-tight text-stone-100">
                 Consensus
               </span>

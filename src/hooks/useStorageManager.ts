@@ -37,7 +37,7 @@ export function useStorageManager(userId: string | null, isDriveConnected: boole
   // Calculate storage usage
   const calculateUsage = useCallback(async () => {
     if (!userId || !isDriveConnected) {
-      // Calculate total size across all Breezy, Synthexis, and Synap storage keys
+      // Calculate total size across all Breezy, Consensus, and Synap storage keys
       let totalLocalBytes = 0;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);

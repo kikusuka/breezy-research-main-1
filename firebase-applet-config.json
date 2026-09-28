@@ -1,8 +1,3 @@
 {
-  "apiKey": "AIzaSyPlaceholder-MockKeyForBuild",
-  "authDomain": "placeholder.firebaseapp.com",
-  "projectId": "placeholder-database-id",
-  "storageBucket": "placeholder.appspot.com",
-  "messagingSenderId": "1234567890",
-  "appId": "1:1234567890:web:abcdef"
+  "apiKey": ""
 }

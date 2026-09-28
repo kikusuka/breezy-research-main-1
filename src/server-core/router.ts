@@ -594,7 +594,7 @@ Analyze this deliberation and output the JSON object.`;
       selectedRound = 2,
     } = body;
 
-    const effectiveProtocol = (selectedRound === 4) ? 'quad' : (selectedRound === 2 && (protocol === 'quad' || protocol === 'deep')) ? 'trio' : protocol;
+    const effectiveProtocol = (selectedRound === 1) ? 'solo' : (selectedRound === 4) ? 'quad' : (selectedRound === 2 && (protocol === 'quad' || protocol === 'deep')) ? 'trio' : protocol;
 
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
       return createJsonResponse({ error: 'Prompt is required' }, 400, req, env);

@@ -1,5 +1,5 @@
 /**
- * Workspace Service for Synthexis
+ * Workspace Service for Consensus
  * Handles calling real Google Workspace REST endpoints
  */
 

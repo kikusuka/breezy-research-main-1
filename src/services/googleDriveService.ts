@@ -1,14 +1,14 @@
 /**
- * Google Drive Service for Synthexis
+ * Google Drive Service for Consensus
  * Handles authentication, file operations, and sync with Google Drive
  */
 
 import { google } from 'googleapis';
 import type { DebateSession as Session, SessionMetadata } from '../types';
 
-const APP_FOLDER_NAME = 'Synthexis_Data';
+const APP_FOLDER_NAME = 'Consensus_Data';
 const SESSIONS_FOLDER_NAME = 'sessions';
-const METADATA_FILE_NAME = 'synthexis_metadata.json';
+const METADATA_FILE_NAME = 'consensus_metadata.json';
 
 export class GoogleDriveService {
   private accessToken: string | null = null;
