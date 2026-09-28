@@ -1,6 +1,6 @@
 {
-  "name": "Breezy Playground",
-  "description": "Weightless AI Workspace, Interactive Research & Code Engineering Playground.",
+  "name": "Consensus Workspace",
+  "description": "Premium multi-model research workspace, interactive dialectic audits & alignment playground.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

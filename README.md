@@ -1,21 +1,21 @@
-# Breezy Playground
+# Consensus Workspace
 
-> **Weightless AI Workspace, Deep Technical Research, Cloud Code Engineering & Grounded Study Engine**
+> **Premium Multi-Model Research Workspace, Interactive Dialectic Audits & Sourced Alignment Playground**
 
-Breezy Playground is a unified, multi-mode developer and researcher platform. It brings conversational AI, multi-perspective technical inquiry, ephemeral code execution, and grounded knowledge analysis into a cohesive, responsive browser interface.
+Consensus Workspace is a unified, multi-mode developer and researcher platform. It brings conversational AI, multi-perspective technical inquiry, ephemeral code execution, and grounded knowledge analysis into a cohesive, responsive browser interface.
 
 ---
 
 ## 🏛️ Architecture & Unified Workspaces
 
-Breezy Playground is structured as a single platform shell hosting specialized workspaces:
+Consensus Workspace is structured as a single platform shell hosting specialized workspaces:
 
 ```text
-                             BREEZY PLAYGROUND
-                                     │
+                             CONSENSUS WORKSPACE
+                                      │
       ┌──────────────────┬───────────┴───────────┬──────────────────┐
       │                  │                       │                  │
-    Breezy           Synthexis                 Build              Synap
+    Breezy           Consensus                 Build              Synap
 (Conversational    (Technical Research      (Cloud IDE &      (Study & Knowledge
    Workspace)      & Evidence Engine)    Ephemeral Runner)         Engine)
 ```
@@ -25,7 +25,7 @@ Breezy Playground is structured as a single platform shell hosting specialized w
 * **Canvas Prototype**: Interactive layout for authoring and outlining presentations, tasks, and coursework. *(Clearly designated in preview mode while live Google Workspace OAuth sync is in active development).*
 * **Design & Theme**: High-contrast, accessibility-checked Dark and Light mode support with smooth palette transitions.
 
-### 2. Synthexis (Deep Technical Research)
+### 2. Consensus (Deep Technical Research)
 * **Multi-Perspective Synthesis**: Reconciles thesis arguments, critical counter-arguments, and synthesis findings from top-tier LLMs.
 * **Search Grounding Abstraction**: Pluggable provider interface supporting:
   * **SearXNG** (Self-hostable privacy-first metasearch)
@@ -35,7 +35,7 @@ Breezy Playground is structured as a single platform shell hosting specialized w
 * **Truthful Evidence Graph**: Maps claims directly to retrieved sources, explicitly reporting whether evidence currently supports each claim without inflated verification claims.
 * **Structured Export**: Markdown export with complete citation trails and inquiry parameters.
 
-### 3. Build (Breezy IDE)
+### 3. Build (Consensus IDE)
 * **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
 * **Simulated ANSI Terminal**: Real-time log streamer supporting ANSI color escape codes, live text filter search, auto-scrolling, and keyboard shortcuts (`Cmd+K` / `Ctrl+K` to clear, `Cmd+Shift+Down` to jump to bottom).
 * **Execution Preview (Simulation)**: Simulated cloud-runner workflow for testing the Build workspace UI and job lifecycle previews. No remote code execution or remote GPU provisioning occurs.
@@ -49,25 +49,25 @@ Breezy Playground is structured as a single platform shell hosting specialized w
 
 ## 🛠️ Technology Stack & Deployment Architecture
 
-Breezy Research consists of a static React frontend with multi-tier edge backend failover:
+Consensus Workspace consists of a static React frontend with multi-tier edge backend failover:
 
 ```text
-                             BREEZY RESEARCH
+                             CONSENSUS WORKSPACE
                                     │
-                         Static Frontend (Vite)
-                     (Cloudflare Pages / Vercel)
+                          Static Frontend (Vite)
+                      (Cloudflare Pages / Vercel)
                                     │
-                          ┌─────────┴─────────┐
-                          │                   │
-                     Cloudflare             Deno
-                      Worker               Deploy
-                     [PRIMARY]          [SECONDARY]
-                   100k req/day          1M req/mo
-                          │                   │
-                          └─────────┬─────────┘
-                                    │
-                                 Render
-                               [EMERGENCY]
+                           ┌─────────┴─────────┐
+                           │                   │
+                      Cloudflare             Deno
+                       Worker               Deploy
+                      [PRIMARY]          [SECONDARY]
+                    100k req/day          1M req/mo
+                           │                   │
+                           └─────────┬─────────┘
+                                     │
+                                  Render
+                                [EMERGENCY]
 ```
 
 | Layer | Technologies & Runtime |
@@ -84,7 +84,7 @@ Breezy Research consists of a static React frontend with multi-tier edge backend
 ## 🔐 Security & Data Handling Model
 
 * **Local-First Storage**: User chat threads, research sessions, and notebook data are stored in local browser storage (IndexedDB and LocalStorage).
-* **Transparent Credentials**: API keys (BYOK) are routed via edge backend proxies to prevent client exposure.
+* **Secure Key Vault Configuration**: API keys (BYOK) are stored locally in the user's browser, and are passed securely inside requests to the edge backend proxies so they are never exposed to remote logs.
 * **Explicit Authentication States**: Connected services strictly differentiate between real authenticated connections (OAuth / Personal Access Tokens) and local Sandbox Demo modes.
 * **Audited Scopes**: When connecting third-party services, access is requested strictly for necessary capabilities (e.g. read-only repository inspection).
 * **Bounded Edge Failover**: If the primary Cloudflare Worker is rate-limited or unavailable, requests fail over to the secondary Deno Deploy backend with clear UI notification.

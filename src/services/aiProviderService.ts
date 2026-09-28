@@ -1,12 +1,12 @@
 /**
  * Multi-Provider AI Service with Transparent Routing
  * Seamlessly integrates Backend Edge Proxy (Cloudflare / Deno / Render)
- * with Client-Side Bring-Your-Own-Key (BYOK) fallback.
+ * with Secure Client-Side Bring-Your-Own-Key (BYOK) proxying.
  * 
- * Truthful error handling: Never generates fake answers.
+ * Truthful security model: Keys are stored locally and routed securely via edge backend proxies.
+ * Never performs direct third-party browser-side requests.
  */
 
-import { GoogleGenAI } from '@google/genai';
 import { ProviderKeyConfig } from '../types';
 import { apiClient } from './apiClient';
 
@@ -16,7 +16,7 @@ export const aiProviderService = {
    */
   getStoredKeys(): ProviderKeyConfig {
     try {
-      const raw = localStorage.getItem('breezy_provider_keys') || localStorage.getItem('synthexis_provider_keys');
+      const raw = localStorage.getItem('consensus_provider_keys') || localStorage.getItem('breezy_provider_keys');
       if (raw) {
         return JSON.parse(raw);
       }
@@ -29,13 +29,14 @@ export const aiProviderService = {
    */
   saveStoredKeys(config: ProviderKeyConfig) {
     try {
+      localStorage.setItem('consensus_provider_keys', JSON.stringify(config));
       localStorage.setItem('breezy_provider_keys', JSON.stringify(config));
-      localStorage.setItem('synthexis_provider_keys', JSON.stringify(config));
     } catch {}
   },
 
   /**
    * Generate content with genuine failover across available backend and BYOK providers.
+   * All requests are proxied via secure backend edge endpoints to avoid client-side CORS issues or key exposure.
    */
   async generateWithFailover(
     prompt: string,
@@ -45,7 +46,7 @@ export const aiProviderService = {
     const keys = this.getStoredKeys();
     const errors: string[] = [];
 
-    // 1. Try Primary Backend Proxy first (Cloudflare / Deno / Render)
+    // 1. Try Gemini via Edge Backend Proxy (with local BYOK fallback if present)
     try {
       const res = await apiClient.chatBreezy({
         prompt,
@@ -59,116 +60,63 @@ export const aiProviderService = {
         const activeBackend = apiClient.getActiveEndpoint().name;
         return {
           text: res.text,
-          providerUsed: `Google Gemini (${activeBackend})`,
+          providerUsed: keys.gemini ? `Google Gemini (BYOK via ${activeBackend})` : `Google Gemini (${activeBackend})`,
           modelUsed: 'gemini-3.8-flash',
         };
       }
     } catch (err: any) {
-      errors.push(`Backend API: ${err.message || 'Request failed'}`);
-      console.warn('Backend proxy request failed, checking client-side BYOK keys...', err);
+      errors.push(`Gemini Backend: ${err.message || 'Request failed'}`);
     }
 
-    // 2. Direct Client-Side BYOK Gemini if configured
-    if (keys.gemini || import.meta.env.VITE_GEMINI_API_KEY) {
+    // 2. Try Groq via Edge Backend Proxy (BYOK)
+    if (keys.groq) {
       try {
-        const geminiKey = keys.gemini || import.meta.env.VITE_GEMINI_API_KEY || '';
-        const ai = new GoogleGenAI({ apiKey: geminiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: prompt,
-          config: {
-            systemInstruction,
-            temperature,
-          },
+        const res = await apiClient.chatBreezy({
+          prompt,
+          history: [],
+          provider: 'groq',
+          model: 'llama-3.3-70b-versatile',
+          apiKey: keys.groq,
         });
 
-        if (response && response.text) {
+        if (res && res.text) {
+          const activeBackend = apiClient.getActiveEndpoint().name;
           return {
-            text: response.text,
-            providerUsed: 'Google Gemini (Client BYOK)',
-            modelUsed: 'gemini-3.8-flash',
+            text: res.text,
+            providerUsed: `Groq Cloud (BYOK via ${activeBackend})`,
+            modelUsed: 'llama-3.3-70b-versatile',
           };
         }
       } catch (err: any) {
-        errors.push(`Client Gemini: ${err.message || 'Failed'}`);
+        errors.push(`Groq Backend: ${err.message || 'Request failed'}`);
       }
     }
 
-    // 3. Client-Side BYOK Groq if configured
-    if (keys.groq) {
-      try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${keys.groq}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              ...(systemInstruction ? [{ role: 'system', content: systemInstruction }] : []),
-              { role: 'user', content: prompt }
-            ],
-            temperature,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content;
-          if (text) {
-            return {
-              text,
-              providerUsed: 'Groq Cloud (Client BYOK)',
-              modelUsed: 'llama-3.3-70b-versatile',
-            };
-          }
-        } else {
-          errors.push(`Groq: HTTP ${res.status}`);
-        }
-      } catch (err: any) {
-        errors.push(`Groq: ${err.message}`);
-      }
-    }
-
-    // 4. Client-Side BYOK OpenRouter if configured
+    // 3. Try OpenRouter via Edge Backend Proxy (BYOK)
     if (keys.openrouter) {
       try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${keys.openrouter}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'Breezy Research',
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-3.3-70b-instruct',
-            messages: [
-              ...(systemInstruction ? [{ role: 'system', content: systemInstruction }] : []),
-              { role: 'user', content: prompt }
-            ],
-            temperature,
-          }),
+        const res = await apiClient.chatBreezy({
+          prompt,
+          history: [],
+          provider: 'openrouter',
+          model: 'meta-llama/llama-3.3-70b-instruct',
+          apiKey: keys.openrouter,
         });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content;
-          if (text) {
-            return {
-              text,
-              providerUsed: 'OpenRouter (Client BYOK)',
-              modelUsed: 'meta-llama/llama-3.3-70b-instruct',
-            };
-          }
-        } else {
-          errors.push(`OpenRouter: HTTP ${res.status}`);
+
+        if (res && res.text) {
+          const activeBackend = apiClient.getActiveEndpoint().name;
+          return {
+            text: res.text,
+            providerUsed: `OpenRouter (BYOK via ${activeBackend})`,
+            modelUsed: 'meta-llama/llama-3.3-70b-instruct',
+          };
         }
       } catch (err: any) {
-        errors.push(`OpenRouter: ${err.message}`);
+        errors.push(`OpenRouter Backend: ${err.message || 'Request failed'}`);
       }
     }
 
-    // 5. Honest Failure
+    // 4. Honest Failure
     const summary = errors.length > 0 ? errors.join('; ') : 'No valid API keys configured';
     throw new Error(`AI providers unavailable (${summary}). Please configure an active API key in Settings.`);
   }
