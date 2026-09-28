@@ -589,7 +589,12 @@ Analyze this deliberation and output the JSON object.`;
       keys = {},
       seats = {},
       enableSearchGrounding = false,
+      agreementThreshold = 78,
+      autoResolve = true,
+      selectedRound = 2,
     } = body;
+
+    const effectiveProtocol = (selectedRound === 4) ? 'quad' : (selectedRound === 2 && (protocol === 'quad' || protocol === 'deep')) ? 'trio' : protocol;
 
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
       return createJsonResponse({ error: 'Prompt is required' }, 400, req, env);
@@ -727,7 +732,7 @@ Ground your technical architecture, critique, and trade-off claims in the above 
 
         const groundedPrompt = `${prompt}${groundingContext}`;
 
-        if (protocol === 'solo') {
+        if (effectiveProtocol === 'solo') {
           await sendEvent('round_start', {
             round: 1,
             role: 'solo',
@@ -910,8 +915,8 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
         let verifierContent = '';
         let verifierSummary = '';
 
-        // Execute Verifier Stage ONLY IF protocol is 'quad' or default (Deep Mode)
-        if (protocol === 'quad' || protocol === 'deep') {
+        // Execute Verifier Stage ONLY IF effectiveProtocol is 'quad' or default (Deep Mode)
+        if (effectiveProtocol === 'quad' || effectiveProtocol === 'deep') {
           const verifierRoundNum = 3;
           await sendEvent('round_start', {
             round: verifierRoundNum,
@@ -982,7 +987,7 @@ Perform rigorous empirical and constraint verification on these analyses.`;
         }
 
         // SYNTHESIZER (Final Resolution)
-        const finalRoundNum = (protocol === 'quad' || protocol === 'deep') ? 4 : 3;
+        const finalRoundNum = (effectiveProtocol === 'quad' || effectiveProtocol === 'deep') ? 4 : 3;
         await sendEvent('round_start', {
           round: finalRoundNum,
           role: 'arbiter',
@@ -1002,6 +1007,8 @@ Directives:
 2. Adjudicate impartially: thoroughly integrate mitigations for every genuine edge case.
 3. Deliver a comprehensive, high-caliber, practical solution.
 4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach.
+5. CONSENSUS CRITERIA: Ensure the synthesis has at least ${agreementThreshold}% logical consistency and factual alignment between model claims.
+6. CONTRADICTION STRATEGY: ${autoResolve ? 'Auto-resolve opposing claims by identifying empirical common ground and technical consensus.' : 'Do not auto-resolve: clearly list any unresolved disagreements and contradictory viewpoints under a separate "Unresolved Contradictions" section.'}
 ${toneInstruction}
 Structure your response in clean Markdown with clear headings.`;
 

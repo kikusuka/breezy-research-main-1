@@ -326,7 +326,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
         <aside className="xl:col-span-3 flex flex-col gap-4">
           <div className="bg-[#161a22] p-4 rounded-xl flex flex-col gap-3 border border-white/5 font-sans">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <span className="text-xs font-semibold text-stone-200">Active Peer Nodes</span>
+              <span className="text-xs font-semibold text-stone-200">Network Status</span>
               <span className={`font-mono text-[9px] px-2 py-0.5 rounded border ${isOnline ? 'text-[#7bdb80] bg-[#7bdb80]/10 border-[#7bdb80]/20' : 'text-red-400 bg-red-400/10 border-red-500/20'}`}>
                 {isOnline ? 'Online' : 'Offline'}
               </span>

@@ -250,12 +250,21 @@ export default function App() {
     setIsDeliberating(true);
     setActiveRound(1);
     setStreamingText('');
-    setResearchEvents([`Starting multi-model research on: "${promptText.slice(0, 50)}..."`]);
+    setResearchEvents([
+      !consensusMode 
+        ? `Starting lightweight single-model query: "${promptText.slice(0, 50)}..."` 
+        : `Starting multi-model consensus audit: "${promptText.slice(0, 50)}..."`
+    ]);
 
-    const protocol = depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
+    const protocol = !consensusMode ? 'solo' : depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
     const tone: DebateTone = 'balanced';
     const searchEngine: SearchEngineProvider = 'google';
     const seats = providerConfigService.getSeatsPayload();
+
+    const config = providerConfigService.getConfig();
+    const agreementThreshold = config.agreementThreshold ?? 78;
+    const autoResolve = config.autoResolve ?? true;
+    const selectedRound = config.selectedRound ?? 2;
 
     const newSession = createNewSession(promptText, protocol as any, [], tone);
     setSessions((prev) => [newSession, ...prev]);
@@ -271,6 +280,9 @@ export default function App() {
           keys,
           seats,
           enableSearchGrounding: true,
+          agreementThreshold,
+          autoResolve,
+          selectedRound,
         },
         {
           signal: controller.signal,

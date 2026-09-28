@@ -28,6 +28,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeSessionId,
   onSelectSession,
   onNewSession,
+  consensusMode = true,
+  onToggleConsensusMode,
   isOpenMobile = false,
   onCloseMobile,
   onOpenProfile,
@@ -146,6 +148,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>Settings</span>
               </button>
             </nav>
+          </div>
+
+          {/* Consensus Mode Toggle */}
+          <div className="mx-3 mt-1 mb-2 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-1.5 shrink-0">
+            <div className="flex items-center justify-between">
+              <span className="font-sans text-[11px] font-semibold text-stone-300">Audited Consensus</span>
+              <button
+                type="button"
+                onClick={onToggleConsensusMode}
+                className={`w-8 h-4.5 rounded-full relative p-0.5 transition-colors cursor-pointer ${
+                  consensusMode ? 'bg-stone-100' : 'bg-white/10'
+                }`}
+              >
+                <div
+                  className={`w-3.5 h-3.5 rounded-full bg-stone-950 shadow-xs transition-transform duration-200 ${
+                    consensusMode ? 'translate-x-3.5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+            <span className="text-[9px] text-stone-500 leading-normal">
+              {consensusMode 
+                ? 'Multi-model dialectic and alignment check active.' 
+                : 'Solo lightweight assistant analysis active.'}
+            </span>
           </div>
 
           {/* Research History List */}

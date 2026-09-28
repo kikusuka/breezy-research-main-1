@@ -97,7 +97,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-[#9d85f2]/20 hover:text-white transition-colors text-left text-xs font-medium cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px] text-[#ccbdff]">account_tree</span>
-                <span>Synthexis</span>
+                <span>Consensus</span>
               </button>
               <button
                 type="button"

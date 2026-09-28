@@ -173,7 +173,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
           <div className="flex-1 flex flex-col items-center justify-center py-12 sm:py-24 text-center w-full">
             {/* Elegant Serif Header Group */}
             <span className="font-serif text-4xl sm:text-5xl font-normal text-stone-100 tracking-tight mb-3">
-              Synthexis
+              Consensus
             </span>
             <h1 className="text-base sm:text-lg font-serif text-stone-300 font-normal mb-8 tracking-wide">
               What are you curious about?
@@ -324,10 +324,10 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
             {/* Direct human language explanation & topics block */}
             <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8 font-sans">
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-                How Synthexis Works
+                How Consensus Works
               </span>
               <p className="text-xs text-stone-400 leading-relaxed mb-8">
-                Synthexis translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
+                Consensus translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
               </p>
 
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">

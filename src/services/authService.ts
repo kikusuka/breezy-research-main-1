@@ -15,20 +15,39 @@ import {
 } from 'firebase/auth';
 
 let firebaseConfig: any = {
-  apiKey: "AIzaSyPlaceholder-MockKeyForBuild",
-  authDomain: "placeholder.firebaseapp.com",
-  projectId: "placeholder-database-id",
-  storageBucket: "placeholder.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ""
 };
 
-try {
-  // @ts-ignore
-  firebaseConfig = (await import('../../firebase-applet-config.json')).default;
-} catch (e) {
-  // Fallback to placeholder config when config file is not present
+// If no environment variables are set, fallback to imported JSON if available
+if (!firebaseConfig.apiKey) {
+  try {
+    // @ts-ignore
+    const fileConfig = (await import('../../firebase-applet-config.json')).default;
+    firebaseConfig = { ...firebaseConfig, ...fileConfig };
+  } catch (e) {
+    // Use fallback placeholder configs so initializeApp doesn't crash on import
+    firebaseConfig = {
+      apiKey: "AIzaSyPlaceholder-MockKeyForBuild",
+      authDomain: "placeholder.firebaseapp.com",
+      projectId: "placeholder-database-id",
+      storageBucket: "placeholder.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcdef"
+    };
+  }
 }
+
+// Ensure clean check of whether Firebase config is real and fully initialized
+export const isFirebaseConfigured = !!(
+  firebaseConfig.apiKey && 
+  !firebaseConfig.apiKey.includes('Placeholder') && 
+  !firebaseConfig.apiKey.includes('MockKey')
+);
 
 // Initialize Firebase with exact applet config
 const app = initializeApp(firebaseConfig);

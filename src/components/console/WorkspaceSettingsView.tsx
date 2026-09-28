@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProviderKeyConfig } from '../../types';
-import { authService, AuthUser } from '../../services/authService';
+import { authService, AuthUser, isFirebaseConfigured } from '../../services/authService';
 import { workspaceService, GoogleDriveFile, GmailMessage, CalendarEvent } from '../../services/workspaceService';
 import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
 import { providerConfigService } from '../../services/providerConfigService';
@@ -17,7 +17,6 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
   const [autoResolve, setAutoResolve] = useState<boolean>(canonical.autoResolve ?? true);
   const [agreementThreshold, setAgreementThreshold] = useState<number>(canonical.agreementThreshold ?? 78);
-  const [themeMode, setThemeMode] = useState<'obsidian' | 'slate' | 'system'>('obsidian');
   const [webhookActive, setWebhookActive] = useState<boolean>(() => {
     const saved = localStorage.getItem('breezy_webhook_active');
     return saved !== null ? saved === 'true' : false;
@@ -410,6 +409,15 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         {/* Workspace Sync Tab Content */}
         {activeTab === 'integrations' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {!isFirebaseConfigured && (
+              <div className="col-span-1 lg:col-span-12 p-4 rounded-xl bg-amber-950/40 border border-amber-500/20 text-amber-200 text-xs flex items-start gap-3">
+                <span className="material-symbols-outlined text-amber-400 text-[18px]">warning</span>
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold text-amber-100">Firebase OAuth Flow Unconfigured</span>
+                  <span>Google Workspace & GitHub sync require active Firebase credentials. Provide VITE_FIREBASE_* environment variables to enable active auth flows. The application will safely fall back to unconfigured, local-only sandbox state.</span>
+                </div>
+              </div>
+            )}
             {/* Google Integration (7 Columns) */}
             <div className="lg:col-span-7 flex flex-col gap-6">
               <section className="p-6 rounded-2xl bg-[#161a22] border border-white/5 flex flex-col gap-6">
@@ -563,7 +571,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <div className="max-w-sm">
                       <h4 className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Sync inactive</h4>
                       <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-                        Authorize Synthexis to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
+                        Authorize Consensus to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
                       </p>
                       <button
                         onClick={() => onConnectWorkspace(googleSubTab)}

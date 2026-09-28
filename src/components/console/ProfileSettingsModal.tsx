@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ProviderKeyConfig } from '../../types';
 import { providerConfigService, AVAILABLE_MODELS, PRESET_ROLE_CONFIGS } from '../../services/providerConfigService';
 import { userProfileService, UserProfile } from '../../services/userProfileService';
-import { authService, AuthUser } from '../../services/authService';
+import { authService, AuthUser, isFirebaseConfigured } from '../../services/authService';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -350,25 +350,37 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const res = await authService.signInWithGoogle();
-                        if (res?.user) {
-                          setAuthUser(res.user);
-                          if (res.user.displayName) setDisplayName(res.user.displayName);
-                          if (res.user.email) setEmail(res.user.email);
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      disabled={!isFirebaseConfigured}
+                      onClick={async () => {
+                        try {
+                          const res = await authService.signInWithGoogle();
+                          if (res?.user) {
+                            setAuthUser(res.user);
+                            if (res.user.displayName) setDisplayName(res.user.displayName);
+                            if (res.user.email) setEmail(res.user.email);
+                          }
+                        } catch (e: any) {
+                          alert(`Authorization error: ${e.message}`);
                         }
-                      } catch (e: any) {
-                        alert(`Authorization error: ${e.message}`);
-                      }
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-100 font-sans text-xs font-semibold border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">key</span>
-                    <span>Sign in with Google OAuth</span>
-                  </button>
+                      }}
+                      className={`w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 border ${
+                        isFirebaseConfigured
+                          ? 'bg-white/10 hover:bg-white/20 text-stone-100 border-white/10 cursor-pointer'
+                          : 'bg-white/5 text-stone-500 border-white/5 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">key</span>
+                      <span>Sign in with Google OAuth</span>
+                    </button>
+                    {!isFirebaseConfigured && (
+                      <span className="text-[10px] text-amber-500/80 bg-amber-950/20 border border-amber-500/10 p-2 rounded-lg text-center font-medium leading-relaxed">
+                        ⚠️ Cloud features are disabled. Start a local-sandbox container or configure real Firebase credential variables VITE_FIREBASE_* to enable cloud Google Auth.
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
