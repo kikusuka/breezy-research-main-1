@@ -156,7 +156,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   };
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] bg-[#10141a] text-stone-200">
+    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] bg-stone-950 text-stone-200">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -175,7 +175,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
             <span className="font-serif text-4xl sm:text-5xl font-normal text-stone-100 tracking-tight mb-3">
               Synthexis
             </span>
-            <h1 className="text-base sm:text-lg font-serif text-stone-300 font-normal mb-8 tracking-wide">
+            <h1 className="text-base sm:text-lg font-serif text-stone-400 font-normal mb-8 tracking-wide">
               What are you curious about?
             </h1>
 
@@ -456,7 +456,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               ) : (
                 <div className="text-stone-400 text-xs sm:text-sm flex items-center gap-2">
                   <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
-                  <span>Evaluating assumptions and synthexis matrices...</span>
+                  <span>Evaluating assumptions and research topology...</span>
                 </div>
               )}
             </article>
@@ -626,7 +626,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
       {/* Persistent Follow-up Input area inside active thread (Minimizes blurring overlay completely) */}
       {!isInitialPrompt && (
-        <div className="sticky bottom-0 left-0 right-0 p-4 bg-[#10141a] border-t border-white/5 z-10">
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-stone-950 border-t border-stone-800/40 z-10">
           <div className="max-w-3xl mx-auto w-full">
             <div className="bg-[#161a22] border border-white/5 rounded-xl p-3 shadow-lg focus-within:border-white/10 transition-all relative">
               <div className="flex flex-col gap-2">

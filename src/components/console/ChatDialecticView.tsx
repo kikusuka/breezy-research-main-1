@@ -248,8 +248,8 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 onClick={onOpenModelsTab}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 border border-stone-700/40 hover:border-stone-500/60 text-stone-400 hover:text-stone-100 font-mono text-[10px] transition-all uppercase tracking-widest"
               >
-                <span className="material-symbols-outlined text-[14px]">tune</span>
-                <span>Config_Matrix</span>
+                <span className="material-symbols-outlined text-[14px]">hub</span>
+                <span>Topology</span>
               </button>
             </div>
           </div>
