@@ -297,7 +297,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             <div className="space-y-4 text-right sm:text-left">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">Evidence & Verification</span>
               <p className="text-sm text-stone-400 leading-relaxed font-serif italic text-right">
-                Every claim is cross-referenced with real-time documentation and public specifications. Zero artificial consensus clamping.
+                Every claim is cross-referenced with real-time documentation and public specifications. Zero artificial synthexis clamping.
               </p>
             </div>
           </div>

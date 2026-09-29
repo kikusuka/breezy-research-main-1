@@ -98,7 +98,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
       
       if (metrics.claimsContradicted > 0) return { label: 'COUNTER-CLAIMS DETECTED', color: 'bg-amber-500', icon: 'rule' };
       if (metrics.claimsUnresolved > metrics.claimsSupported) return { label: 'INSUFFICIENT EVIDENCE', color: 'bg-amber-600', icon: 'warning' };
-      if (metrics.synthexisRate && metrics.synthexisRate >= 90) return { label: 'VERIFIED GROUNDING', color: 'bg-emerald-500', icon: 'verified' };
+      if (metrics.synthexisRate && metrics.synthexisRate >= 90) return { label: 'HIGH SYNTHESIS CONSISTENCY', color: 'bg-emerald-500', icon: 'verified' };
       
       return { label: 'SYNTHESIS AUDITED', color: 'bg-emerald-600', icon: 'fact_check' };
     }

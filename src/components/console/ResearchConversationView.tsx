@@ -327,7 +327,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 How Synthexis Works
               </span>
               <p className="text-xs text-stone-400 leading-relaxed mb-8">
-                Synthexis translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
+                Synthexis translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical jargon — just verified technical synthexis.
               </p>
 
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
