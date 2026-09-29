@@ -1,5 +1,5 @@
 import React from 'react';
-import { BreezyLogoIcon } from '../icons/ProductLogos';
+import { BreezyLogoIcon, SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 
 export type BreezyTab = 'chat' | 'ide' | 'canvas';
@@ -20,6 +20,7 @@ interface BreezySidebarProps {
   onNewChat: () => void;
   onDeleteChat: (id: string, e: React.MouseEvent) => void;
   onOpenProfile: () => void;
+  onSwitchToSynthexis?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -33,6 +34,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
   onNewChat,
   onDeleteChat,
   onOpenProfile,
+  onSwitchToSynthexis,
   isOpenMobile,
   onCloseMobile,
 }) => {
@@ -62,9 +64,14 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               <div className="w-8 h-8 rounded-full bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.25)]">
                 <BreezyLogoIcon className="w-4 h-4 text-sky-400" />
               </div>
-              <span className="font-sans text-sm font-bold text-white tracking-tight">
-                Breezy
-              </span>
+              <div className="flex flex-col">
+                <span className="font-sans text-sm font-bold text-white tracking-tight leading-none">
+                  Breezy
+                </span>
+                <span className="text-[10px] text-slate-400 font-sans mt-0.5 leading-none">
+                  & Synthexis
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -92,7 +99,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               <span className={`material-symbols-outlined text-[17px] ${activeTab === 'chat' ? 'text-sky-400' : 'text-slate-500'}`}>
                 forum
               </span>
-              <span>Breezy Chat Streams</span>
+              <span>Breezy Chat</span>
             </button>
 
             <button

@@ -1,6 +1,7 @@
 import React from 'react';
-import { ProductMode } from '../console/TopBar';
 import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
+
+export type ProductMode = 'synap' | 'breezy' | 'synthexis';
 
 interface SynapHeaderProps {
   readinessPercentage: number;

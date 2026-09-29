@@ -12,15 +12,11 @@ import { ModelsSynthexisView } from './components/console/ModelsSynthexisView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
-import { SynapWorkspace } from './components/synap/SynapWorkspace';
 import { BreezySidebar, BreezyTab } from './components/breezy/BreezySidebar';
 import { BreezyWorkspace } from './components/breezy/BreezyWorkspace';
 import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
 import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace';
 import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
-import { SynapHeader } from './components/synap/SynapHeader';
-import { computeNotebookReadiness } from './services/scheduler';
-import { synapService } from './services/synapService';
 import { authService } from './services/authService';
 
 import {
@@ -58,15 +54,14 @@ export default function App() {
   const [productMode, setProductMode] = useState<ProductMode>(() => {
     const params = new URLSearchParams(window.location.search);
     const modeParam = params.get('mode');
-    if (modeParam === 'synthexis' || modeParam === 'synap' || modeParam === 'breezy') {
+    if (modeParam === 'synthexis' || modeParam === 'breezy') {
       return modeParam;
     }
     const hash = window.location.hash.toLowerCase();
-    if (hash.includes('synap')) return 'synap';
     if (hash.includes('synthexis')) return 'synthexis';
 
     const saved = localStorage.getItem('breezy_product_mode');
-    if (saved === 'synthexis' || saved === 'synap' || saved === 'breezy') {
+    if (saved === 'synthexis' || saved === 'breezy') {
       return saved as ProductMode;
     }
     return 'breezy';
@@ -165,35 +160,6 @@ export default function App() {
     providerConfigService.saveKeys(newKeys);
     toast('API keys saved successfully.');
   };
-
-  // Real computed readiness from Synap notebooks
-  const [aggregatedReadiness, setAggregatedReadiness] = useState<number>(0);
-  useEffect(() => {
-    async function loadReadiness() {
-      try {
-        const notebooks = await synapService.loadNotebooks();
-        if (!notebooks || notebooks.length === 0) {
-          setAggregatedReadiness(0);
-          return;
-        }
-        let total = 0;
-        let count = 0;
-        for (const nb of notebooks) {
-          if (nb.examDate && nb.studyItems && nb.studyItems.length > 0) {
-            const res = computeNotebookReadiness(nb.studyItems, nb.examDate);
-            if (res) {
-              total += res.readiness;
-              count++;
-            }
-          }
-        }
-        setAggregatedReadiness(count > 0 ? Math.round(total / count) : 0);
-      } catch {
-        setAggregatedReadiness(0);
-      }
-    }
-    loadReadiness();
-  }, [productMode]);
 
   const handleNewDebate = () => {
     const fresh = createNewSession('New Inquiry', 'trio', [], 'balanced');
@@ -390,24 +356,6 @@ export default function App() {
     });
   };
 
-  if (productMode === 'synap') {
-    return (
-      <div className={`min-h-screen font-sans antialiased overflow-x-hidden bg-[#0A0A0F] text-[#e4e1ed]`}>
-        <SynapWorkspace
-          productMode={productMode}
-          onSelectProductMode={setProductMode}
-          onOpenProfile={() => setIsProfileSettingsOpen(true)}
-        />
-        <ProfileSettingsModal
-          isOpen={isProfileSettingsOpen}
-          onClose={() => setIsProfileSettingsOpen(false)}
-          keys={keys}
-          onSaveKeys={handleSaveKeys}
-        />
-      </div>
-    );
-  }
-
   if (productMode === 'breezy') {
     return (
       <div className={`flex min-h-screen font-sans antialiased overflow-x-hidden bg-[#090d16] text-slate-100`}>
@@ -420,38 +368,64 @@ export default function App() {
           onNewChat={handleNewBreezyChat}
           onDeleteChat={handleDeleteBreezyChat}
           onOpenProfile={() => setIsProfileSettingsOpen(true)}
+          onSwitchToSynthexis={() => setProductMode('synthexis')}
           isOpenMobile={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
         <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
-          <SynapHeader
-            readinessPercentage={aggregatedReadiness}
+          <TopBar
             productMode={productMode}
             onSelectProductMode={setProductMode}
-            onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
+            onOpenSearch={() => setIsCommandPaletteOpen(true)}
             onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           />
 
-          {breezyTab === 'chat' && (
-            <BreezyWorkspace
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-              toast={toast}
-            />
-          )}
+          <main className="relative pt-16 flex-1 flex flex-col min-h-0">
+            {breezyTab === 'chat' && (
+              <BreezyWorkspace
+                onOpenSettings={() => setIsProfileSettingsOpen(true)}
+                toast={toast}
+                chats={breezyChats}
+                activeId={breezyActiveId}
+                onSelectChat={setBreezyActiveId}
+                onUpdateChats={(next) => {
+                  setBreezyChats(next);
+                  try {
+                    localStorage.setItem('breezy:chats', JSON.stringify(next));
+                  } catch {}
+                }}
+                onNewChat={handleNewBreezyChat}
+                onSwitchToSynthexis={() => {
+                  setProductMode('synthexis');
+                  toast('Switched to Synthexis Research Console.');
+                }}
+              />
+            )}
 
-          {breezyTab === 'ide' && (
-            <BreezyIdeWorkspace
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-            />
-          )}
+            {breezyTab === 'ide' && (
+              <BreezyIdeWorkspace
+                onOpenSettings={() => setIsProfileSettingsOpen(true)}
+              />
+            )}
 
-          {breezyTab === 'canvas' && (
-            <BreezyCanvasWorkspace
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-            />
-          )}
+            {breezyTab === 'canvas' && (
+              <BreezyCanvasWorkspace
+                onOpenSettings={() => setIsProfileSettingsOpen(true)}
+              />
+            )}
+          </main>
         </div>
+
+        <CommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onSelectTab={setActiveTab}
+          sessions={sessions}
+          onSelectSession={handleSelectSession}
+          onNewSession={handleNewDebate}
+          onSelectProductMode={setProductMode}
+        />
 
         {appToast && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
@@ -485,6 +459,7 @@ export default function App() {
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
         onDeleteSession={handleDeleteSession}
+        onSwitchToBreezy={() => setProductMode('breezy')}
       />
 
       <div className="pl-0 lg:pl-64 flex flex-col min-h-screen">
@@ -519,10 +494,11 @@ export default function App() {
                 onExportMarkdown={handleExportMarkdown}
                 keys={keys}
                 onOpenNotes={() => setActiveTab('notes')}
-                onExportToSynap={async (s) => {
-                  const notebook = await synapService.exportResearchSession(s.prompt, s.finalOutput || '');
-                  synapService.setActiveNotebookId(notebook.id);
-                  setProductMode('synap');
+                onOpenInBreezy={(s) => {
+                  handleNewBreezyChat();
+                  setProductMode('breezy');
+                  setBreezyTab('chat');
+                  toast('Transferred session to Breezy AI.');
                 }}
                 onOpenInIde={(s) => {
                   const codeMatch = s.finalOutput?.match(/```(?:python|javascript|typescript|html|bash|json)?\n([\s\S]*?)```/);

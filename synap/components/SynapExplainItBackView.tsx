@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { SynapNotebook, SynapSource, SynapStudyItem } from '../../types/synap';
-import { synapService } from '../../services/synapService';
-import { retrieveRelevantChunks } from '../../services/synapDatabase';
-import { verifyQuoteVerbatim } from '../../services/scheduler';
+import { SynapNotebook, SynapSource, SynapStudyItem } from '../types/synap';
+import { synapService } from '../services/synapService';
+import { retrieveRelevantChunks } from '../services/synapDatabase';
+import { verifyQuoteVerbatim } from '../services/scheduler';
 
 interface ExplainItBackViewProps {
   notebook: SynapNotebook;

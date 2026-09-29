@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SynapStudyItem } from '../../types/synap';
-import { getSM2State } from '../../services/scheduler';
+import { SynapStudyItem } from '../types/synap';
+import { getSM2State } from '../services/scheduler';
 
 interface SynapFlashcardViewProps {
   studyItems: SynapStudyItem[];

@@ -15,7 +15,7 @@ interface ResearchConversationViewProps {
   keys: ProviderKeyConfig;
   researchEvents?: string[];
   onOpenNotes?: () => void;
-  onExportToSynap?: (session: DebateSession) => void;
+  onOpenInBreezy?: (session: DebateSession) => void;
   onOpenInIde?: (session: DebateSession) => void;
 }
 
@@ -31,7 +31,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   keys,
   researchEvents = [],
   onOpenNotes,
-  onExportToSynap,
+  onOpenInBreezy,
   onOpenInIde,
 }) => {
   const [inputText, setInputText] = useState('');
@@ -474,14 +474,14 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                  {onExportToSynap && (
+                  {onOpenInBreezy && (
                     <button
                       type="button"
-                      onClick={() => onExportToSynap(session)}
-                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                      onClick={() => onOpenInBreezy(session)}
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[16px]">school</span>
-                      <span>Study in Synap</span>
+                      <span className="material-symbols-outlined text-[16px]">air</span>
+                      <span>Chat in Breezy</span>
                     </button>
                   )}
                   {onOpenInIde && (

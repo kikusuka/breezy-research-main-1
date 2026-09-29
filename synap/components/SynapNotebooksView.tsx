@@ -1,6 +1,6 @@
 import React from 'react';
-import { SynapNotebook } from '../../types/synap';
-import { computeNotebookReadiness, computePredictedRecall, getSM2State } from '../../services/scheduler';
+import { SynapNotebook } from '../types/synap';
+import { computeNotebookReadiness, computePredictedRecall, getSM2State } from '../services/scheduler';
 
 interface SynapNotebooksViewProps {
   notebooks: SynapNotebook[];

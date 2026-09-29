@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { scheduleItem, computeNotebookReadiness, computePredictedRecall, verifyQuoteVerbatim } from '../src/services/scheduler';
-import { SynapStudyItem } from '../src/types/synap';
+import { scheduleItem, computeNotebookReadiness, computePredictedRecall, verifyQuoteVerbatim } from '../services/scheduler';
+import { SynapStudyItem } from '../types/synap';
 
 describe('Synap SM-2 Scheduler', () => {
   it('should initialize and grow interval after successive Good ratings', () => {

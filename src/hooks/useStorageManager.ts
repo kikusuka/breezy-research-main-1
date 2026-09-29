@@ -41,7 +41,7 @@ export function useStorageManager(userId: string | null, isDriveConnected: boole
       let totalLocalBytes = 0;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith('breezy') || key.startsWith('synthexis') || key.startsWith('synap:'))) {
+        if (key && (key.startsWith('breezy') || key.startsWith('synthexis'))) {
           const val = localStorage.getItem(key) || '';
           totalLocalBytes += new TextEncoder().encode(val).length;
         }

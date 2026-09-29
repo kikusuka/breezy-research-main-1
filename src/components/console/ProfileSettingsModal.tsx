@@ -120,17 +120,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       authorizationType: authUser ? 'google_oauth' : 'session_enclave',
     });
 
-    const config = {
-      type: provider,
-      baseUrl: provider === 'openai' ? baseUrl.trim() : undefined,
-      model: model.trim(),
-      key: key.trim(),
-      systemPrompt: systemPrompt.trim(),
-    };
-    try {
-      localStorage.setItem('synap:provider', JSON.stringify(config));
-    } catch {}
-
     try {
       const existingKeys = providerConfigService.getKeys();
 
@@ -182,7 +171,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       )
     ) {
       const breezyKeys = Object.keys(localStorage).filter(
-        (k) => k.startsWith('breezy') || k.startsWith('synthexis') || k.startsWith('synap:')
+        (k) => k.startsWith('breezy') || k.startsWith('synthexis')
       );
       breezyKeys.forEach((k) => localStorage.removeItem(k));
       window.location.reload();

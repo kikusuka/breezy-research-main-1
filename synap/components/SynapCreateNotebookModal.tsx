@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SynapNotebook } from '../../types/synap';
+import { SynapNotebook } from '../types/synap';
 
 interface SynapCreateNotebookModalProps {
   isOpen: boolean;

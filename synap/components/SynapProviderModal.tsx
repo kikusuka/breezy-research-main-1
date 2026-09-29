@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SynapProviderConfig } from '../../types/synap';
+import { SynapProviderConfig } from '../types/synap';
 
 interface SynapProviderModalProps {
   isOpen: boolean;

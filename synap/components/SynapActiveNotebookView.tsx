@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SynapNotebook } from '../../types/synap';
-import { userProfileService } from '../../services/userProfileService';
+import { SynapNotebook } from '../types/synap';
+import { userProfileService } from '../services/userProfileService';
 
 interface SynapActiveNotebookViewProps {
   notebook: SynapNotebook;

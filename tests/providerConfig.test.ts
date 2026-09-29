@@ -6,11 +6,12 @@ describe('providerConfigService', () => {
     localStorage.clear();
   });
 
-  it('loads default canonical configuration when storage is empty', () => {
+  it('loads truthful unconfigured canonical configuration when storage is empty', () => {
     const config = providerConfigService.getConfig();
-    expect(config.defaultProvider).toBe('gemini');
+    expect(config.defaultProvider).toBe('');
+    expect(config.defaultModel).toBe('');
     expect(config.preset).toBe('balanced');
-    expect(config.roles.architect.provider).toBe('gemini');
+    expect(config.roles.architect.provider).toBe('');
   });
 
   it('correctly applies fast preset', () => {

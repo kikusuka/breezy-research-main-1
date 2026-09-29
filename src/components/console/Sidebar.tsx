@@ -1,6 +1,6 @@
 import React from 'react';
 import { DebateSession } from '../../types';
-import { SynthexisLogoIcon } from '../icons/ProductLogos';
+import { SynthexisLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -19,6 +19,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
   onOpenProfile?: () => void;
   onDeleteSession?: (id: string, e: React.MouseEvent) => void;
+  onSwitchToBreezy?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   onOpenProfile,
   onDeleteSession,
+  onSwitchToBreezy,
 }) => {
   return (
     <>
@@ -64,9 +66,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="w-6 h-6 rounded-sm bg-stone-100 flex items-center justify-center group-hover:scale-105 transition-transform">
                  <span className="material-symbols-outlined text-stone-950 text-[16px] font-bold">adjust</span>
               </div>
-              <span className="font-display text-lg tracking-tight text-stone-100 italic">
-                Synthexis
-              </span>
+              <div className="flex flex-col">
+                <span className="font-display text-base tracking-tight text-stone-100 italic leading-none">
+                  Synthexis
+                </span>
+                <span className="text-[10px] text-stone-400 font-sans mt-0.5 leading-none">
+                  & Breezy
+                </span>
+              </div>
             </button>
 
             <button
@@ -98,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
                 }`}
               >
-                <span className="material-symbols-outlined text-[18px]">terminal</span>
+                <span className="material-symbols-outlined text-[18px]">psychology</span>
                 <span>Workspace</span>
               </button>
 
@@ -133,6 +140,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="material-symbols-outlined text-[18px]">hub</span>
                 <span>Topology</span>
               </button>
+
+              {/* Direct Switch to Breezy Chat */}
+              {onSwitchToBreezy && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchToBreezy();
+                    onCloseMobile?.();
+                  }}
+                  className="mt-2 flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-sans font-medium transition-all cursor-pointer bg-sky-950/40 hover:bg-sky-900/60 border border-sky-500/30 text-sky-300 hover:text-white"
+                  title="Switch to Breezy Chat"
+                >
+                  <div className="flex items-center gap-2">
+                    <BreezyLogoIcon className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Breezy Chat</span>
+                  </div>
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </button>
+              )}
             </nav>
           </div>
 

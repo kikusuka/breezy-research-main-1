@@ -142,21 +142,9 @@ export const providerConfigService = {
         localStorage.getItem('breezy_byok_keys') ||
         localStorage.getItem('breezy_provider_keys') ||
         localStorage.getItem('synthexis_byok_keys');
-      const legacySynapRaw = localStorage.getItem('synap:provider');
 
       const keys: CanonicalProviderKeys = legacyKeysRaw ? JSON.parse(legacyKeysRaw) : {};
-      const hasKeys = Object.keys(keys).some((k) => Boolean(keys[k]));
-
-      if (legacySynapRaw) {
-        try {
-          const synap = JSON.parse(legacySynapRaw);
-          if (synap.key && !keys[synap.type]) {
-            keys[synap.type] = synap.key;
-          }
-        } catch {}
-      }
-
-      const hasAnyKey = hasKeys || Object.keys(keys).some((k) => Boolean(keys[k]));
+      const hasAnyKey = Object.keys(keys).some((k) => Boolean(keys[k]));
 
       const initialConfig: CanonicalWorkspaceConfig = {
         defaultProvider: hasAnyKey ? 'gemini' : ('' as any),
