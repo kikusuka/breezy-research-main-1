@@ -3,6 +3,7 @@ import { ProviderKeyConfig } from '../../types';
 import { providerConfigService, AVAILABLE_MODELS, PRESET_ROLE_CONFIGS } from '../../services/providerConfigService';
 import { userProfileService, UserProfile } from '../../services/userProfileService';
 import { authService, AuthUser, isFirebaseConfigured } from '../../services/authService';
+import { apiClient } from '../../services/apiClient';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
   // Role Routing State
   const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>('balanced');
+  const [serverGeminiActive, setServerGeminiActive] = useState(false);
   const [roles, setRoles] = useState({
     architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
     skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
@@ -53,6 +55,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   // Load current settings from canonical services
   useEffect(() => {
     if (isOpen) {
+      const checkServerHealth = async () => {
+        try {
+          const health = await apiClient.getHealth();
+          setServerGeminiActive(!!health.serverGeminiConfigured);
+        } catch {}
+      };
+      checkServerHealth();
+
       try {
         const p = userProfileService.getProfile();
         setProfile(p);
@@ -433,7 +443,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     const currentProvider = currentSeat.provider || 'gemini';
                     const currentModel = currentSeat.model || 'gemini-3.8-flash';
                     const activeKey = providerConfigService.getKey(currentProvider);
-                    const hasKey = Boolean(activeKey) || currentProvider === 'gemini';
+                    const hasKey = Boolean(activeKey) || (currentProvider === 'gemini' && serverGeminiActive);
                     const modelsList = AVAILABLE_MODELS[currentProvider] || [];
 
                     return (

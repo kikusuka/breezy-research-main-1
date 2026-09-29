@@ -7,7 +7,14 @@
 import { callAgentWithStream } from './providers';
 import { BackendEnv } from './types';
 
-export async function summarizeStage(content: string, roleName: string, apiKey?: string, env: BackendEnv = {}): Promise<string> {
+export async function summarizeStage(
+  content: string,
+  roleName: string,
+  apiKey?: string,
+  env: BackendEnv = {},
+  provider: 'gemini' | 'anthropic' | 'groq' | 'sambanova' | 'openrouter' = 'gemini',
+  model: string = 'gemini-3.8-flash'
+): Promise<string> {
   if (!content || content.length < 300) return content;
   try {
     const summaryPrompt = `You are a high-density technical outline compressor.
@@ -21,9 +28,9 @@ CONTENT TO COMPRESS:
 ${content}`;
 
     const summary = await callAgentWithStream({
-      provider: 'gemini',
-      model: 'gemini-3.8-flash',
-      apiKey: apiKey || env.GEMINI_API_KEY,
+      provider,
+      model,
+      apiKey,
       systemInstruction: 'You are a high-density technical outline generator.',
       userPrompt: summaryPrompt,
       temperature: 0.1,
@@ -48,8 +55,22 @@ export async function generateRealEvidenceGraph(opts: {
   isSolo?: boolean;
   apiKey?: string;
   env?: BackendEnv;
+  provider?: 'gemini' | 'anthropic' | 'groq' | 'sambanova' | 'openrouter';
+  model?: string;
 }): Promise<{ evidenceGraph: any; researchMetrics: any }> {
-  const { prompt, finalSynthexis, proposalContent, critiqueContent, discoveredSources, durationMs, isSolo = false, apiKey, env = {} } = opts;
+  const {
+    prompt,
+    finalSynthexis,
+    proposalContent,
+    critiqueContent,
+    discoveredSources,
+    durationMs,
+    isSolo = false,
+    apiKey,
+    env = {},
+    provider = 'gemini',
+    model = 'gemini-3.8-flash',
+  } = opts;
 
   // In solo mode, there is no multi-agent debate synthexis rate
   if (isSolo) {
@@ -125,9 +146,9 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
 }`;
 
     const rawResult = await callAgentWithStream({
-      provider: 'gemini',
-      model: 'gemini-3.8-flash',
-      apiKey: apiKey || env.GEMINI_API_KEY,
+      provider,
+      model,
+      apiKey,
       systemInstruction: 'You extract structured evidence graphs from research transcripts in valid JSON.',
       userPrompt: extractionPrompt,
       temperature: 0.1,

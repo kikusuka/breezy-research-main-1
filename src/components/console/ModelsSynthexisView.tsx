@@ -26,13 +26,20 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
     const results: Record<string, { ok: boolean; latencyMs?: number; msg?: string }> = {};
     const keys = config.keys || {};
 
+    // First check server health to see if server-side Gemini is available
+    let serverGeminiActive = false;
+    try {
+      const health = await apiClient.getHealth();
+      serverGeminiActive = !!health.serverGeminiConfigured;
+    } catch {}
+
     const providersToTest = ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'].filter(
-      (p) => Boolean(keys[p]) || p === 'gemini'
+      (p) => Boolean(keys[p]) || (p === 'gemini' && serverGeminiActive)
     );
 
     for (const p of providersToTest) {
       const apiKey = keys[p] || '';
-      if (p === 'gemini' && !apiKey) {
+      if (p === 'gemini' && !apiKey && serverGeminiActive) {
         results[p] = { ok: true, msg: 'Server Gemini API Key configured.' };
         continue;
       }
@@ -165,7 +172,9 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                           {testInfo.ok ? `${testInfo.latencyMs ? `${testInfo.latencyMs}ms` : 'Verified'}` : 'Verification Failed'}
                         </span>
                       ) : (
-                        <span className="font-mono text-[11px] text-stone-500 font-bold uppercase tracking-widest">Active</span>
+                        <span className="font-mono text-[11px] text-stone-600 font-bold uppercase tracking-widest italic">
+                          Unconfigured
+                        </span>
                       )}
                     </div>
                   </div>

@@ -97,8 +97,13 @@ Return STRICT valid JSON matching this schema exactly, with NO outer wrappers, N
       let rawJson = '';
 
       if (provider.type === 'gemini') {
-        const key = provider.key || (import.meta as any).env.VITE_GEMINI_API_KEY || '';
-        const ai = new (await import('@google/genai')).GoogleGenAI({ apiKey: key || undefined });
+        const key = provider.key || '';
+        if (!key) {
+          toast('Google Gemini key unconfigured. Please set your key in Synap Settings.');
+          setLoading(false);
+          return;
+        }
+        const ai = new (await import('@google/genai')).GoogleGenAI({ apiKey: key });
         const resp = await ai.models.generateContent({
           model: provider.model || 'gemini-3.8-flash',
           contents: userPrompt,

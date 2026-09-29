@@ -156,6 +156,31 @@ class ApiClient {
   /**
    * Health check with 30-second TTL cache to prevent request storms
    */
+  public async getHealth(force: boolean = false): Promise<any> {
+    const endpoint = this.getActiveEndpoint();
+    const now = Date.now();
+
+    try {
+      const url = `${endpoint.url}/api/health`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) return { ok: false };
+      const data = await res.json();
+      this.lastCheckedHealthOk = true;
+      this.notify('Active connection healthy');
+      return data;
+    } catch (e) {
+      this.lastCheckedHealthOk = false;
+      this.notify('Backend unreachable');
+      return { ok: false };
+    }
+  }
+
+  /**
+   * Health check with 30-second TTL cache to prevent request storms
+   */
   public async checkHealth(force: boolean = false): Promise<boolean> {
     // Opportunistically check if primary has recovered
     if (this.currentEndpointIndex !== 0) {

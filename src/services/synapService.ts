@@ -223,8 +223,11 @@ export const synapService = {
 
     // 1. If Gemini
     if (provider.type === 'gemini') {
-      const key = provider.key || (import.meta as any).env.VITE_GEMINI_API_KEY || '';
-      const ai = new GoogleGenAI({ apiKey: key || undefined });
+      const key = provider.key || '';
+      if (!key) {
+        throw new Error('Google Gemini key is not configured. Please provide an API key in Synap Settings.');
+      }
+      const ai = new GoogleGenAI({ apiKey: key });
       const resp = await ai.models.generateContent({
         model: provider.model || 'gemini-3.8-flash',
         contents: fullPrompt,
@@ -307,8 +310,11 @@ export const synapService = {
     
     // We send a direct prompt utilizing our grounded proxy
     if (provider.type === 'gemini') {
-      const key = provider.key || (import.meta as any).env.VITE_GEMINI_API_KEY || '';
-      const ai = new GoogleGenAI({ apiKey: key || undefined });
+      const key = provider.key || '';
+      if (!key) {
+        throw new Error('Google Gemini key unconfigured. Please set your key in Synap Settings.');
+      }
+      const ai = new GoogleGenAI({ apiKey: key });
       const resp = await ai.models.generateContent({
         model: provider.model || 'gemini-3.8-flash',
         contents: prompt,

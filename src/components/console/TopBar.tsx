@@ -1,25 +1,18 @@
 import React from 'react';
-import { ConsoleTab } from './Sidebar';
 import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
 
 export type ProductMode = 'breezy' | 'synthexis' | 'synap';
 
 interface TopBarProps {
-  activeTab: ConsoleTab;
-  onSelectTab: (tab: ConsoleTab) => void;
   productMode: ProductMode;
   onSelectProductMode: (mode: ProductMode) => void;
-  onNewResearch?: () => void;
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
-  activeTab,
-  onSelectTab,
   productMode,
   onSelectProductMode,
-  onNewResearch,
   onOpenSearch,
   onToggleMobileMenu,
 }) => {

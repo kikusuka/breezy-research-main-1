@@ -489,11 +489,8 @@ export default function App() {
 
       <div className="pl-0 lg:pl-64 flex flex-col min-h-screen">
         <TopBar
-          activeTab={activeTab}
-          onSelectTab={setActiveTab}
           productMode={productMode}
           onSelectProductMode={setProductMode}
-          onNewResearch={handleNewDebate}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />

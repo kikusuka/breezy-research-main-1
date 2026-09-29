@@ -35,6 +35,28 @@ function getClientIdentifier(req: Request): string {
   );
 }
 
+/**
+ * Identify the best available provider/model for background research tasks (summarization, extraction)
+ */
+function getExtractionConfig(keys: any, env: BackendEnv) {
+  if (keys.gemini || env.GEMINI_API_KEY) {
+    return { provider: 'gemini', model: 'gemini-3.8-flash', apiKey: keys.gemini || env.GEMINI_API_KEY };
+  }
+  if (keys.anthropic || env.ANTHROPIC_API_KEY) {
+    return { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022', apiKey: keys.anthropic || env.ANTHROPIC_API_KEY };
+  }
+  if (keys.groq || env.GROQ_API_KEY) {
+    return { provider: 'groq', model: 'llama-3.3-70b-versatile', apiKey: keys.groq || env.GROQ_API_KEY };
+  }
+  if (keys.sambanova || env.SAMBANOVA_API_KEY) {
+    return { provider: 'sambanova', model: 'Meta-Llama-3.3-70B-Instruct', apiKey: keys.sambanova || env.SAMBANOVA_API_KEY };
+  }
+  if (keys.openrouter || env.OPENROUTER_API_KEY) {
+    return { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct', apiKey: keys.openrouter || env.OPENROUTER_API_KEY };
+  }
+  return null;
+}
+
 export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<string, string> {
   const requestOrigin = req.headers.get('Origin');
   const allowedOriginsConfig = env.ALLOWED_ORIGINS?.trim();
@@ -546,12 +568,16 @@ ${(session.steps || []).map((s: any) => `[Round ${s.round} - ${s.role}]: ${s.con
 Analyze this deliberation and output the JSON object.`;
 
       const keys = providerKeyConfig || {};
-      const geminiKey = keys.gemini || env.GEMINI_API_KEY;
+      const extractionConfig = getExtractionConfig(keys, env);
+      
+      if (!extractionConfig) {
+        return createJsonResponse({ error: 'No configured model found for summarization task. Please provide a Gemini or other provider key.' }, 400, req, env);
+      }
 
       const resultText = await callAgentWithStream({
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        apiKey: geminiKey,
+        provider: extractionConfig.provider as any,
+        model: extractionConfig.model,
+        apiKey: extractionConfig.apiKey,
         systemInstruction,
         userPrompt,
         temperature: 0.2,
@@ -641,14 +667,37 @@ Analyze this deliberation and output the JSON object.`;
         const resolveSeatConfig = (seat: any, roleName: string, fallbackProv: string, fallbackModel: string) => {
           const chosen = seat || { provider: fallbackProv, model: fallbackModel };
           const prov = chosen.provider;
-          if (prov === 'gemini') return chosen;
+          const hasGemini = Boolean(keys.gemini || env.GEMINI_API_KEY);
+
+          if (prov === 'gemini') {
+            if (!hasGemini) {
+              const alt = getExtractionConfig(keys, env);
+              if (alt) {
+                sendEvent('notice', {
+                  message: `Google Gemini unconfigured. Redirecting ${roleName} stage to ${alt.provider.toUpperCase()}.`
+                });
+                return { provider: alt.provider, model: alt.model };
+              }
+            }
+            return chosen;
+          }
 
           const hasKey = Boolean(keys[prov]?.trim() || (env as any)[`${prov.toUpperCase()}_API_KEY`]);
           if (!hasKey) {
-            sendEvent('notice', {
-              message: `No API key provided for ${prov.toUpperCase()}. Falling back to Gemini for ${roleName} stage.`
-            });
-            return { provider: 'gemini', model: 'gemini-3.8-flash' };
+            if (hasGemini) {
+              sendEvent('notice', {
+                message: `No API key provided for ${prov.toUpperCase()}. Falling back to Gemini for ${roleName} stage.`
+              });
+              return { provider: 'gemini', model: 'gemini-3.8-flash' };
+            } else {
+              const alt = getExtractionConfig(keys, env);
+              if (alt) {
+                sendEvent('notice', {
+                  message: `Requested provider ${prov.toUpperCase()} unconfigured. Redirecting to ${alt.provider.toUpperCase()}.`
+                });
+                return { provider: alt.provider, model: alt.model };
+              }
+            }
           }
           return chosen;
         };
@@ -844,9 +893,17 @@ Structure in clean Markdown with clear headings.`;
           signal: req.signal,
         });
 
+        const extractionConfig = getExtractionConfig(keys, env);
+
         await sendEvent('status', { message: 'Condensing Analyst proposal for model context...' });
-        const geminiKey = keys.gemini || env.GEMINI_API_KEY;
-        const proposalSummary = await summarizeStage(proposalContent, 'Analyst (Proposal)', geminiKey, env);
+        const proposalSummary = await summarizeStage(
+          proposalContent,
+          'Analyst (Proposal)',
+          extractionConfig?.apiKey,
+          env,
+          extractionConfig?.provider as any,
+          extractionConfig?.model
+        );
 
         await sendEvent('round_complete', {
           round: 1,
@@ -902,7 +959,14 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
         });
 
         await sendEvent('status', { message: 'Condensing Critic review for model context...' });
-        const critiqueSummary = await summarizeStage(critiqueContent, 'Critic (Red-Team)', geminiKey, env);
+        const critiqueSummary = await summarizeStage(
+          critiqueContent,
+          'Critic (Red-Team)',
+          extractionConfig?.apiKey,
+          env,
+          extractionConfig?.provider as any,
+          extractionConfig?.model
+        );
 
         await sendEvent('round_complete', {
           round: 2,
@@ -975,7 +1039,14 @@ Perform rigorous empirical and constraint verification on these analyses.`;
             });
           }
 
-          verifierSummary = await summarizeStage(verifierContent, 'Verifier (Audit)', geminiKey, env);
+          verifierSummary = await summarizeStage(
+            verifierContent,
+            'Verifier (Audit)',
+            extractionConfig?.apiKey,
+            env,
+            extractionConfig?.provider as any,
+            extractionConfig?.model
+          );
 
           await sendEvent('round_complete', {
             round: verifierRoundNum,
@@ -1059,8 +1130,10 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
           critiqueContent: critiqueSummary || '',
           discoveredSources,
           durationMs: totalDurationMs,
-          apiKey: geminiKey,
+          apiKey: extractionConfig?.apiKey,
           env,
+          provider: extractionConfig?.provider as any,
+          model: extractionConfig?.model,
         });
 
         await sendEvent('evidence_graph', { evidenceGraph, researchMetrics });
