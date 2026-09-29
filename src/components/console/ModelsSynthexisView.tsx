@@ -72,90 +72,102 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
       )}
 
       {/* Header Context */}
-      <div className="px-4 sm:px-8 py-6 border-b border-stone-800/40 bg-stone-900/20 flex flex-wrap items-center justify-between gap-4 backdrop-blur-sm">
-        <div className="flex flex-col gap-1 max-w-2xl">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] uppercase tracking-[0.2em] text-stone-100 bg-stone-800 px-2 py-0.5 rounded font-bold">
-              COMPUTE_MATRIX
+      <div className="px-4 sm:px-8 py-8 border-b border-stone-800/40 bg-stone-900/10 flex flex-wrap items-center justify-between gap-6 backdrop-blur-sm">
+        <div className="flex flex-col gap-2 max-w-2xl">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500 font-bold">
+              Infrastructure
             </span>
-            <span className="font-mono text-[10px] text-stone-600 uppercase tracking-widest font-bold">Protocol: Synthexis_LORA</span>
+            <span aria-hidden="true" className="text-stone-700">·</span>
+            <span className="font-mono text-[10px] text-stone-600 uppercase tracking-widest font-bold font-mono">Standard Configuration</span>
           </div>
-          <h1 className="text-2xl font-serif italic font-medium text-stone-100 tracking-tight mt-1">
-            Research Pipeline Topology
+          <h1 className="text-3xl font-serif italic font-medium text-stone-100 tracking-tight">
+            Research Topology
           </h1>
-          <p className="text-[11px] text-stone-500 leading-relaxed uppercase tracking-widest mt-1">
-            Assigned compute nodes for hypothesis formation, adversarial critique, and verification.
+          <p className="text-[12px] text-stone-500 leading-relaxed font-serif italic max-w-xl">
+            A directory of active compute nodes assigned to hypothesis formation, adversarial critique, and verification.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleRebenchmark}
             disabled={isBenchmarking}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900/40 hover:bg-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest border border-stone-800/60 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-900/40 hover:bg-stone-800 text-stone-400 hover:text-stone-100 text-[11px] font-bold uppercase tracking-widest border border-stone-800/60 transition-all cursor-pointer"
           >
-            <span className={`material-symbols-outlined text-[15px] ${isBenchmarking ? 'animate-spin' : ''}`}>
+            <span className={`material-symbols-outlined text-[16px] ${isBenchmarking ? 'animate-spin' : ''}`}>
               sync
             </span>
-            <span>{isBenchmarking ? 'Running_Health_Check' : 'Test_Credentials'}</span>
+            <span>{isBenchmarking ? 'Running Health Check' : 'Verify Credentials'}</span>
           </button>
           <button
             type="button"
             onClick={onOpenSettings}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 text-stone-950 text-[10px] font-bold uppercase tracking-widest hover:bg-white transition-all cursor-pointer shadow-lg"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-100 text-stone-950 text-[11px] font-bold uppercase tracking-widest hover:bg-white transition-all cursor-pointer shadow-lg"
           >
-            <span className="material-symbols-outlined text-[15px]">tune</span>
-            <span>Reconfigure_Routing</span>
+            <span className="material-symbols-outlined text-[16px]">tune</span>
+            <span>Adjust Routing</span>
           </button>
         </div>
       </div>
 
-      <div className="p-4 sm:p-8 flex flex-col gap-6 max-w-7xl">
+      <div className="p-4 sm:p-8 flex flex-col gap-10 max-w-7xl mx-auto w-full">
         {/* Section 1: Active Role Assignments */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-stone-500 text-[18px]">hub</span>
-              <h2 className="font-mono text-[10px] font-bold text-stone-100 uppercase tracking-[0.2em]">
-                Active_Node_Assignments
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between pb-2 border-b border-stone-800/20">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-stone-500 text-[20px]">hub</span>
+              <h2 className="font-serif italic text-lg text-stone-100">
+                Compute Allocations
               </h2>
             </div>
-            <span className="font-mono text-[9px] text-stone-400 bg-stone-900 px-2 py-0.5 rounded border border-stone-800 uppercase tracking-widest font-bold">
-              Preset: {(config.preset || 'balanced').toUpperCase()}
-            </span>
+            <div className="flex items-center gap-3 text-[10px] font-mono text-stone-500 uppercase tracking-widest">
+              <span>Preset Mode</span>
+              <span className="text-stone-100 font-bold">{config.preset || 'Balanced'}</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              { roleKey: 'architect', title: 'Lead Analyst', sub: 'Hypothesis_Form', desc: 'Framing & initial thesis proposal.' },
-              { roleKey: 'skeptic', title: 'Adversary', sub: 'Stress_Testing', desc: 'Identifies flaws & edge cases.' },
-              { roleKey: 'verifier', title: 'Verifier', sub: 'Fact_Verification', desc: 'Evidence & constraint validation.' },
-              { roleKey: 'arbiter', title: 'Synthesizer', sub: 'Final_Resolution', desc: 'Produces integrated summary.' },
+              { roleKey: 'architect', title: 'Lead Analyst', sub: 'Hypothesis Formulation', desc: 'Responsible for framing the initial thesis and proposing a coherent structural response.' },
+              { roleKey: 'skeptic', title: 'Adversary', sub: 'Stress Testing', desc: 'Identifies logical flaws, edge cases, and areas of insufficient evidence within the thesis.' },
+              { roleKey: 'verifier', title: 'Verifier', sub: 'Fact Verification', desc: 'Validates claims against external constraints and ensures evidential integrity.' },
+              { roleKey: 'arbiter', title: 'Synthesizer', sub: 'Resolution', desc: 'Reconciles conflicting perspectives into a unified, high-fidelity research output.' },
             ].map((item) => {
               const seat = rolesMap[item.roleKey as keyof typeof rolesMap] || { provider: 'gemini', model: 'gemini-3.8-flash' };
               const testInfo = testResults[seat.provider];
               return (
-                <div key={item.roleKey} className="p-5 rounded-xl bg-stone-900/20 border border-stone-800/40 flex flex-col justify-between gap-4 backdrop-blur-sm group hover:border-stone-700/60 transition-all">
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-stone-800/40">
-                      <span className="font-mono text-[9px] text-stone-500 uppercase tracking-widest font-bold">{item.sub}</span>
-                      <span className="font-mono text-[9px] px-2 py-0.5 rounded bg-stone-950 text-stone-400 border border-stone-800 uppercase font-bold tracking-tighter group-hover:text-stone-100 transition-colors">
+                <div key={item.roleKey} className="p-6 rounded-xl bg-stone-900/10 border border-stone-800/40 flex flex-col gap-6 hover:border-stone-700/60 transition-all">
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-mono text-[9px] text-stone-500 uppercase tracking-[0.2em] font-bold">{item.sub}</span>
+                      <h3 className="font-serif italic text-xl text-stone-200">{item.title}</h3>
+                    </div>
+                    <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-950 border border-stone-800">
+                      <span className="font-mono text-[10px] text-stone-400 uppercase font-bold tracking-tight">
                         {seat.provider}
                       </span>
                     </div>
-                    <h3 className="font-serif italic text-base text-stone-200 group-hover:text-stone-100 transition-colors">{item.title}</h3>
-                    <p className="font-sans text-[11px] text-stone-500 leading-relaxed uppercase tracking-tight">{item.desc}</p>
                   </div>
-                  <div className="pt-2 border-t border-stone-800/40 flex items-center justify-between font-mono text-[10px]">
-                    <span className="text-stone-400 font-bold tracking-tighter truncate max-w-[120px]">{seat.model}</span>
-                    {testInfo ? (
-                      <span className={`font-bold ${testInfo.ok ? 'text-stone-200' : 'text-stone-600'}`}>
-                        {testInfo.ok ? `${testInfo.latencyMs ? `${testInfo.latencyMs}MS` : 'VERIFIED'}` : 'FAILED'}
-                      </span>
-                    ) : (
-                      <span className="text-stone-600 font-bold uppercase tracking-widest">Active</span>
-                    )}
+                  
+                  <p className="font-sans text-[13px] text-stone-500 leading-relaxed italic">{item.desc}</p>
+                  
+                  <div className="pt-4 border-t border-stone-800/40 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Assigned Model</span>
+                      <span className="font-mono text-[11px] text-stone-300 font-bold tracking-tighter">{seat.model}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Status</span>
+                      {testInfo ? (
+                        <span className={`font-mono text-[11px] font-bold ${testInfo.ok ? 'text-stone-100' : 'text-amber-600'}`}>
+                          {testInfo.ok ? `${testInfo.latencyMs ? `${testInfo.latencyMs}ms` : 'Verified'}` : 'Verification Failed'}
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[11px] text-stone-500 font-bold uppercase tracking-widest">Active</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

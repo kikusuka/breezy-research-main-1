@@ -8,8 +8,6 @@ interface SynapHeaderProps {
   onSelectProductMode?: (mode: ProductMode) => void;
   onOpenQuickJump?: () => void;
   onToggleMobileMenu?: () => void;
-  theme?: 'dark' | 'light';
-  onToggleTheme?: () => void;
   activeNotebookTitle?: string;
   activeDaysLeft?: number;
 }
@@ -20,17 +18,12 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
   onSelectProductMode,
   onOpenQuickJump,
   onToggleMobileMenu,
-  theme = 'dark',
-  onToggleTheme,
   activeNotebookTitle,
   activeDaysLeft,
 }) => {
   return (
-    <header className={`fixed top-0 left-0 lg:left-72 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b shadow-sm transition-colors ${
-      theme === 'light'
-        ? 'bg-white/90 border-slate-200 text-slate-800'
-        : 'bg-[#0A0A0F]/90 border-white/5 text-stone-100'
-    }`}>
+    <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-[#0A0A0F]/90 text-stone-100 shadow-sm transition-colors"
+    >
       {/* Left Group: Menu Icon (3 parallel lines) & Product Mode Switcher (Breezy / Synthexis / Synap) */}
       <div className="flex items-center gap-2 sm:gap-4">
         <button
@@ -44,15 +37,13 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
 
         {/* Product Mode Switcher positioned right beside the sidebar icon for continuity */}
         {onSelectProductMode && (
-          <div className={`flex items-center border rounded-full p-0.5 sm:p-1 shadow-inner shrink-0 ${
-            theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-black/50 border-white/10'
-          }`}>
+          <div className="flex items-center border rounded-full p-0.5 sm:p-1 shadow-inner shrink-0 bg-black/50 border-white/10">
             <button
               type="button"
               onClick={() => onSelectProductMode('breezy')}
               className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
                 productMode === 'breezy'
-                  ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                  ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
@@ -65,7 +56,7 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
               onClick={() => onSelectProductMode('synthexis')}
               className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
                 productMode === 'synthexis'
-                  ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                  ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
@@ -78,7 +69,7 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
               onClick={() => onSelectProductMode('synap')}
               className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
                 productMode === 'synap'
-                  ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
+                  ? 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
@@ -87,6 +78,7 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
             </button>
           </div>
         )}
+
 
         {/* Glowing Beta Badge in SynapHeader */}
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold select-none shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.08)]">
@@ -126,36 +118,12 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
         )}
       </div>
 
-      {/* Right Group: Search, Theme & Notifications */}
+      {/* Right Group: Quick Jump */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {onToggleTheme && (
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className={`p-1.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-sans cursor-pointer ${
-              theme === 'light'
-                ? 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200'
-                : 'bg-white/5 border-white/10 text-stone-300 hover:text-white hover:bg-white/10'
-            }`}
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-            </span>
-            <span className="hidden sm:inline font-medium">
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </span>
-          </button>
-        )}
-
         <button
           type="button"
           onClick={() => onOpenQuickJump?.()}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all ${
-            theme === 'light'
-              ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-              : 'bg-[#1f1f27] hover:bg-[#292932] text-[#cac4d4] border-white/5'
-          }`}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all bg-[#1f1f27] hover:bg-[#292932] text-[#cac4d4] border-white/5"
         >
           <span className="material-symbols-outlined text-[16px]">search</span>
           <span className="hidden sm:inline font-sans">Quick Jump</span>

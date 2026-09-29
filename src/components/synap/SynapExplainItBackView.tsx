@@ -9,7 +9,6 @@ interface ExplainItBackViewProps {
   onAddStudyItems: (items: SynapStudyItem[]) => void;
   onUpdateNotebook: (nb: SynapNotebook) => void;
   toast: (msg: string) => void;
-  theme?: 'dark' | 'light';
 }
 
 interface ClaimEvaluation {
@@ -38,7 +37,6 @@ export const SynapExplainItBackView: React.FC<ExplainItBackViewProps> = ({
   onAddStudyItems,
   onUpdateNotebook,
   toast,
-  theme = 'dark',
 }) => {
   const [concept, setConcept] = useState('');
   const [explanation, setExplanation] = useState('');

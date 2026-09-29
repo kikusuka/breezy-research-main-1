@@ -79,20 +79,6 @@ export default function App() {
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [breezyTab, setBreezyTab] = useState<BreezyTab>('chat');
 
-  // Theme state
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('breezy_theme') as 'dark' | 'light') || 'dark';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('breezy_theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  }, [theme]);
-
   // Breezy chat states
   const [breezyChats, setBreezyChats] = useState<Record<string, any>>(() => {
     try {
@@ -406,13 +392,11 @@ export default function App() {
 
   if (productMode === 'synap') {
     return (
-      <div className={`min-h-screen font-sans antialiased overflow-x-hidden ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#0A0A0F] text-[#e4e1ed]'}`}>
+      <div className={`min-h-screen font-sans antialiased overflow-x-hidden bg-[#0A0A0F] text-[#e4e1ed]`}>
         <SynapWorkspace
           productMode={productMode}
           onSelectProductMode={setProductMode}
           onOpenProfile={() => setIsProfileSettingsOpen(true)}
-          theme={theme}
-          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
         <ProfileSettingsModal
           isOpen={isProfileSettingsOpen}
@@ -426,7 +410,7 @@ export default function App() {
 
   if (productMode === 'breezy') {
     return (
-      <div className={`flex min-h-screen font-sans antialiased overflow-x-hidden ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#090d16] text-slate-100'}`}>
+      <div className={`flex min-h-screen font-sans antialiased overflow-x-hidden bg-[#090d16] text-slate-100`}>
         <BreezySidebar
           activeTab={breezyTab}
           onSelectTab={setBreezyTab}
@@ -447,8 +431,6 @@ export default function App() {
             onSelectProductMode={setProductMode}
             onOpenQuickJump={() => setIsCommandPaletteOpen(true)}
             onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            theme={theme}
-            onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
           />
 
           {breezyTab === 'chat' && (
@@ -514,11 +496,9 @@ export default function App() {
           onNewResearch={handleNewDebate}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          theme={theme}
-          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
 
-        <main className="relative pt-14 bg-stone-950 min-h-screen flex-1 flex flex-col">
+        <main className="relative pt-16 bg-stone-950 min-h-screen flex-1 flex flex-col">
           {activeTab === 'chat' && (
             currentSession ? (
               <ResearchConversationView

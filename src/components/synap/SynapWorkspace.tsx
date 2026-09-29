@@ -27,16 +27,12 @@ interface SynapWorkspaceProps {
   productMode?: ProductMode;
   onSelectProductMode?: (mode: ProductMode) => void;
   onOpenProfile?: () => void;
-  theme?: 'dark' | 'light';
-  onToggleTheme?: () => void;
 }
 
 export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
   productMode,
   onSelectProductMode,
   onOpenProfile,
-  theme,
-  onToggleTheme,
 }) => {
   const [activeView, setActiveView] = useState<SynapNavView>('notebooks');
   const [notebooks, setNotebooks] = useState<SynapNotebook[]>([]);
@@ -317,8 +313,6 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
           onSelectProductMode={onSelectProductMode}
           onOpenQuickJump={() => setActiveView('weak-spots')}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
           activeNotebookTitle={currentNotebook?.title}
           activeDaysLeft={currentNotebook?.examDate ? Math.max(0, Math.ceil((new Date(currentNotebook.examDate).getTime() - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24))) : undefined}
         />
@@ -385,7 +379,6 @@ export const SynapWorkspace: React.FC<SynapWorkspaceProps> = ({
                 setNotebooks((prev) => prev.map((n) => (n.id === nb.id ? nb : n)));
               }}
               toast={showToast}
-              theme={theme}
             />
           )}
 
