@@ -35,7 +35,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
       protocol === 'solo'
         ? 'Solo Model Inquiry'
         : protocol === 'quad'
-          ? 'Verified Quad-Model Research'
+          ? 'Quad-Model Research'
           : 'Multi-Model Research';
     navigator.clipboard.writeText(`Breezy Research Archive: "${title}" (${label})`);
     showToast('Citation reference copied to clipboard');

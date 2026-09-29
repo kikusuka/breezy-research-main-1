@@ -152,10 +152,33 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             <span className="font-display text-5xl sm:text-6xl lg:text-7xl text-stone-100 tracking-tight">
               Synthexis
             </span>
-            <div className="flex items-center justify-center gap-3 text-[11px] font-mono uppercase tracking-[0.2em] text-stone-500">
-              <span className="w-1 h-1 rounded-full bg-stone-700"></span>
-              <span>{factualMetric}</span>
-              <span className="w-1 h-1 rounded-full bg-stone-700"></span>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center justify-center gap-3 text-[11px] font-mono uppercase tracking-[0.2em] text-stone-500">
+                <span className="w-1 h-1 rounded-full bg-stone-700"></span>
+                <span>{factualMetric}</span>
+                <span className="w-1 h-1 rounded-full bg-stone-700"></span>
+              </div>
+              {(() => {
+                const hasAnyKey = Object.keys(config.keys || {}).some((k) => Boolean(config.keys[k]));
+                if (!hasAnyKey) {
+                  return (
+                    <button
+                      type="button"
+                      onClick={onOpenModels}
+                      className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[10px] uppercase tracking-widest font-bold hover:bg-amber-500/20 transition-all cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                      <span>NO AI PROVIDER CONNECTED — CONFIGURE TO START</span>
+                    </button>
+                  );
+                }
+                return (
+                  <div className="mt-1 inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] uppercase tracking-widest font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>Provider Connected</span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

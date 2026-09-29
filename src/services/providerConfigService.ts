@@ -67,6 +67,15 @@ export interface CanonicalWorkspaceConfig {
 
 const CANONICAL_STORAGE_KEY = 'breezy_canonical_provider_config';
 
+export const UNCONFIGURED_ROLE: RoleSeatConfig = { provider: '' as any, model: '' };
+
+const UNCONFIGURED_ROLES: CanonicalWorkspaceConfig['roles'] = {
+  architect: UNCONFIGURED_ROLE,
+  skeptic: UNCONFIGURED_ROLE,
+  verifier: UNCONFIGURED_ROLE,
+  arbiter: UNCONFIGURED_ROLE,
+};
+
 export const PRESET_ROLE_CONFIGS: Record<string, CanonicalWorkspaceConfig['roles']> = {
   fast: {
     architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
@@ -114,12 +123,13 @@ export const providerConfigService = {
       const raw = localStorage.getItem(CANONICAL_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
+        const hasKeys = parsed.keys && Object.keys(parsed.keys).some((k) => Boolean(parsed.keys[k]));
         return {
-          defaultProvider: parsed.defaultProvider || 'gemini',
-          defaultModel: parsed.defaultModel || 'gemini-3.8-flash',
+          defaultProvider: parsed.defaultProvider || (hasKeys ? 'gemini' : ''),
+          defaultModel: parsed.defaultModel || (hasKeys ? 'gemini-3.8-flash' : ''),
           preset: parsed.preset || 'balanced',
-          roles: { ...DEFAULT_ROLES, ...parsed.roles },
-          fallback: parsed.fallback || { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
+          roles: parsed.roles || (hasKeys ? DEFAULT_ROLES : UNCONFIGURED_ROLES),
+          fallback: parsed.fallback || { enabled: false, provider: '', model: '' },
           keys: parsed.keys || {},
           agreementThreshold: typeof parsed.agreementThreshold === 'number' ? parsed.agreementThreshold : 78,
           autoResolve: typeof parsed.autoResolve === 'boolean' ? parsed.autoResolve : true,
@@ -135,8 +145,7 @@ export const providerConfigService = {
       const legacySynapRaw = localStorage.getItem('synap:provider');
 
       const keys: CanonicalProviderKeys = legacyKeysRaw ? JSON.parse(legacyKeysRaw) : {};
-      let defaultProvider: any = 'gemini';
-      let defaultModel = 'gemini-3.8-flash';
+      const hasKeys = Object.keys(keys).some((k) => Boolean(keys[k]));
 
       if (legacySynapRaw) {
         try {
@@ -147,12 +156,14 @@ export const providerConfigService = {
         } catch {}
       }
 
+      const hasAnyKey = hasKeys || Object.keys(keys).some((k) => Boolean(keys[k]));
+
       const initialConfig: CanonicalWorkspaceConfig = {
-        defaultProvider,
-        defaultModel,
+        defaultProvider: hasAnyKey ? 'gemini' : ('' as any),
+        defaultModel: hasAnyKey ? 'gemini-3.8-flash' : '',
         preset: 'balanced',
-        roles: DEFAULT_ROLES,
-        fallback: { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
+        roles: hasAnyKey ? DEFAULT_ROLES : UNCONFIGURED_ROLES,
+        fallback: { enabled: false, provider: '' as any, model: '' },
         keys,
         agreementThreshold: 78,
         autoResolve: true,
@@ -163,11 +174,11 @@ export const providerConfigService = {
       return initialConfig;
     } catch {
       return {
-        defaultProvider: 'gemini',
-        defaultModel: 'gemini-3.8-flash',
+        defaultProvider: '' as any,
+        defaultModel: '',
         preset: 'balanced',
-        roles: DEFAULT_ROLES,
-        fallback: { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
+        roles: UNCONFIGURED_ROLES,
+        fallback: { enabled: false, provider: '' as any, model: '' },
         keys: {},
         agreementThreshold: 78,
         autoResolve: true,

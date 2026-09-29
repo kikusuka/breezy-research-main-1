@@ -142,7 +142,8 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               { roleKey: 'verifier', title: 'Verifier', sub: 'Fact Verification', desc: 'Validates claims against external constraints and ensures evidential integrity.' },
               { roleKey: 'arbiter', title: 'Synthesizer', sub: 'Resolution', desc: 'Reconciles conflicting perspectives into a unified, high-fidelity research output.' },
             ].map((item) => {
-              const seat = rolesMap[item.roleKey as keyof typeof rolesMap] || { provider: 'gemini', model: 'gemini-3.8-flash' };
+              const seat = rolesMap[item.roleKey as keyof typeof rolesMap] || { provider: '', model: '' };
+              const isConfigured = Boolean(seat.provider && seat.model);
               const testInfo = testResults[seat.provider];
               return (
                 <div key={item.roleKey} className="p-6 rounded-xl bg-stone-900/10 border border-stone-800/40 flex flex-col gap-6 hover:border-stone-700/60 transition-all">
@@ -153,7 +154,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                     </div>
                     <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-950 border border-stone-800">
                       <span className="font-mono text-[10px] text-stone-400 uppercase font-bold tracking-tight">
-                        {seat.provider}
+                        {isConfigured ? seat.provider : 'Not connected'}
                       </span>
                     </div>
                   </div>
@@ -163,17 +164,23 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                   <div className="pt-4 border-t border-stone-800/40 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Assigned Model</span>
-                      <span className="font-mono text-[11px] text-stone-300 font-bold tracking-tighter">{seat.model}</span>
+                      <span className="font-mono text-[11px] text-stone-300 font-bold tracking-tighter">
+                        {isConfigured ? seat.model : '—'}
+                      </span>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Status</span>
-                      {testInfo ? (
+                      {!isConfigured ? (
+                        <span className="font-mono text-[11px] text-amber-500 font-bold uppercase tracking-widest italic">
+                          Unconfigured
+                        </span>
+                      ) : testInfo ? (
                         <span className={`font-mono text-[11px] font-bold ${testInfo.ok ? 'text-stone-100' : 'text-amber-600'}`}>
                           {testInfo.ok ? `${testInfo.latencyMs ? `${testInfo.latencyMs}ms` : 'Verified'}` : 'Verification Failed'}
                         </span>
                       ) : (
                         <span className="font-mono text-[11px] text-stone-600 font-bold uppercase tracking-widest italic">
-                          Unconfigured
+                          Not Tested
                         </span>
                       )}
                     </div>
