@@ -80,9 +80,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
 
         <nav className="hidden sm:flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-500">
-          <span className="hover:text-stone-300 cursor-default transition-colors">Council_Protocol</span>
+          <span className="hover:text-stone-300 cursor-default transition-colors">Research_Pipeline</span>
           <span className="text-stone-800">/</span>
-          <span className="text-stone-300 font-bold tracking-normal">{activeTab === 'chat' ? 'Terminal' : activeTab === 'notes' ? 'Archives' : 'Matrix'}</span>
+          <span className="text-stone-300 font-bold tracking-normal">{activeTab === 'chat' ? 'Workspace' : activeTab === 'notes' ? 'Archives' : 'Models'}</span>
         </nav>
       </div>
 
@@ -141,7 +141,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <div className="absolute right-0 mt-3 w-64 rounded-xl bg-stone-900 border border-stone-800 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] p-2 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-2xl">
               <div className="px-3 py-2 border-b border-stone-800 mb-1">
                 <span className="text-[9px] uppercase font-mono font-bold tracking-[0.2em] text-stone-500">
-                  Network_Topology
+                  Backend_Network
                 </span>
               </div>
               <div className="flex flex-col gap-0.5">

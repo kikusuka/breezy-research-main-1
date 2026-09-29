@@ -1,9 +1,9 @@
 import { DebateSession, DebateStep, DebateTone } from '../types';
 
 // Storage key constants
-export const STORAGE_SESSIONS_KEY = 'breezy_research_sessions_v1';
-export const STORAGE_ACTIVE_ID_KEY = 'breezy_active_session_id_v1';
-const DB_NAME = 'breezy_storage_db';
+export const STORAGE_SESSIONS_KEY = 'synthexis_research_sessions_v2';
+export const STORAGE_ACTIVE_ID_KEY = 'synthexis_active_session_id_v2';
+const DB_NAME = 'synthexis_storage_db';
 const STORE_NAME = 'research_sessions';
 
 // IndexedDB asynchronous fallback manager

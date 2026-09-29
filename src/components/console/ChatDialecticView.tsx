@@ -86,6 +86,28 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
     ? `${(session.metrics.durationMs / 1000).toFixed(1)}s`
     : '';
 
+  const getTruthfulBadge = () => {
+    if (isDeliberating) return { label: 'RESEARCH IN PROGRESS', color: 'bg-amber-500', icon: 'sync', pulse: true };
+    if (session.status === 'error') return { label: 'PIPELINE FAILURE', color: 'bg-error', icon: 'error' };
+    if (session.protocol === 'solo') return { label: 'SOLO INQUIRY', color: 'bg-stone-600', icon: 'bolt' };
+    
+    if (session.status === 'completed') {
+      const metrics = session.researchMetrics;
+      // If no metrics yet (legacy or loading), show generic
+      if (!metrics || metrics.claimsIdentified === 0) return { label: 'RESEARCH COMPLETE', color: 'bg-stone-500', icon: 'check_circle' };
+      
+      if (metrics.claimsContradicted > 0) return { label: 'CONTRADICTIONS DETECTED', color: 'bg-amber-500', icon: 'rule' };
+      if (metrics.claimsUnresolved > metrics.claimsSupported) return { label: 'INSUFFICIENT EVIDENCE', color: 'bg-amber-600', icon: 'warning' };
+      if (metrics.synthexisRate && metrics.synthexisRate >= 90) return { label: 'VERIFIED SOURCES', color: 'bg-emerald-500', icon: 'verified' };
+      
+      return { label: 'AUDITED', color: 'bg-emerald-600', icon: 'fact_check' };
+    }
+    
+    return { label: 'STATION IDLE', color: 'bg-stone-800', icon: 'pause' };
+  };
+
+  const badge = getTruthfulBadge();
+
   const suggestionChips = [
     'Show cost comparison ($/mo)',
     'Explain failover steps',
@@ -117,14 +139,14 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 font-mono text-[11px] text-outline">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/5 border border-emerald-500/10">
-            <span className="material-symbols-outlined text-emerald-400 text-[14px]">verified</span>
-            <span className="font-mono text-[10px] text-emerald-400 font-semibold uppercase">
-              Grounded Research
+          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${badge.color}/10 border border-${badge.color}/20`}>
+            <span className={`material-symbols-outlined text-${badge.color} text-[14px] ${badge.pulse ? 'animate-spin' : ''}`}>{badge.icon}</span>
+            <span className={`font-mono text-[10px] text-${badge.color} font-semibold uppercase`}>
+              {badge.label}
             </span>
           </div>
           <span className="px-2 py-0.5 bg-surface-container rounded border border-outline-variant/20 text-tertiary">
-            Multi-Perspective Research
+            Multi-Perspective Pipeline
           </span>
         </div>
       </div>
@@ -188,7 +210,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[10px] font-bold text-stone-100 uppercase tracking-widest">
-                OPERATOR
+                INQUIRY
               </span>
               <span className="font-mono text-[9px] text-stone-500">
                 {new Date(session.createdAt || Date.now()).toLocaleTimeString()}
@@ -211,11 +233,11 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[11px] font-bold text-stone-100 uppercase tracking-widest">
-                    SYNTHEXIS_CORE
+                    SYNTHEXIS
                   </span>
-                  <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-950 font-mono text-[9px] uppercase font-bold tracking-tighter">
-                    VERIFIED
-                  </span>
+                  <div className={`px-2 py-0.5 rounded ${badge.color} text-on-primary font-mono text-[9px] uppercase font-bold tracking-tighter`}>
+                    {badge.label.replace('RESEARCH ', '')}
+                  </div>
                 </div>
                 <span className="font-mono text-[10px] text-stone-500 mt-0.5 uppercase tracking-wide">
                   Integrated analysis ({durationText})
@@ -230,7 +252,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 border border-stone-700/40 hover:border-stone-500/60 text-stone-400 hover:text-stone-100 font-mono text-[10px] transition-all uppercase tracking-widest"
               >
                 <span className="material-symbols-outlined text-[14px]">tune</span>
-                <span>Matrix_Config</span>
+                <span>Config_Matrix</span>
               </button>
             </div>
           </div>
@@ -469,7 +491,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             <span className="material-symbols-outlined text-[15px]">reply</span>
-            <span>Append_Inquiry</span>
+            <span>Follow_Up</span>
           </button>
 
           <button
@@ -478,7 +500,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             <span className="material-symbols-outlined text-[15px]">content_copy</span>
-            <span>Export_Plaintext</span>
+            <span>Copy_Raw</span>
           </button>
 
           <button
@@ -487,7 +509,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             <span className="material-symbols-outlined text-[15px]">note_add</span>
-            <span>Commit_Archive</span>
+            <span>Save_Archive</span>
           </button>
         </div>
 

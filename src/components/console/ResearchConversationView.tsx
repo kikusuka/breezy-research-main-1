@@ -461,7 +461,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               )}
             </article>
 
-            {/* Action Bridge: Turn Research Insights into Actions */}
+            {/* Action Bridge: Integration into other workspaces */}
             {session?.finalOutput && !isDeliberating && (
               <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-emerald-500/10 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg my-3">
                 <div className="flex items-center gap-3">
@@ -469,8 +469,8 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     <span className="material-symbols-outlined text-[20px]">hub</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-stone-100">Action Bridge</span>
-                    <span className="text-[11px] text-stone-400">Export verified insights into active workspaces</span>
+                    <span className="text-xs font-bold text-stone-100">Workspace Integration</span>
+                    <span className="text-[11px] text-stone-400">Export verified insights into active work environments</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
@@ -478,7 +478,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     <button
                       type="button"
                       onClick={() => onExportToSynap(session)}
-                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-[#ccbdff] hover:bg-white text-[#331282] font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">school</span>
                       <span>Study in Synap</span>
@@ -488,10 +488,10 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     <button
                       type="button"
                       onClick={() => onOpenInIde(session)}
-                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md border border-stone-700 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">terminal</span>
-                      <span>Open in Breezy IDE</span>
+                      <span>Open in Terminal IDE</span>
                     </button>
                   )}
                 </div>

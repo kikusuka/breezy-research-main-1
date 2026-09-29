@@ -86,14 +86,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Primary Views Nav: Minimalist unboxed */}
           <div className="px-3 py-4 border-b border-stone-800/40">
             <nav className="flex flex-col gap-0.5">
-              {/* ... (rest of nav updated in previous step) */}
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectTab('chat');
+                  onCloseMobile?.();
+                }}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest transition-all ${
+                  activeTab === 'chat'
+                    ? 'bg-stone-800 text-stone-100 font-bold'
+                    : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">terminal</span>
+                <span>Workspace</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectTab('notes');
+                  onCloseMobile?.();
+                }}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest transition-all ${
+                  activeTab === 'notes'
+                    ? 'bg-stone-800 text-stone-100 font-bold'
+                    : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">folder_special</span>
+                <span>Archives</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectTab('models');
+                  onCloseMobile?.();
+                }}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest transition-all ${
+                  activeTab === 'models'
+                    ? 'bg-stone-800 text-stone-100 font-bold'
+                    : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">hub</span>
+                <span>Model_Matrix</span>
+              </button>
             </nav>
           </div>
 
           {/* Synthexis Mode Toggle: Minimal */}
           <div className="mx-3 mt-4 mb-2 px-3 py-3 rounded-xl bg-stone-900/60 border border-stone-800/60 flex flex-col gap-2 shrink-0 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">Audit_Engine</span>
+              <span className="font-mono text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">Review_Engine</span>
               <button
                 type="button"
                 onClick={onToggleSynthexisMode}
@@ -110,8 +156,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <p className="text-[10px] text-stone-600 leading-relaxed font-mono uppercase tracking-tighter">
               {synthexisMode 
-                ? 'Dialectic_Active' 
-                : 'Direct_Access'}
+                ? 'Synthexis_Active' 
+                : 'Direct_Mode'}
             </p>
           </div>
 

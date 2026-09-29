@@ -14,9 +14,9 @@ describe('Evidence & Pipeline Truthfulness', () => {
     expect(count).toBe(3); // arxiv.org, github.com, docs.python.org
   });
 
-  it('computes consensus rate null for solo inquiries', () => {
+  it('computes synthexis rate null for solo inquiries', () => {
     const isSolo = true;
-    const consensusRate = isSolo ? null : 85;
-    expect(consensusRate).toBeNull();
+    const synthexisRate = isSolo ? null : 85;
+    expect(synthexisRate).toBeNull();
   });
 });

@@ -258,7 +258,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         <div className="w-full max-w-4xl mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 md:col-span-3 pb-4 border-b border-stone-800/60 flex items-center justify-between">
             <span className="font-display text-xl text-stone-400 tracking-tight italic">Recommended Inquiries</span>
-            <span className="font-mono text-[9px] uppercase tracking-widest text-stone-600">Vol. 2026 / Technical Catalog</span>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-stone-600">Technical Index</span>
           </div>
           
           {realScenarios.map((item, idx) => (
@@ -277,7 +277,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   {item.description}
                 </p>
                 <div className="pt-2 flex items-center gap-2 text-[9px] font-mono uppercase tracking-widest text-stone-600 group-hover:text-stone-400">
-                  <span>Begin Inquiry</span>
+                  <span>Run Analysis</span>
                   <span className="material-symbols-outlined text-[12px]">east</span>
                 </div>
               </div>
@@ -289,13 +289,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         <div className="w-full max-w-2xl mt-48 py-16 border-t border-stone-800/60 space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
             <div className="space-y-4">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">The Council Protocol</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">The Synthesis Pipeline</span>
               <p className="text-sm text-stone-400 leading-relaxed font-serif italic">
                 A multi-model dialectic architecture designed to identify technical contradictions, stress-test architectural claims, and synthesize high-integrity resolutions.
               </p>
             </div>
             <div className="space-y-4 text-right sm:text-left">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">Provenance & Trust</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">Evidence & Verification</span>
               <p className="text-sm text-stone-400 leading-relaxed font-serif italic text-right">
                 Every claim is cross-referenced with real-time documentation and public specifications. Zero artificial consensus clamping.
               </p>
