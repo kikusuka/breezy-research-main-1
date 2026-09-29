@@ -1,7 +1,7 @@
 /**
  * Structured Evidence Graph & Summarizer
  * Runtime-agnostic evidence graph extraction
- * Strict Truthfulness: No fabricated metrics or artificial consensus clamping.
+ * Strict Truthfulness: No fabricated metrics or artificial synthexis clamping.
  */
 
 import { callAgentWithStream } from './providers';
@@ -40,7 +40,7 @@ ${content}`;
 
 export async function generateRealEvidenceGraph(opts: {
   prompt: string;
-  finalSynthesis: string;
+  finalSynthexis: string;
   proposalContent: string;
   critiqueContent: string;
   discoveredSources: any[];
@@ -49,9 +49,9 @@ export async function generateRealEvidenceGraph(opts: {
   apiKey?: string;
   env?: BackendEnv;
 }): Promise<{ evidenceGraph: any; researchMetrics: any }> {
-  const { prompt, finalSynthesis, proposalContent, critiqueContent, discoveredSources, durationMs, isSolo = false, apiKey, env = {} } = opts;
+  const { prompt, finalSynthexis, proposalContent, critiqueContent, discoveredSources, durationMs, isSolo = false, apiKey, env = {} } = opts;
 
-  // In solo mode, there is no multi-agent debate consensus rate
+  // In solo mode, there is no multi-agent debate synthexis rate
   if (isSolo) {
     return {
       evidenceGraph: {
@@ -69,7 +69,7 @@ export async function generateRealEvidenceGraph(opts: {
         claimsUnresolved: 0,
         sourcesConsulted: discoveredSources.length,
         primarySourcesCount: 0,
-        consensusRate: null, // Truthful: No consensus measurement in solo mode
+        synthexisRate: null, // Truthful: No synthexis measurement in solo mode
       },
     };
   }
@@ -90,8 +90,8 @@ ${proposalContent.slice(0, 1500)}
 CRITIC OBJECTIONS EXCERPT:
 ${critiqueContent.slice(0, 1500)}
 
-FINAL SYNTHESIS EXCERPT:
-${finalSynthesis.slice(0, 2000)}
+FINAL SYNTHEXIS EXCERPT:
+${finalSynthexis.slice(0, 2000)}
 
 OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no markdown):
 {
@@ -186,7 +186,7 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
     const sourcesConsulted = discoveredSources.length;
 
     // Real, unclamped calculation: only compute rate when claims were actually identified
-    const consensusRate = claimsIdentified > 0
+    const synthexisRate = claimsIdentified > 0
       ? Math.round(((claimsSupported + 0.5 * (claimsIdentified - claimsContradicted - claimsUnresolved)) / claimsIdentified) * 100)
       : null;
 
@@ -204,7 +204,7 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       claimsUnresolved,
       sourcesConsulted,
       primarySourcesCount,
-      consensusRate,
+      synthexisRate,
     };
 
     const evidenceGraph = {
@@ -234,7 +234,7 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
         claimsUnresolved: 0,
         sourcesConsulted: discoveredSources.length,
         primarySourcesCount: 0,
-        consensusRate: null, // Truthful: Report null on audit failure
+        synthexisRate: null, // Truthful: Report null on audit failure
       },
     };
   }

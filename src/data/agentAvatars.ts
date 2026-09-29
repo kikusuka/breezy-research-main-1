@@ -88,13 +88,13 @@ export const AGENT_AVATARS: Record<string, AgentAvatarConfig> = {
   arbiter: {
     role: 'arbiter',
     name: 'Reviewer',
-    title: 'Synthesis & Adjudication',
+    title: 'Synthexis & Adjudication',
     avatarSrc: reviewerSvg,
     glowColor: 'shadow-amber-500/20 ring-amber-500/40',
     badgeBorder: 'border-amber-500/30',
     badgeBg: 'bg-amber-950/40',
     badgeText: 'text-amber-300',
-    description: 'Reconciles conflicting perspectives into a clear, unified final synthesis.',
+    description: 'Reconciles conflicting perspectives into a clear, unified final synthexis.',
   },
   verifier: {
     role: 'verifier',
@@ -116,7 +116,7 @@ export const AGENT_AVATARS: Record<string, AgentAvatarConfig> = {
     badgeBorder: 'border-fuchsia-500/30',
     badgeBg: 'bg-fuchsia-950/40',
     badgeText: 'text-fuchsia-300',
-    description: 'Compiles and structures key arguments across models before final synthesis.',
+    description: 'Compiles and structures key arguments across models before final synthexis.',
   },
 };
 
@@ -151,7 +151,7 @@ export function getToneAvatar(role: string, tone: DebateTone = 'balanced'): Agen
       badgeBorder: 'border-emerald-500/40',
       badgeBg: 'bg-emerald-950/60',
       badgeText: 'text-emerald-200',
-      toneTag: 'Consensus Mode',
+      toneTag: 'Synthexis Mode',
       toneFilterClass: '',
     };
   }

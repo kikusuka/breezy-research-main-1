@@ -100,7 +100,7 @@ export const authService = {
       cachedAccessToken = credential?.accessToken || null;
       
       if (cachedAccessToken) {
-        sessionStorage.setItem('consensus_g_token', cachedAccessToken);
+        sessionStorage.setItem('synthexis_g_token', cachedAccessToken);
       }
 
       return {
@@ -140,7 +140,7 @@ export const authService = {
       const token = credential?.accessToken || null;
       if (token) {
         cachedAccessToken = token;
-        sessionStorage.setItem('consensus_g_token', token);
+        sessionStorage.setItem('synthexis_g_token', token);
       }
       return token;
     } catch (error: any) {
@@ -155,13 +155,13 @@ export const authService = {
   async signOut(): Promise<void> {
     if (!isFirebaseConfigured) {
       cachedAccessToken = null;
-      sessionStorage.removeItem('consensus_g_token');
+      sessionStorage.removeItem('synthexis_g_token');
       return;
     }
     try {
       await signOut(auth);
       cachedAccessToken = null;
-      sessionStorage.removeItem('consensus_g_token');
+      sessionStorage.removeItem('synthexis_g_token');
     } catch (error: any) {
       console.error('Sign-out error:', error);
       throw new Error('Failed to sign out');
@@ -178,7 +178,7 @@ export const authService = {
     }
     return onAuthStateChanged(auth, (firebaseUser) => {
       if (!cachedAccessToken) {
-        cachedAccessToken = sessionStorage.getItem('consensus_g_token');
+        cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
       }
 
       if (firebaseUser) {
@@ -200,7 +200,7 @@ export const authService = {
    */
   getAccessToken(): string | null {
     if (!cachedAccessToken) {
-      cachedAccessToken = sessionStorage.getItem('consensus_g_token');
+      cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
     }
     return cachedAccessToken;
   },
@@ -211,9 +211,9 @@ export const authService = {
   setAccessToken(token: string | null) {
     cachedAccessToken = token;
     if (token) {
-      sessionStorage.setItem('consensus_g_token', token);
+      sessionStorage.setItem('synthexis_g_token', token);
     } else {
-      sessionStorage.removeItem('consensus_g_token');
+      sessionStorage.removeItem('synthexis_g_token');
     }
   },
 

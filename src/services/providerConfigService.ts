@@ -27,7 +27,7 @@ export const AVAILABLE_MODELS: Record<string, { id: string; name: string; descri
     { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', description: 'Ultra-lightweight low-latency model' },
   ],
   anthropic: [
-    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Best-in-class deep reasoning & analytical synthesis' },
+    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Best-in-class deep reasoning & analytical synthexis' },
     { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'Ultra-fast lightweight Claude model' },
   ],
   groq: [

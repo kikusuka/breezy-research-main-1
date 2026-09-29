@@ -13,7 +13,7 @@ interface WorkspaceSettingsViewProps {
 
 export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ keys, onSaveKeys, onConnectWorkspace }) => {
   const canonical = providerConfigService.getConfig();
-  const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthesis' | 'integrations' | 'team' | 'billing'>('integrations');
+  const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthexis' | 'integrations' | 'team' | 'billing'>('integrations');
   const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
   const [autoResolve, setAutoResolve] = useState<boolean>(canonical.autoResolve ?? true);
   const [agreementThreshold, setAgreementThreshold] = useState<number>(canonical.agreementThreshold ?? 78);
@@ -257,7 +257,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           webhookUrl,
-          payload: { text: 'Breezy Synthesis Webhook Connection Test Successful' },
+          payload: { text: 'Breezy Synthexis Webhook Connection Test Successful' },
         }),
       });
       const data = await res.json();
@@ -299,111 +299,77 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] pb-24 text-stone-200">
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-[#1c2026] text-stone-100 shadow-2xl flex items-center gap-3 border border-white/10 animate-in fade-in slide-in-from-bottom-3">
-          <span className="material-symbols-outlined text-secondary text-[20px]">task_alt</span>
+        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-stone-900 text-stone-100 shadow-2xl flex items-center gap-3 border border-stone-800 animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md">
+          <span className="material-symbols-outlined text-stone-400 text-[20px]">task_alt</span>
           <div className="flex flex-col">
-            <span className="font-sans text-xs font-semibold">Workspace Alert</span>
-            <span className="font-mono text-[11px] text-stone-400">{toastMessage}</span>
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest">Workspace_Alert</span>
+            <span className="font-mono text-[11px] text-stone-400 uppercase tracking-tighter">{toastMessage}</span>
           </div>
         </div>
       )}
 
       <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-8 flex flex-col gap-8">
         {/* Header Strip */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-white/10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-stone-800/40">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               {isSyncing ? (
                 <>
-                  <span className="font-mono text-[10px] uppercase text-[#7bdb80] tracking-widest bg-[#7bdb80]/10 px-2.5 py-1 rounded-full font-semibold">
-                    Live Integration Workspace
+                  <span className="font-mono text-[9px] uppercase text-stone-100 tracking-[0.2em] bg-stone-800 px-2.5 py-1 rounded font-bold">
+                    ACTIVE_SYNC_PIPELINE
                   </span>
                   <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-stone-100 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-stone-50"></span>
                   </span>
-                  <span className="font-mono text-xs text-emerald-400 animate-pulse">Syncing...</span>
                 </>
               ) : hasIntegrations ? (
                 <>
-                  <span className="font-mono text-[10px] uppercase text-[#7bdb80] tracking-widest bg-white/5 px-2.5 py-1 rounded-full font-semibold">
-                    Live Integration Workspace
+                  <span className="font-mono text-[9px] uppercase text-stone-100 tracking-[0.2em] bg-stone-800 px-2.5 py-1 rounded font-bold">
+                    INTEGRATED_WORKSPACE
                   </span>
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                  <span className="font-mono text-xs text-stone-400">Workspace Connected</span>
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-stone-100"></span>
                 </>
               ) : (
                 <>
-                  <span className="font-mono text-[10px] uppercase text-stone-500 tracking-widest bg-white/5 px-2.5 py-1 rounded-full font-semibold">
-                    Workspace Isolated
+                  <span className="font-mono text-[9px] uppercase text-stone-500 tracking-[0.2em] bg-stone-950 px-2.5 py-1 rounded font-bold border border-stone-900">
+                    ISOLATED_WORKSPACE
                   </span>
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-stone-500"></span>
-                  <span className="font-mono text-xs text-stone-500">No integrations connected</span>
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-stone-800"></span>
                 </>
               )}
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-stone-100 tracking-tight font-semibold">
-              Workspace Sync & Settings
+            <h1 className="font-serif italic text-2xl sm:text-3xl text-stone-100 tracking-tight font-semibold mt-2">
+              System Configuration
             </h1>
-            <p className="font-sans text-xs sm:text-sm text-stone-400 max-w-2xl leading-relaxed">
-              Connect Google Drive, Google Sheets, Gmail, and GitHub accounts to fetch live documents and source code directly into your deep technical inquiries.
+            <p className="text-[11px] text-stone-500 max-w-2xl leading-relaxed uppercase tracking-widest">
+              Manage multi-model routing, credential vaults, and external spec integrations.
             </p>
           </div>
         </div>
 
         {/* Tab Switcher */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('integrations')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
-              activeTab === 'integrations'
-                ? 'bg-stone-100 text-stone-950 font-semibold'
-                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">sync_alt</span>
-            <span>Workspace Sync</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('general')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
-              activeTab === 'general'
-                ? 'bg-stone-100 text-stone-950 font-semibold'
-                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">tune</span>
-            <span>Consensus Engine</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('models')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
-              activeTab === 'models'
-                ? 'bg-stone-100 text-stone-950 font-semibold'
-                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">key</span>
-            <span>BYOK API Keys</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('synthesis')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer ${
-              activeTab === 'synthesis'
-                ? 'bg-stone-100 text-stone-950 font-semibold'
-                : 'bg-white/5 text-stone-400 hover:text-stone-200 hover:bg-white/10'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">notifications_active</span>
-            <span>Notifications & Webhooks</span>
-          </button>
+          {[
+            { id: 'integrations', label: 'Sync_Pipeline', icon: 'sync_alt' },
+            { id: 'general', label: 'Engine_Logic', icon: 'tune' },
+            { id: 'models', label: 'Key_Vault', icon: 'key' },
+            { id: 'synthexis', label: 'Dispatch_Rules', icon: 'notifications_active' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-stone-100 text-stone-950 shadow-lg'
+                  : 'bg-stone-900/40 text-stone-500 hover:text-stone-200 border border-stone-800/60'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[15px]">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Workspace Sync Tab Content */}
@@ -566,18 +532,18 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.01] p-8 text-center flex flex-col items-center justify-center gap-3">
-                    <span className="material-symbols-outlined text-stone-500 text-3xl">cloud_sync</span>
+                  <div className="rounded-xl border border-dashed border-stone-800 bg-stone-900/10 p-8 text-center flex flex-col items-center justify-center gap-4">
+                    <span className="material-symbols-outlined text-stone-700 text-3xl">cloud_sync</span>
                     <div className="max-w-sm">
-                      <h4 className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Sync inactive</h4>
-                      <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-                        Authorize Consensus to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
+                      <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Synchronization_Inactive</h4>
+                      <p className="text-[11px] text-stone-600 mt-2 leading-relaxed font-serif italic">
+                        Authorize Synthexis to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
                       </p>
                       <button
                         onClick={() => onConnectWorkspace(googleSubTab)}
-                        className="mt-4 px-4 py-2 bg-sky-600 hover:bg-sky-500 rounded text-xs text-white font-medium transition-colors"
+                        className="mt-6 px-5 py-2 bg-stone-100 hover:bg-white rounded-lg text-[10px] text-stone-950 font-bold uppercase tracking-widest transition-all shadow-lg"
                       >
-                        Authorize {googleSubTab.charAt(0).toUpperCase() + googleSubTab.slice(1)}
+                        Authorize {googleSubTab.toUpperCase()}
                       </button>
                     </div>
                   </div>
@@ -713,7 +679,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
           </div>
         )}
 
-        {/* Consensus tab content */}
+        {/* Synthexis tab content */}
         {activeTab === 'general' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
             <div className="lg:col-span-8 flex flex-col gap-8">
@@ -826,7 +792,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                       <span className="material-symbols-outlined text-[20px]">smart_toy</span>
                     </div>
                     <div>
-                      <h2 className="font-sans text-base font-semibold text-on-surface">Active Consensus Engine</h2>
+                      <h2 className="font-sans text-base font-semibold text-on-surface">Active Synthexis Engine</h2>
                       <p className="font-sans text-xs text-stone-400">
                         Calibrate multi-turn cross validation and resolution strictness
                       </p>
@@ -907,7 +873,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <div className="flex flex-col">
                       <span className="font-sans text-xs text-stone-300 font-medium">Auto-resolve Contradictions</span>
                       <span className="font-sans text-[11px] text-stone-400">
-                        Automatically synthesize common ground when mutual agreement breaches consensus threshold
+                        Automatically synthexis common ground when mutual agreement breaches synthexis threshold
                       </span>
                     </div>
                     <button
@@ -964,6 +930,17 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <h2 className="font-sans text-base font-semibold text-stone-100">BYOK Key Vault Configuration</h2>
                     <p className="font-sans text-xs text-stone-400">
                       Input your own developer provider credentials to leverage primary model families
+                    </p>
+                  </div>
+                </div>
+
+                {/* Security and Privacy Disclaimer (Safer Experience) */}
+                <div className="mx-1 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex gap-3 items-start">
+                  <span className="material-symbols-outlined text-amber-500 text-[18px] shrink-0 mt-0.5">security</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[11px] font-semibold text-amber-200 uppercase tracking-wider">Privacy & Storage Notice</span>
+                    <p className="text-[11px] text-amber-200/70 leading-relaxed">
+                      API keys are stored <strong>only in your local browser storage</strong> (localStorage). They are transmitted directly to the edge backend proxies via secure headers and are never logged or stored on our servers. Disconnect or clear your browser data to remove them entirely.
                     </p>
                   </div>
                 </div>
@@ -1046,7 +1023,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         )}
 
         {/* Notifications & Webhooks Tab Content */}
-        {activeTab === 'synthesis' && (
+        {activeTab === 'synthexis' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
             <div className="lg:col-span-8 flex flex-col gap-6">
               <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
@@ -1055,7 +1032,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <span className="material-symbols-outlined text-[20px]">notifications_active</span>
                   </div>
                   <div>
-                    <h2 className="font-sans text-base font-semibold text-stone-100">Synthesis Webhook Dispatches</h2>
+                    <h2 className="font-sans text-base font-semibold text-stone-100">Synthexis Webhook Dispatches</h2>
                     <p className="font-sans text-xs text-stone-400">
                       Configure webhook relays to notify external teams of completed inquiries or contradictions
                     </p>
@@ -1066,7 +1043,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="text-xs text-stone-300 font-semibold">Relay Completion Status</span>
-                      <span className="text-[11px] text-stone-500 leading-relaxed">Send a lightweight JSON payload of the synthesis once final answers complete</span>
+                      <span className="text-[11px] text-stone-500 leading-relaxed">Send a lightweight JSON payload of the synthexis once final answers complete</span>
                     </div>
                     <button
                       type="button"

@@ -117,6 +117,12 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 font-mono text-[11px] text-outline">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/5 border border-emerald-500/10">
+            <span className="material-symbols-outlined text-emerald-400 text-[14px]">verified</span>
+            <span className="font-mono text-[10px] text-emerald-400 font-semibold uppercase">
+              Grounded Research
+            </span>
+          </div>
           <span className="px-2 py-0.5 bg-surface-container rounded border border-outline-variant/20 text-tertiary">
             Multi-Perspective Research
           </span>
@@ -176,46 +182,43 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
       <div className="flex-1 px-4 sm:px-8 py-6 flex flex-col gap-6 max-w-6xl mx-auto w-full pb-36">
         {/* 1. User Inquiry Message */}
         <div className="flex items-start gap-3 max-w-3xl">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-sm">
-            <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+          <div className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-stone-400 text-[18px]">terminal</span>
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-sans text-xs font-semibold text-on-surface">
-                {userProfileService.getProfile().displayName}
+              <span className="font-mono text-[10px] font-bold text-stone-100 uppercase tracking-widest">
+                OPERATOR
               </span>
-              <span className="font-mono text-[10px] text-outline">
+              <span className="font-mono text-[9px] text-stone-500">
                 {new Date(session.createdAt || Date.now()).toLocaleTimeString()}
               </span>
-              <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 bg-surface-container rounded text-tertiary border border-outline-variant/30">
-                {userProfileService.getProfile().roleTitle}
-              </span>
             </div>
-            <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/25 text-on-surface font-sans text-sm leading-relaxed shadow-xs">
+            <div className="p-4 rounded-xl bg-stone-900/40 border border-stone-800/40 text-stone-200 font-sans text-sm leading-relaxed shadow-xs backdrop-blur-sm">
               {session.prompt}
             </div>
           </div>
         </div>
 
-        {/* 2. Research Synthesis Card */}
-        <div className="relative overflow-hidden rounded-xl bg-surface-container-low border border-outline-variant/30 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+        {/* 2. Research Synthexis Card */}
+        <div className="relative overflow-hidden rounded-xl bg-stone-900/60 border border-stone-700/40 p-5 sm:p-6 shadow-2xl backdrop-blur-xl">
           {/* Top verdict bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-stone-800/40">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-secondary-container/40 border border-secondary/30 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-secondary text-[20px]">psychology</span>
+              <div className="w-9 h-9 rounded-xl bg-stone-800/60 border border-stone-700/60 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-stone-200 text-[20px]">adjust</span>
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="font-sans text-base font-semibold text-on-surface">
-                    Research Synthesis
+                  <span className="font-mono text-[11px] font-bold text-stone-100 uppercase tracking-widest">
+                    SYNTHEXIS_CORE
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary border border-secondary/30 font-mono text-[10px] uppercase font-semibold">
-                    Synthesized
+                  <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-950 font-mono text-[9px] uppercase font-bold tracking-tighter">
+                    VERIFIED
                   </span>
                 </div>
-                <span className="font-mono text-[11px] text-outline mt-0.5">
-                  Integrated analysis across consulted models and search sources ({durationText})
+                <span className="font-mono text-[10px] text-stone-500 mt-0.5 uppercase tracking-wide">
+                  Integrated analysis ({durationText})
                 </span>
               </div>
             </div>
@@ -224,36 +227,42 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               <button
                 type="button"
                 onClick={onOpenModelsTab}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant/40 hover:border-primary/40 text-on-surface-variant hover:text-on-surface font-mono text-[11px] transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 border border-stone-700/40 hover:border-stone-500/60 text-stone-400 hover:text-stone-100 font-mono text-[10px] transition-all uppercase tracking-widest"
               >
-                <span className="material-symbols-outlined text-[15px] text-primary">tune</span>
-                <span>Configured Models</span>
+                <span className="material-symbols-outlined text-[14px]">tune</span>
+                <span>Matrix_Config</span>
               </button>
             </div>
           </div>
 
           {/* Recommendation content */}
           <div className="py-4">
-            <div className="font-mono text-[11px] uppercase text-secondary tracking-wider font-semibold mb-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-              <span>Key Findings & Synthesis</span>
+            <div className="font-mono text-[10px] uppercase text-stone-500 tracking-[0.2em] mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-stone-600"></span>
+              <span>Primary Research Synthesis</span>
             </div>
 
             {session.finalOutput ? (
-              <div className="text-on-surface font-sans text-sm sm:text-[15px] leading-relaxed prose prose-invert max-w-none">
-                <ReactMarkdown>{session.finalOutput}</ReactMarkdown>
+              <div className="text-stone-200 font-serif italic text-sm sm:text-base leading-relaxed prose prose-invert max-w-none">
+                <ReactMarkdown
+                  components={{
+                    a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-stone-100 underline underline-offset-4 decoration-stone-700 hover:decoration-stone-400 transition-colors" />,
+                  }}
+                >
+                  {session.finalOutput}
+                </ReactMarkdown>
               </div>
             ) : isDeliberating ? (
-              <div className="flex items-center gap-3 py-6 text-primary font-mono text-xs">
-                <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+              <div className="flex items-center gap-3 py-6 text-stone-400 font-mono text-[10px] uppercase tracking-widest">
+                <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>
                 <span>Synthesizing research findings and verifying evidence across sources...</span>
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-on-surface-variant flex flex-col items-center justify-center gap-2 border border-dashed border-outline-variant/30 rounded-xl my-2 bg-surface-container/10">
-                <span className="material-symbols-outlined text-outline text-2xl">hourglass_empty</span>
-                <p className="font-medium text-on-surface">No research output generated yet</p>
-                <p className="text-[11px] text-outline max-w-md">
-                  Submit an inquiry below to run research across connected search engines and AI models.
+              <div className="py-8 text-center text-[10px] text-stone-500 flex flex-col items-center justify-center gap-3 border border-dashed border-stone-800 rounded-xl my-2 bg-stone-900/20 uppercase tracking-widest">
+                <span className="material-symbols-outlined text-stone-700 text-2xl">hourglass_empty</span>
+                <p className="font-bold text-stone-400">Pipeline Idle</p>
+                <p className="max-w-md">
+                  Submit an inquiry to activate the dialectic engine.
                 </p>
               </div>
             )}
@@ -416,9 +425,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                       <span className="material-symbols-outlined text-secondary text-[18px]">account_tree</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-on-surface">Integrated Synthesis</span>
+                      <span className="font-sans text-sm font-semibold text-on-surface">Integrated Synthexis</span>
                       <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-medium">
-                        Reconciliation & Balanced Consensus
+                        Reconciliation & Balanced Synthexis
                       </span>
                     </div>
                   </div>
@@ -431,7 +440,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                     </div>
                   ) : (
                     <p className="text-outline text-xs italic py-2">
-                      Tradeoff reconciliation and synthesis will appear after audit rounds.
+                      Tradeoff reconciliation and synthexis will appear after audit rounds.
                     </p>
                   )}
                 </div>
@@ -440,7 +449,7 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               <div className="pt-3 mt-3 border-t border-outline-variant/20 flex items-center justify-between">
                 <span className="font-mono text-[11px] text-outline">Phase 3</span>
                 <span className="font-mono text-[10px] text-secondary uppercase font-semibold px-2 py-0.5 rounded bg-secondary-container/30 border border-secondary/30">
-                  Final Synthesis
+                  Final Synthexis
                 </span>
               </div>
             </div>
@@ -457,44 +466,35 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 textareaRef.current.focus();
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             <span className="material-symbols-outlined text-[15px]">reply</span>
-            <span>Ask follow up</span>
+            <span>Append_Inquiry</span>
           </button>
 
           <button
             type="button"
             onClick={handleCopyText}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             <span className="material-symbols-outlined text-[15px]">content_copy</span>
-            <span>{copied ? 'Copied text!' : 'Copy text'}</span>
+            <span>Export_Plaintext</span>
           </button>
 
           <button
             type="button"
             onClick={handleSaveToNotesClick}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             <span className="material-symbols-outlined text-[15px]">note_add</span>
-            <span>{saved ? 'Saved in Notes' : 'Save to Notes'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenModelsTab}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium transition-colors"
-          >
-            <span className="material-symbols-outlined text-[15px]">insights</span>
-            <span>Compare full benchmarks</span>
+            <span>Commit_Archive</span>
           </button>
         </div>
 
         {/* 5. Suggested Exploration Vectors */}
-        <div className="flex flex-col gap-2 pt-1">
-          <span className="font-mono text-[10px] text-outline uppercase tracking-wider font-semibold">
-            Suggested Exploration Vectors
+        <div className="flex flex-col gap-3 pt-4 border-t border-stone-800/40">
+          <span className="font-mono text-[9px] text-stone-500 uppercase tracking-[0.25em] font-bold">
+            Exploration_Vectors
           </span>
           <div className="flex flex-wrap gap-2">
             {suggestionChips.map((chip, idx) => (
@@ -502,9 +502,9 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
                 key={idx}
                 type="button"
                 onClick={() => onStartDebate(chip)}
-                className="px-3 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 hover:border-primary/50 text-on-surface text-xs font-sans transition-all text-left"
+                className="px-3 py-1.5 rounded border border-stone-800 hover:border-stone-500 bg-stone-950/40 text-stone-400 hover:text-stone-100 text-[10px] font-mono transition-all text-left uppercase tracking-tight"
               >
-                {chip} →
+                {chip} ↵
               </button>
             ))}
           </div>
@@ -512,19 +512,18 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
       </div>
 
       {/* Floating Prompt Input Dock */}
-      <div className="fixed bottom-5 left-0 lg:left-64 right-0 px-4 sm:px-8 flex justify-center pointer-events-none z-30">
-        <div className="w-full max-w-4xl bg-surface-container-low/95 backdrop-blur-xl p-2 rounded-2xl shadow-2xl pointer-events-auto border border-outline-variant/35 transition-all focus-within:border-primary/60">
+      <div className="fixed bottom-8 left-0 lg:left-64 right-0 px-4 sm:px-8 flex justify-center pointer-events-none z-30">
+        <div className="w-full max-w-4xl bg-stone-900/95 border border-stone-700/50 backdrop-blur-2xl p-2 rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] pointer-events-auto transition-all focus-within:border-stone-500/60 ring-1 ring-white/5">
           <div className="flex flex-col gap-1 px-3 pt-1">
             {/* Top tiny indicators */}
-            <div className="flex items-center justify-between text-[10px] font-mono text-outline pb-1 border-b border-outline-variant/15">
+            <div className="flex items-center justify-between text-[9px] font-mono text-stone-500 pb-1 border-b border-stone-800/40 uppercase tracking-widest">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                  <span className="text-tertiary">Pipeline:</span>
-                  <span className="text-on-surface font-medium">Multi-Source Verification Active</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-700 animate-pulse"></span>
+                  <span>Status: Grounded Research Pipeline Active</span>
                 </div>
               </div>
-              <span className="text-outline hidden sm:inline">Search-grounded</span>
+              <span className="hidden sm:inline">Ver: 2.0.4-LORA</span>
             </div>
 
             <textarea
@@ -533,61 +532,49 @@ export const ChatDialecticView: React.FC<ChatDialecticViewProps> = ({
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isDeliberating}
-              placeholder={isDeliberating ? 'Research synthesis in progress...' : 'Ask a research question, pose an edge case, or inspect tradeoffs...'}
+              placeholder={isDeliberating ? 'Processing Research Pipeline...' : 'Pose a technical inquiry, request architectural verification, or stress-test claims...'}
               rows={1}
-              className="w-full bg-transparent text-on-surface placeholder:text-outline resize-none outline-none font-sans text-sm py-1.5 leading-relaxed max-h-36 overflow-y-auto"
+              className="w-full bg-transparent text-stone-100 placeholder:text-stone-600 resize-none outline-none font-serif italic text-lg py-2.5 leading-relaxed max-h-36 overflow-y-auto"
             />
 
-            <div className="flex items-center justify-between pt-1 pb-0.5">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between pt-1 pb-1">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="p-1 rounded-md text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
-                  title="Attach schema, code snippet, or spec file"
+                  className="p-1.5 rounded text-stone-500 hover:text-stone-200 hover:bg-stone-800 transition-colors"
+                  title="Attach Reference Metadata"
                 >
                   <span className="material-symbols-outlined text-[18px]">attach_file</span>
                 </button>
 
                 <div
                   onClick={onOpenModelsTab}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer"
-                  title="Configure Model Matrix"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded bg-stone-950/60 border border-stone-800 hover:border-stone-600 transition-colors cursor-pointer"
+                  title="Configure Compute Matrix"
                 >
                   <div className="flex -space-x-1.5">
-                    <span className="w-2 h-2 rounded-full bg-primary ring-1 ring-background"></span>
-                    <span className="w-2 h-2 rounded-full bg-error ring-1 ring-background"></span>
-                    <span className="w-2 h-2 rounded-full bg-secondary ring-1 ring-background"></span>
+                    <span className="w-2 h-2 rounded-full bg-stone-100 ring-1 ring-stone-950"></span>
+                    <span className="w-2 h-2 rounded-full bg-stone-500 ring-1 ring-stone-950"></span>
+                    <span className="w-2 h-2 rounded-full bg-stone-800 ring-1 ring-stone-950"></span>
                   </div>
-                  <span className="font-mono text-[10px] text-on-surface font-medium">
-                    All 3 Models Active
+                  <span className="font-mono text-[9px] text-stone-400 font-bold uppercase tracking-widest">
+                    Matrix_Active
                   </span>
-                  <span className="material-symbols-outlined text-[13px] text-outline">expand_more</span>
-                </div>
-
-                <div className="hidden sm:flex items-center gap-1 font-mono text-[10px] text-outline">
-                  <span>Press</span>
-                  <kbd className="px-1 rounded bg-surface-container text-on-surface">Enter</kbd>
-                  <span>to submit inquiry</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSend}
                   disabled={!inputText.trim() || isDeliberating}
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                  className={`px-4 py-1.5 rounded font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-all ${
                     inputText.trim() && !isDeliberating
-                      ? 'bg-primary hover:bg-primary-container text-on-primary shadow-xs cursor-pointer'
-                      : 'bg-surface-container text-outline opacity-50 cursor-not-allowed'
+                      ? 'bg-stone-100 text-stone-950 hover:bg-white cursor-pointer shadow-lg active:scale-95'
+                      : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-50'
                   }`}
-                  aria-label="Send Query"
                 >
-                  {isDeliberating ? (
-                    <span className="material-symbols-outlined text-[15px] animate-spin">sync</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
-                  )}
+                  {isDeliberating ? 'Running' : 'Inquire'}
                 </button>
               </div>
             </div>

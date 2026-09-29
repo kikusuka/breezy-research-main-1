@@ -149,7 +149,7 @@ export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () =>
             ? {
                 ...c,
                 content: c.content
-                  ? `${c.content}\n\n---\n**AI Synthesis:**\n${expansionText}`
+                  ? `${c.content}\n\n---\n**AI Synthexis:**\n${expansionText}`
                   : expansionText,
               }
             : c

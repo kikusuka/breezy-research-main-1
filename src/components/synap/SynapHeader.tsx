@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProductMode } from '../console/TopBar';
-import { BreezyLogoIcon, ConsensusLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
+import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
 
 interface SynapHeaderProps {
   readinessPercentage: number;
@@ -69,8 +69,8 @@ export const SynapHeader: React.FC<SynapHeaderProps> = ({
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              <ConsensusLogoIcon className="w-4 h-4" />
-              <span>Consensus</span>
+              <SynthexisLogoIcon className="w-4 h-4" />
+              <span>Synthexis</span>
             </button>
 
             <button

@@ -39,6 +39,7 @@ class ApiClient {
   private isCheckingHealth = false;
   private lastFailoverTimestamp: number = 0;
   private primaryRecoveryCooldownMs: number = 180000; // 3 minutes cooldown before probing primary
+  private lastCheckedHealthOk: boolean = true;
 
   constructor() {
     const primaryUrl = import.meta.env.VITE_PRIMARY_API_URL?.replace(/\/$/, '') || '';
@@ -109,7 +110,7 @@ class ApiClient {
     return {
       activeId: active.id,
       activeName: active.name,
-      isOnline: true,
+      isOnline: this.lastCheckedHealthOk,
       isPrimary: this.currentEndpointIndex === 0,
       lastChecked: Date.now(),
       failoverReason: reason,
@@ -179,10 +180,14 @@ class ApiClient {
         headers: { Accept: 'application/json' },
       });
       const ok = res.ok;
+      this.lastCheckedHealthOk = ok;
       this.healthCache.set(endpoint.id, { ok, timestamp: now });
+      this.notify(ok ? 'Active connection healthy' : 'Backend health check failed');
       return ok;
     } catch (e) {
+      this.lastCheckedHealthOk = false;
       this.healthCache.set(endpoint.id, { ok: false, timestamp: now });
+      this.notify('Backend unreachable');
       return false;
     } finally {
       this.isCheckingHealth = false;
@@ -233,10 +238,14 @@ class ApiClient {
         if (endpointIndex !== this.currentEndpointIndex && response.ok) {
           this.currentEndpointIndex = endpointIndex;
           this.lastFailoverTimestamp = Date.now();
+          this.lastCheckedHealthOk = true;
           this.notify(`Switched to ${endpoint.name}`);
           if (onFailoverNotice) {
             onFailoverNotice(`Connected to backup service (${endpoint.name}).`);
           }
+        } else if (response.ok && !this.lastCheckedHealthOk) {
+          this.lastCheckedHealthOk = true;
+          this.notify('Connection recovered');
         }
 
         return response;
@@ -249,6 +258,9 @@ class ApiClient {
         }
       }
     }
+
+    this.lastCheckedHealthOk = false;
+    this.notify('All backends unreachable');
 
     throw new Error(
       lastError?.message

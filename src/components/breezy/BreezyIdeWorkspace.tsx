@@ -172,7 +172,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   // Selected File States
   const [selectedFilePath, setSelectedFilePath] = useState<string>(() => {
     const injected = localStorage.getItem('breezy_ide_active_code');
-    if (injected) return 'research_synthesis.py';
+    if (injected) return 'research_synthexis.py';
     return TEMPLATES[0].filename;
   });
   const [editorContent, setEditorContent] = useState<string>(() => {

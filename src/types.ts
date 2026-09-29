@@ -93,7 +93,7 @@ export interface ResearchMetrics {
   claimsUnresolved: number;
   sourcesConsulted: number;
   primarySourcesCount: number;
-  consensusRate?: number;
+  synthexisRate?: number;
 }
 
 export interface EvidenceGraph {
@@ -119,7 +119,7 @@ export interface DebateSession {
   researchMetrics?: ResearchMetrics;
   metrics?: {
     durationMs: number;
-    consensusRate: number; // 0 - 100%
+    synthexisRate: number; // 0 - 100%
     contentionLevel: 'Low' | 'Moderate' | 'High' | 'Severe';
     resolvedPointsCount: number;
   };

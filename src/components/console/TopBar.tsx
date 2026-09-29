@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ConsoleTab } from './Sidebar';
 import { apiClient, BackendState } from '../../services/apiClient';
-import { BreezyLogoIcon, ConsensusLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
+import { BreezyLogoIcon, SynthexisLogoIcon, SynapLogoIcon } from '../icons/ProductLogos';
 
 export type ProductMode = 'breezy' | 'synthexis' | 'synap';
 
@@ -63,105 +63,88 @@ export const TopBar: React.FC<TopBarProps> = ({
     };
   }, [showBackendMenu]);
   return (
-    <header className={`fixed top-0 left-0 lg:left-64 right-0 h-14 backdrop-blur-md border-b z-40 flex items-center justify-between px-4 sm:px-6 transition-colors ${
+    <header className={`fixed top-0 left-0 lg:left-64 right-0 h-14 backdrop-blur-xl border-b z-40 flex items-center justify-between px-6 transition-all duration-300 ${
       theme === 'light'
-        ? 'bg-white/90 border-slate-200 text-slate-800'
-        : 'bg-[#10141a]/90 border-white/10 text-stone-100'
+        ? 'bg-stone-50/80 border-stone-200 text-stone-900'
+        : 'bg-stone-950/80 border-stone-800/60 text-stone-100'
     }`}>
-      {/* Zone 1: Brand / Sidebar Icon & Product Mode Switcher */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      {/* Zone 1: Breadcrumbs / Context */}
+      <div className="flex items-center gap-4">
         <button
           type="button"
           onClick={onToggleMobileMenu}
-          className="w-10 h-10 flex items-center justify-center text-stone-400 hover:text-stone-100 lg:hidden rounded-xl hover:bg-white/5 active:bg-white/10 cursor-pointer shrink-0"
+          className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-100 lg:hidden rounded-lg hover:bg-stone-800/60 transition-colors shrink-0"
           aria-label="Toggle Navigation"
         >
-          <span className="material-symbols-outlined text-[22px]">menu</span>
+          <span className="material-symbols-outlined text-[20px]">menu</span>
         </button>
 
-        {/* Mode Switcher positioned right beside the sidebar icon for continuity */}
-        <div className={`flex items-center border rounded-full p-0.5 sm:p-1 shadow-inner shrink-0 ${
-          theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-black/40 border-white/10'
-        }`}>
-          <button
-            type="button"
-            onClick={() => onSelectProductMode('breezy')}
-            className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
-              productMode === 'breezy'
-                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <BreezyLogoIcon className="w-4 h-4 text-sky-400" />
-            <span>Breezy</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onSelectProductMode('synthexis');
-              onSelectTab('chat');
-            }}
-            className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
-              productMode === 'synthexis'
-                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <ConsensusLogoIcon className="w-4 h-4" />
-            <span>Consensus</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectProductMode('synap')}
-            className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-sans transition-all flex items-center gap-1.5 cursor-pointer ${
-              productMode === 'synap'
-                ? theme === 'light' ? 'bg-sky-600 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-950 font-semibold shadow-xs'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <SynapLogoIcon className="w-4 h-4" />
-            <span>Synap</span>
-          </button>
-        </div>
-
-        {/* Subtle Glowing Beta Tag */}
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold select-none shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.08)]">
-          <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse"></span>
-          <span>BETA RELEASE</span>
-        </div>
+        <nav className="hidden sm:flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-500">
+          <span className="hover:text-stone-300 cursor-default transition-colors">Council_Protocol</span>
+          <span className="text-stone-800">/</span>
+          <span className="text-stone-300 font-bold tracking-normal">{activeTab === 'chat' ? 'Terminal' : activeTab === 'notes' ? 'Archives' : 'Matrix'}</span>
+        </nav>
       </div>
 
-      {/* Zone 2: Primary Actions (Backend Status, Theme Toggle & Quick Jump) */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Backend Indicator Chip */}
+      {/* Zone 2: Mode Hub (Center-ish but adhering to 3-zone flow) */}
+      <div className="flex items-center gap-1 p-1 bg-stone-900/60 border border-stone-800/60 rounded-xl shadow-2xl backdrop-blur-md">
+        <button
+          onClick={() => onSelectProductMode('synthexis')}
+          className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all flex items-center gap-2 ${
+            productMode === 'synthexis'
+              ? 'bg-stone-100 text-stone-950 shadow-sm'
+              : 'text-stone-500 hover:text-stone-300'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[14px]">adjust</span>
+          <span className="hidden md:inline">Synthexis</span>
+        </button>
+        <button
+          onClick={() => onSelectProductMode('synap')}
+          className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all flex items-center gap-2 ${
+            productMode === 'synap'
+              ? 'bg-stone-100 text-stone-950 shadow-sm'
+              : 'text-stone-500 hover:text-stone-300'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[14px]">psychology</span>
+          <span className="hidden md:inline">Synap</span>
+        </button>
+        <button
+          onClick={() => onSelectProductMode('breezy')}
+          className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all flex items-center gap-2 ${
+            productMode === 'breezy'
+              ? 'bg-stone-100 text-stone-950 shadow-sm'
+              : 'text-stone-500 hover:text-stone-300'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[14px]">terminal</span>
+          <span className="hidden md:inline">Console</span>
+        </button>
+      </div>
+
+      {/* Zone 3: Global Actions */}
+      <div className="flex items-center gap-3">
+        {/* Backend Selector: Editorial Style */}
         <div className="relative" ref={backendMenuRef}>
           <button
             type="button"
             onClick={() => setShowBackendMenu(!showBackendMenu)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-mono transition-all cursor-pointer ${
-              theme === 'light'
-                ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
-                : 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10'
-            }`}
-            title="Active Backend Status & Failover Router"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-800/60 bg-stone-900/40 text-[9px] font-mono text-stone-500 hover:text-stone-200 hover:bg-stone-800 transition-all cursor-pointer font-bold uppercase tracking-widest"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="hidden md:inline">{backendState.activeName}</span>
-            <span className="md:hidden">{backendState.activeId.toUpperCase()}</span>
+            <div className="w-1 h-1 rounded-full bg-stone-500"></div>
+            <span className="hidden md:inline">{backendState.activeId.toUpperCase()}_NODE</span>
             <span className="material-symbols-outlined text-[14px]">expand_more</span>
           </button>
 
           {showBackendMenu && (
-            <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#161a22] border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 text-stone-200 font-sans">
-              <div className="px-2 py-1 border-b border-white/5 mb-1">
-                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-400">
-                  Backend Router
+            <div className="absolute right-0 mt-3 w-64 rounded-xl bg-stone-900 border border-stone-800 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] p-2 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-2xl">
+              <div className="px-3 py-2 border-b border-stone-800 mb-1">
+                <span className="text-[9px] uppercase font-mono font-bold tracking-[0.2em] text-stone-500">
+                  Network_Topology
                 </span>
-                <p className="text-[10px] text-stone-400 mt-0.5">Auto-failover enabled across edge endpoints</p>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 {apiClient.getEndpoints().map((ep) => {
                   const isSelected = ep.id === backendState.activeId;
                   return (
@@ -172,17 +155,17 @@ export const TopBar: React.FC<TopBarProps> = ({
                         apiClient.setEndpointManually(ep.id);
                         setShowBackendMenu(false);
                       }}
-                      className={`text-left px-2.5 py-1.5 rounded-lg text-xs flex flex-col gap-0.5 cursor-pointer transition-colors ${
+                      className={`text-left px-3 py-2 rounded-lg transition-colors flex flex-col gap-0.5 ${
                         isSelected
-                          ? 'bg-white/10 text-white font-medium'
-                          : 'hover:bg-white/5 text-stone-400 hover:text-stone-200'
+                          ? 'bg-stone-800 text-stone-100'
+                          : 'hover:bg-stone-800/50 text-stone-500 hover:text-stone-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold">{ep.name}</span>
-                        {isSelected && <span className="text-[10px] text-emerald-400 font-mono">Active</span>}
+                        <span className="text-[10px] font-bold uppercase tracking-widest">{ep.id}</span>
+                        {isSelected && <div className="w-1 h-1 rounded-full bg-stone-100"></div>}
                       </div>
-                      <span className="text-[10px] font-mono text-stone-400">{ep.tierInfo}</span>
+                      <span className="text-[9px] font-mono opacity-60 uppercase tracking-tighter">{ep.tierInfo}</span>
                     </button>
                   );
                 })}
@@ -191,41 +174,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
 
-        {/* Light / Dark Mode Toggle Button */}
-        {onToggleTheme && (
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className={`p-1.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-sans cursor-pointer ${
-              theme === 'light'
-                ? 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200'
-                : 'bg-white/5 border-white/10 text-stone-300 hover:text-white hover:bg-white/10'
-            }`}
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-            </span>
-            <span className="hidden sm:inline font-medium">
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </span>
-          </button>
-        )}
-
         <button
           type="button"
           onClick={onOpenSearch}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs cursor-pointer shadow-xs ${
-            theme === 'light'
-              ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-              : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-stone-300 hover:text-stone-100'
-          }`}
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-stone-800/60 bg-stone-900/40 text-stone-500 hover:text-stone-100 hover:bg-stone-800 transition-all cursor-pointer shadow-xl"
+          title="Search Records (⌘K)"
         >
-          <span className="material-symbols-outlined text-[16px]">search</span>
-          <span className="hidden sm:inline font-sans">Quick Jump</span>
-          <kbd className="hidden sm:inline font-mono text-[10px] text-stone-400 bg-white/5 px-1 py-0.5 rounded">
-            ⌘K
-          </kbd>
+          <span className="material-symbols-outlined text-[18px]">search</span>
         </button>
       </div>
     </header>

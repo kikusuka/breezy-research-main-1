@@ -173,7 +173,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
           <div className="flex-1 flex flex-col items-center justify-center py-12 sm:py-24 text-center w-full">
             {/* Elegant Serif Header Group */}
             <span className="font-serif text-4xl sm:text-5xl font-normal text-stone-100 tracking-tight mb-3">
-              Consensus
+              Synthexis
             </span>
             <h1 className="text-base sm:text-lg font-serif text-stone-300 font-normal mb-8 tracking-wide">
               What are you curious about?
@@ -276,7 +276,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                           ? 'bg-white/10 text-stone-100'
                           : 'text-stone-400 hover:text-stone-200'
                       }`}
-                      title="Deep Mode: Multi-angle synthesis and exhaustive cross-checks"
+                      title="Deep Mode: Multi-angle synthexis and exhaustive cross-checks"
                     >
                       Deep
                     </button>
@@ -324,10 +324,10 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
             {/* Direct human language explanation & topics block */}
             <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8 font-sans">
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-                How Consensus Works
+                How Synthexis Works
               </span>
               <p className="text-xs text-stone-400 leading-relaxed mb-8">
-                Consensus translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
+                Synthexis translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical AI council indicators — just verified technical consensus.
               </p>
 
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
@@ -456,7 +456,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               ) : (
                 <div className="text-stone-400 text-xs sm:text-sm flex items-center gap-2">
                   <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
-                  <span>Evaluating assumptions and synthesis matrices...</span>
+                  <span>Evaluating assumptions and synthexis matrices...</span>
                 </div>
               )}
             </article>
@@ -551,7 +551,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 {isTrailExpanded && (
                   <div className="p-4 border-t border-white/5 flex flex-col gap-4 bg-black/10">
                     {session.steps.map((step, idx) => {
-                      const humanRole = step.role === 'architect' ? 'Baseline hypothesis' : step.role === 'skeptic' ? 'Scrutiny objections' : 'Harmonized synthesis';
+                      const humanRole = step.role === 'architect' ? 'Baseline hypothesis' : step.role === 'skeptic' ? 'Scrutiny objections' : 'Harmonized synthexis';
                       return (
                         <div key={idx} className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#141820] border border-white/5">
                           <div className="flex items-center justify-between pb-2 border-b border-white/5">
@@ -636,7 +636,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask follow-up query, challenge a synthesis claim..."
+                    placeholder="Ask follow-up query, challenge a synthexis claim..."
                     rows={1}
                     className="w-full bg-transparent text-stone-100 placeholder-stone-500 text-sm resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
                   />

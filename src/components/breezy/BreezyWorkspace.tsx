@@ -199,7 +199,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
         }
       );
 
-      const aiText = data.text || 'Synthesis complete.';
+      const aiText = data.text || 'Synthexis complete.';
 
       saveChats({
         ...finalChats,

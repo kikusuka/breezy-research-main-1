@@ -203,7 +203,7 @@ export async function handleBackendRequest(
           'Content-Type': 'application/json',
           'User-Agent': 'BreezyResearch-WebhookVerifier/1.0',
         },
-        body: JSON.stringify(payload || { text: 'Synthesis Webhook Connection Test' }),
+        body: JSON.stringify(payload || { text: 'Synthexis Webhook Connection Test' }),
         signal: controller.signal,
       }).finally(() => clearTimeout(timeoutId));
 
@@ -513,7 +513,7 @@ export async function handleBackendRequest(
         signal: req.signal,
       });
 
-      return createJsonResponse({ text: fullAnswer || 'Synthesis completed.' }, 200, req, env);
+      return createJsonResponse({ text: fullAnswer || 'Synthexis completed.' }, 200, req, env);
     } catch (err: any) {
       return createJsonResponse({ error: err?.message || 'Chat generation failed' }, 500, req, env);
     }
@@ -528,7 +528,7 @@ export async function handleBackendRequest(
         return createJsonResponse({ error: 'Session with prompt is required.' }, 400, req, env);
       }
 
-      const systemInstruction = `You are the Lead Research Synthesizer. Your task is to analyze the multi-model analysis trace and produce a valid JSON object with exactly two keys:
+      const systemInstruction = `You are the Lead Research Synthexis Analyst. Your task is to analyze the multi-model analysis trace and produce a valid JSON object with exactly two keys:
 1. "summary": A concise, objective, one-sentence executive summary highlighting the synthesized resolution and core trade-offs. Do not exceed one sentence. Start directly with the summary text.
 2. "category": A highly descriptive, exact three-word title or category reflecting the core technical subject (e.g., "Database Migration Strategy", "OAuth Security Architecture", "Vector Search Indexing"). Exactly 3 words.
 
@@ -537,7 +537,7 @@ Return ONLY a raw JSON object. Do not include markdown code blocks like \`\`\`js
       const userPrompt = `INQUIRY PROMPT:
 ${session.prompt}
 
-FINAL SYNTHESIS OUTPUT:
+FINAL SYNTHEXIS OUTPUT:
 ${session.finalOutput || '(No final output produced yet. Summary based on prompt only.)'}
 
 ANALYSIS STEPS TRANSCRIPT:
@@ -778,7 +778,7 @@ Structure your response in clean Markdown with clear headings.`;
           const totalDurationMs = Date.now() - startTime;
           const { evidenceGraph, researchMetrics } = await generateRealEvidenceGraph({
             prompt,
-            finalSynthesis: soloContent,
+            finalSynthexis: soloContent,
             proposalContent: soloContent,
             critiqueContent: '',
             discoveredSources,
@@ -795,7 +795,7 @@ Structure your response in clean Markdown with clear headings.`;
             researchMetrics,
             metrics: {
               durationMs: totalDurationMs,
-              consensusRate: null,
+              synthexisRate: null,
               contentionLevel: 'None (Solo Inquiry)',
               resolvedPointsCount: 1,
             },
@@ -966,12 +966,12 @@ Perform rigorous empirical and constraint verification on these analyses.`;
           } catch (err: any) {
             const errMsg = err?.message || 'API error or connection timeout';
             console.warn(`[Verifier Stage Error] ${verifierConfig.provider}/${verifierConfig.model} failed:`, errMsg);
-            verifierContent = `*Verifier Stage Notice: Independent verification model (${verifierConfig.provider}/${verifierConfig.model}) was unavailable (${errMsg}). Final synthesis proceeded directly with Analyst and Critic outputs.*`;
+            verifierContent = `*Verifier Stage Notice: Independent verification model (${verifierConfig.provider}/${verifierConfig.model}) was unavailable (${errMsg}). Final synthexis proceeded directly with Analyst and Critic outputs.*`;
             
             await sendEvent('stage_warning', {
               round: verifierRoundNum,
               role: 'verifier',
-              message: `Verifier model (${verifierConfig.provider}) unavailable: ${errMsg}. Synthesis proceeded without independent verification.`,
+              message: `Verifier model (${verifierConfig.provider}) unavailable: ${errMsg}. Synthexis proceeded without independent verification.`,
             });
           }
 
@@ -1007,8 +1007,8 @@ Directives:
 2. Adjudicate impartially: thoroughly integrate mitigations for every genuine edge case.
 3. Deliver a comprehensive, high-caliber, practical solution.
 4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach.
-5. CONSENSUS CRITERIA: Ensure the synthesis has at least ${agreementThreshold}% logical consistency and factual alignment between model claims.
-6. CONTRADICTION STRATEGY: ${autoResolve ? 'Auto-resolve opposing claims by identifying empirical common ground and technical consensus.' : 'Do not auto-resolve: clearly list any unresolved disagreements and contradictory viewpoints under a separate "Unresolved Contradictions" section.'}
+5. SYNTHEXIS CRITERIA: Ensure the synthexis has at least ${agreementThreshold}% logical consistency and factual alignment between model claims.
+6. CONTRADICTION STRATEGY: ${autoResolve ? 'Auto-resolve opposing claims by identifying empirical common ground and technical synthexis.' : 'Do not auto-resolve: clearly list any unresolved disagreements and contradictory viewpoints under a separate "Unresolved Contradictions" section.'}
 ${toneInstruction}
 Structure your response in clean Markdown with clear headings.`;
 
@@ -1025,9 +1025,9 @@ ${verifierSummary ? `\n---\nSTAGE 3 - VERIFIER AUDIT (CONDENSED):\n${verifierSum
 
 Synthesize the final, definitive, high-integrity answer for the user.`;
 
-        let finalSynthesis = '';
+        let finalSynthexis = '';
         const finalRoundStart = Date.now();
-        finalSynthesis = await callAgentWithStream({
+        finalSynthexis = await callAgentWithStream({
           provider: arbiterConfig.provider,
           model: arbiterConfig.model,
           apiKey: keys[arbiterConfig.provider],
@@ -1046,7 +1046,7 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
           round: finalRoundNum,
           role: 'arbiter',
           durationMs: Date.now() - finalRoundStart,
-          content: finalSynthesis,
+          content: finalSynthexis,
         });
 
         const totalDurationMs = Date.now() - startTime;
@@ -1054,7 +1054,7 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
 
         const { evidenceGraph, researchMetrics } = await generateRealEvidenceGraph({
           prompt,
-          finalSynthesis,
+          finalSynthexis,
           proposalContent,
           critiqueContent: critiqueSummary || '',
           discoveredSources,
@@ -1065,12 +1065,12 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
 
         await sendEvent('evidence_graph', { evidenceGraph, researchMetrics });
         await sendEvent('complete', {
-          finalOutput: finalSynthesis,
+          finalOutput: finalSynthexis,
           evidenceGraph,
           researchMetrics,
           metrics: {
             durationMs: totalDurationMs,
-            consensusRate: researchMetrics.consensusRate,
+            synthexisRate: researchMetrics.synthexisRate,
             contentionLevel: researchMetrics.claimsContradicted > 0 ? 'Moderate' : 'Low',
             resolvedPointsCount: researchMetrics.claimsSupported,
           },

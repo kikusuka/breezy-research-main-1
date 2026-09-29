@@ -1,21 +1,21 @@
-# Consensus Workspace
+# Synthexis Workspace
 
-> **Premium Multi-Model Research Workspace, Interactive Dialectic Audits & Sourced Alignment Playground**
+> **Premium Multi-Model Research Workspace, Interactive Dialectic Audits & Sourced Synthexis Playground**
 
-Consensus Workspace is a unified, multi-mode developer and researcher platform. It brings conversational AI, multi-perspective technical inquiry, ephemeral code execution, and grounded knowledge analysis into a cohesive, responsive browser interface.
+Synthexis Workspace is a unified, multi-mode developer and researcher platform. It brings conversational AI, multi-perspective technical inquiry, ephemeral code execution, and grounded knowledge analysis into a cohesive, responsive browser interface.
 
 ---
 
 ## 🏛️ Architecture & Unified Workspaces
 
-Consensus Workspace is structured as a single platform shell hosting specialized workspaces:
+Synthexis Workspace is structured as a single platform shell hosting specialized workspaces:
 
 ```text
-                             CONSENSUS WORKSPACE
+                             SYNTHEXIS WORKSPACE
                                       │
       ┌──────────────────┬───────────┴───────────┬──────────────────┐
       │                  │                       │                  │
-    Breezy           Consensus                 Build              Synap
+    Breezy           Synthexis                 Build              Synap
 (Conversational    (Technical Research      (Cloud IDE &      (Study & Knowledge
    Workspace)      & Evidence Engine)    Ephemeral Runner)         Engine)
 ```
@@ -25,7 +25,7 @@ Consensus Workspace is structured as a single platform shell hosting specialized
 * **Canvas Prototype**: Interactive layout for authoring and outlining presentations, tasks, and coursework. *(Clearly designated in preview mode while live Google Workspace OAuth sync is in active development).*
 * **Design & Theme**: High-contrast, accessibility-checked Dark and Light mode support with smooth palette transitions.
 
-### 2. Consensus (Deep Technical Research)
+### 2. Synthexis (Deep Technical Research)
 * **Multi-Perspective Synthesis**: Reconciles thesis arguments, critical counter-arguments, and synthesis findings from top-tier LLMs.
 * **Search Grounding Abstraction**: Pluggable provider interface supporting:
   * **SearXNG** (Self-hostable privacy-first metasearch)
@@ -35,7 +35,7 @@ Consensus Workspace is structured as a single platform shell hosting specialized
 * **Truthful Evidence Graph**: Maps claims directly to retrieved sources, explicitly reporting whether evidence currently supports each claim without inflated verification claims.
 * **Structured Export**: Markdown export with complete citation trails and inquiry parameters.
 
-### 3. Build (Consensus IDE)
+### 3. Build (Synthexis IDE)
 * **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
 * **Simulated ANSI Terminal**: Real-time log streamer supporting ANSI color escape codes, live text filter search, auto-scrolling, and keyboard shortcuts (`Cmd+K` / `Ctrl+K` to clear, `Cmd+Shift+Down` to jump to bottom).
 * **Execution Preview (Simulation)**: Simulated cloud-runner workflow for testing the Build workspace UI and job lifecycle previews. No remote code execution or remote GPU provisioning occurs.
@@ -49,10 +49,10 @@ Consensus Workspace is structured as a single platform shell hosting specialized
 
 ## 🛠️ Technology Stack & Deployment Architecture
 
-Consensus Workspace consists of a static React frontend with multi-tier edge backend failover:
+Synthexis Workspace consists of a static React frontend with multi-tier edge backend failover:
 
 ```text
-                             CONSENSUS WORKSPACE
+                             SYNTHEXIS WORKSPACE
                                     │
                           Static Frontend (Vite)
                       (Cloudflare Pages / Vercel)

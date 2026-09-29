@@ -8,7 +8,7 @@ import { Sidebar, ConsoleTab } from './components/console/Sidebar';
 import { TopBar, ProductMode } from './components/console/TopBar';
 import { ResearchConversationView } from './components/console/ResearchConversationView';
 import { ResearchNotesView } from './components/console/ResearchNotesView';
-import { ModelsConsensusView } from './components/console/ModelsConsensusView';
+import { ModelsSynthexisView } from './components/console/ModelsSynthexisView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
@@ -35,7 +35,7 @@ import {
   saveActiveSessionId,
   createNewSession,
 } from './services/sessionStorage';
-import { exportConsensusAsMarkdown } from './utils/exportTranscript';
+import { exportSynthexisAsMarkdown } from './utils/exportTranscript';
 import { apiClient } from './services/apiClient';
 import { providerConfigService } from './services/providerConfigService';
 
@@ -148,9 +148,9 @@ export default function App() {
   // Sessions and debate states
   const [sessions, setSessions] = useState<DebateSession[]>(() => loadSessions() || [createNewSession('First Inquiry', 'trio', [], 'balanced')]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => loadActiveSessionId() || sessions[0]?.id || null);
-  const [consensusMode, setConsensusMode] = useState(true);
+  const [synthexisMode, setSynthexisMode] = useState(true);
 
-  const handleToggleConsensusMode = () => setConsensusMode((prev) => !prev);
+  const handleToggleSynthexisMode = () => setSynthexisMode((prev) => !prev);
 
   useEffect(() => {
     saveSessions(sessions);
@@ -251,12 +251,12 @@ export default function App() {
     setActiveRound(1);
     setStreamingText('');
     setResearchEvents([
-      !consensusMode 
+      !synthexisMode 
         ? `Starting lightweight single-model query: "${promptText.slice(0, 50)}..."` 
-        : `Starting multi-model consensus audit: "${promptText.slice(0, 50)}..."`
+        : `Starting multi-model synthexis audit: "${promptText.slice(0, 50)}..."`
     ]);
 
-    const protocol = !consensusMode ? 'solo' : depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
+    const protocol = !synthexisMode ? 'solo' : depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
     const tone: DebateTone = 'balanced';
     const searchEngine: SearchEngineProvider = 'google';
     const seats = providerConfigService.getSeatsPayload();
@@ -383,6 +383,9 @@ export default function App() {
         console.log('Debate cancelled');
       } else {
         console.error('Debate error:', err);
+        const errorMessage = err?.message || 'Research engine failure';
+        setResearchEvents((prev) => [...prev, `Critical Error: ${errorMessage}`]);
+        toast(`Engine Error: ${errorMessage}. Check your network or provider keys.`);
       }
     } finally {
       setIsDeliberating(false);
@@ -392,7 +395,7 @@ export default function App() {
 
   const handleExportMarkdown = () => {
     if (!currentSession) return;
-    exportConsensusAsMarkdown({
+    exportSynthexisAsMarkdown({
       prompt: currentSession.prompt,
       protocol: currentSession.protocol,
       steps: currentSession.steps,
@@ -494,8 +497,8 @@ export default function App() {
         activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewDebate}
-        consensusMode={consensusMode}
-        onToggleConsensusMode={handleToggleConsensusMode}
+        synthexisMode={synthexisMode}
+        onToggleSynthexisMode={handleToggleSynthexisMode}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
@@ -515,7 +518,7 @@ export default function App() {
           onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
 
-        <main className="relative pt-14 bg-[#10141a] min-h-screen flex-1 flex flex-col">
+        <main className="relative pt-14 bg-stone-950 min-h-screen flex-1 flex flex-col">
           {activeTab === 'chat' && (
             currentSession ? (
               <ResearchConversationView
@@ -585,7 +588,7 @@ export default function App() {
           )}
 
           {activeTab === 'models' && (
-            <ModelsConsensusView onOpenSettings={() => setActiveTab('settings')} />
+            <ModelsSynthexisView onOpenSettings={() => setActiveTab('settings')} />
           )}
 
           {activeTab === 'settings' && (

@@ -134,7 +134,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   ];
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#08090c] text-stone-200">
+    <div className="flex flex-col w-full min-h-screen bg-stone-950 text-stone-200 selection:bg-stone-100 selection:text-stone-950">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -144,293 +144,168 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv"
       />
 
-      {/* Hero Container */}
-      <div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-12 sm:py-24 flex flex-col justify-center items-center text-center">
-        {/* Understated Wordmark in elegant Serif */}
-        <span className="font-serif italic text-4xl sm:text-5xl font-normal text-stone-100 tracking-tight mb-2">
-          Synthesis
-        </span>
-
-        {/* Dynamic Factual Metric Greeting (No jargon, 100% verified state) */}
-        <div className="font-mono text-[11px] text-[#d4ff33] tracking-wide mb-8 uppercase">
-          {factualMetric}
-        </div>
-
-        {/* Minimalist Question Header */}
-        <h1 className="text-xl sm:text-2xl font-serif text-stone-300 font-normal mb-8 tracking-wide">
-          What are you curious about?
-        </h1>
-
-        {/* The Industrial Input Area */}
-        <div className="w-full bg-[#0f1218] border border-white/5 rounded-2xl p-4 shadow-xl text-left focus-within:border-[#d4ff33]/40 transition-all max-w-xl">
-          <div className="flex items-start gap-3">
-            {/* Plus Icon to attach media/files */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-stone-400 hover:text-stone-100 transition-colors shrink-0 mt-0.5"
-              title="Add Audio, Video, Image, or Doc Spec"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-            </button>
-
-            {/* Focused text box */}
-            <div className="flex-1">
-              <textarea
-                ref={textareaRef}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask a question, explore an idea, or give me something difficult to figure out..."
-                rows={2}
-                className="w-full bg-transparent text-stone-100 placeholder-stone-550 text-sm resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
-              />
+      {/* Main Search Container */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-24 sm:py-32">
+        <div className="w-full max-w-2xl text-center space-y-12">
+          {/* Brand & Context */}
+          <div className="space-y-4">
+            <span className="font-display text-5xl sm:text-6xl lg:text-7xl text-stone-100 tracking-tight">
+              Synthexis
+            </span>
+            <div className="flex items-center justify-center gap-3 text-[11px] font-mono uppercase tracking-[0.2em] text-stone-500">
+              <span className="w-1 h-1 rounded-full bg-stone-700"></span>
+              <span>{factualMetric}</span>
+              <span className="w-1 h-1 rounded-full bg-stone-700"></span>
             </div>
-
-            {/* Industrial Acid Lime Send Button */}
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!inputText.trim()}
-              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all shrink-0 mt-0.5 ${
-                inputText.trim()
-                  ? 'bg-[#d4ff33] text-black hover:bg-[#d4ff33]/90 cursor-pointer shadow-md'
-                  : 'bg-white/5 text-stone-500 cursor-not-allowed'
-              }`}
-              title="Press Enter or Click to Inquire"
-            >
-              <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
-            </button>
           </div>
 
-          {attachedFile && (
-            <div className="flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs text-stone-300 w-fit">
-              <span className="material-symbols-outlined text-[16px] text-stone-400">attach_file</span>
-              <span className="font-medium">{attachedFile.name}</span>
-              <span className="text-stone-500">({attachedFile.size})</span>
-              <button
-                type="button"
-                onClick={() => setAttachedFile(null)}
-                className="text-stone-500 hover:text-stone-200 ml-1 font-bold text-sm"
-              >
-                ×
-              </button>
-            </div>
-          )}
+          {/* Inquiry Input Area */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-b from-stone-800 to-stone-900 rounded-[2rem] opacity-20 group-focus-within:opacity-40 transition-opacity blur-sm"></div>
+            <div className="relative bg-stone-900/40 border border-stone-800/60 rounded-[2rem] p-6 shadow-2xl backdrop-blur-xl focus-within:border-stone-600 transition-all">
+              <div className="flex flex-col gap-4">
+                <textarea
+                  ref={textareaRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Execute research protocol or technical inquiry..."
+                  rows={2}
+                  className="w-full bg-transparent text-stone-100 placeholder-stone-700 text-lg sm:text-xl font-serif italic resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0 uppercase tracking-tighter"
+                />
 
-          {/* Quick Model Setup Control Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-white/5 font-sans">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-black/30 p-0.5 rounded-lg border border-white/5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResearchDepth('solo');
-                    const updated = { ...config, preset: 'fast' as const, roles: PRESET_ROLE_CONFIGS.fast };
-                    setConfig(updated);
-                    providerConfigService.saveConfig(updated);
-                  }}
-                  title="One model. Fastest response."
-                  className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                    researchDepth === 'solo'
-                      ? 'bg-[#d4ff33]/15 text-[#d4ff33] border border-[#d4ff33]/30 shadow-xs'
-                      : 'text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  Fast
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResearchDepth('standard');
-                    const updated = { ...config, preset: 'balanced' as const, roles: PRESET_ROLE_CONFIGS.balanced };
-                    setConfig(updated);
-                    providerConfigService.saveConfig(updated);
-                  }}
-                  title="3 perspectives: Analyst + Critic + Synthesizer."
-                  className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                    researchDepth === 'standard'
-                      ? 'bg-[#d4ff33]/15 text-[#d4ff33] border border-[#d4ff33]/30 shadow-xs'
-                      : 'text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  Balanced
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResearchDepth('deep');
-                    const updated = { ...config, preset: 'deep' as const, roles: PRESET_ROLE_CONFIGS.deep };
-                    setConfig(updated);
-                    providerConfigService.saveConfig(updated);
-                  }}
-                  title="4 stages: Analyst + Critic + Verifier + Synthesizer."
-                  className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                    researchDepth === 'deep'
-                      ? 'bg-[#d4ff33]/15 text-[#d4ff33] border border-[#d4ff33]/30 shadow-xs'
-                      : 'text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  Deep
-                </button>
+                <div className="flex items-center justify-between pt-4 border-t border-stone-800/40">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-600 hover:text-stone-200 hover:bg-stone-800 transition-all border border-stone-800/60"
+                      title="Attach Reference Material"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">attach_file</span>
+                    </button>
+                    
+                    <div className="h-6 w-px bg-stone-800 mx-1"></div>
+
+                    <div className="flex items-center gap-1 bg-stone-950/40 p-1 rounded-lg border border-stone-800/60">
+                      {(['solo', 'standard', 'deep'] as const).map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => {
+                            setResearchDepth(d);
+                            const presetKey = d === 'solo' ? 'fast' : d === 'standard' ? 'balanced' : 'deep';
+                            const updated = { ...config, preset: presetKey as any, roles: PRESET_ROLE_CONFIGS[presetKey] };
+                            setConfig(updated);
+                            providerConfigService.saveConfig(updated);
+                          }}
+                          className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${
+                            researchDepth === d
+                              ? 'bg-stone-100 text-stone-950'
+                              : 'text-stone-600 hover:text-stone-300'
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={!inputText.trim()}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg font-mono text-[10px] font-bold uppercase tracking-[0.25em] transition-all ${
+                      inputText.trim()
+                        ? 'bg-stone-100 text-stone-950 hover:bg-white cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95'
+                        : 'bg-stone-900 text-stone-700 cursor-not-allowed border border-stone-800/40'
+                    }`}
+                  >
+                    <span>Execute</span>
+                    <span className="material-symbols-outlined text-[14px]">east</span>
+                  </button>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowModelSetup(!showModelSetup)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-stone-300 text-xs transition-colors cursor-pointer border border-white/5 focus:border-[#d4ff33]"
-              >
-                <span className="material-symbols-outlined text-[14px]">tune</span>
-                <span className="font-mono text-[11px]">Model Setup</span>
-                <span className="material-symbols-outlined text-[14px]">expand_more</span>
-              </button>
+              {attachedFile && (
+                <div className="absolute -bottom-10 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-900 border border-stone-800 text-[10px] text-stone-400">
+                  <span className="material-symbols-outlined text-[14px]">description</span>
+                  <span className="font-medium truncate max-w-[120px]">{attachedFile.name}</span>
+                  <button onClick={() => setAttachedFile(null)} className="hover:text-stone-200">×</button>
+                </div>
+              )}
             </div>
+          </div>
 
-            <span className="text-[10px] text-stone-400 font-mono">
-              {researchDepth === 'solo' && '1 model · Fast'}
-              {researchDepth === 'standard' && 'Analyst + Critic + Synthesizer'}
-              {researchDepth === 'deep' && 'Analyst + Critic + Verifier + Synthesizer'}
+          {/* Quick Actions / Shortcuts */}
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-[10px] font-mono uppercase tracking-[0.15em] text-stone-600">
+            <button onClick={() => onOpenNotes()} className="hover:text-stone-300 transition-colors flex items-center gap-2">
+              <span className="material-symbols-outlined text-[14px]">auto_stories</span>
+              Access Archives
+            </button>
+            <button onClick={() => onOpenModels()} className="hover:text-stone-300 transition-colors flex items-center gap-2">
+              <span className="material-symbols-outlined text-[14px]">hub</span>
+              Configure Matrix
+            </button>
+            <span className="flex items-center gap-2 select-none">
+              <span className="material-symbols-outlined text-[14px]">keyboard_command_key</span>
+              ⌘K Search
             </span>
           </div>
-
-          {/* Model Setup Popover Panel */}
-          {showModelSetup && (
-            <div className="mt-3 p-4 rounded-xl bg-[#0f1218] border border-white/10 shadow-2xl text-left flex flex-col gap-3 text-stone-200 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                <span className="font-sans text-xs font-bold text-stone-100">Model Setup per Role</span>
-                <button
-                  type="button"
-                  onClick={() => setShowModelSetup(false)}
-                  className="text-stone-400 hover:text-[#d4ff33] text-xs cursor-pointer"
-                >
-                  Done
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {[
-                  { key: 'architect', title: 'Analyst', desc: 'Builds argument' },
-                  { key: 'skeptic', title: 'Critic', desc: 'Stress-tests claims' },
-                  { key: 'verifier', title: 'Verifier', desc: 'Checks facts & math' },
-                  { key: 'arbiter', title: 'Synthesizer', desc: 'Final resolution' },
-                ].map((role) => {
-                  const currentSeat = config.roles?.[role.key as keyof typeof config.roles] || { provider: 'gemini', model: 'gemini-3.8-flash' };
-                  const modelsList = AVAILABLE_MODELS[currentSeat.provider] || [];
-
-                  return (
-                    <div key={role.key} className="p-2 rounded-lg bg-black/30 border border-white/5 flex flex-col gap-1">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-semibold text-stone-200">{role.title}</span>
-                        <span className="font-mono text-[9px] text-stone-400 uppercase">{currentSeat.provider}</span>
-                      </div>
-                      <select
-                        value={currentSeat.model}
-                        onChange={(e) => {
-                          const nextM = e.target.value;
-                          const nextConfig = {
-                            ...config,
-                            preset: 'custom' as const,
-                            roles: {
-                              ...config.roles,
-                              [role.key]: { ...currentSeat, model: nextM },
-                            },
-                          };
-                          setConfig(nextConfig);
-                          providerConfigService.saveConfig(nextConfig);
-                        }}
-                        className="bg-black/60 border border-white/10 rounded px-2 py-1 text-[11px] text-stone-200 outline-none focus:border-[#d4ff33] cursor-pointer"
-                      >
-                        {modelsList.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Quiet Footnote Actions */}
-        <div className="flex items-center gap-6 text-xs text-stone-500 mt-6 font-sans">
-          <button
-            type="button"
-            onClick={() => {
-              setInputText('Compare pgvector vs. Pinecone index scaling...');
-              if (textareaRef.current) textareaRef.current.focus();
-            }}
-            className="hover:text-stone-300 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[14px]">search</span>
-            <span>Research deeply</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="hover:text-stone-300 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[14px]">attach_file</span>
-            <span>Attach document</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenNotes}
-            className="hover:text-stone-300 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[14px]">history</span>
-            <span>Recent inquiries</span>
-          </button>
-        </div>
-
-        {/* Explaining the mechanism in simple, direct human language */}
-        <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8">
-          <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-            How it works
-          </span>
-          <p className="text-xs text-stone-400 leading-relaxed mb-6">
-            Synthesis translates complex technical questions into distinct perspectives, cross-checks assumptions across multiple frontier models, and verifies findings using verified documents and public datasets. The machinery stays quiet, giving you clear answers backed by original sources.
-          </p>
-
-          <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-            Recent topics
-          </span>
-          <div className="flex flex-col gap-4">
-            {realScenarios.map((item, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => onLaunchWorkspace(item.prompt, 'standard')}
-                className="p-4 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-left transition-colors group"
-              >
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs font-semibold text-stone-300 group-hover:text-stone-100 transition-colors">
-                    {item.title}
-                  </span>
-                  <span className="text-[10px] text-stone-500 flex items-center gap-1 group-hover:text-[#d4ff33] transition-colors">
-                    Explore <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
-                  </span>
-                </div>
-                <p className="text-xs text-stone-400 leading-relaxed">
+        {/* Feature Grid: Museum Catalog Style */}
+        <div className="w-full max-w-4xl mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="col-span-1 md:col-span-3 pb-4 border-b border-stone-800/60 flex items-center justify-between">
+            <span className="font-display text-xl text-stone-400 tracking-tight italic">Recommended Inquiries</span>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-stone-600">Vol. 2026 / Technical Catalog</span>
+          </div>
+          
+          {realScenarios.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => onLaunchWorkspace(item.prompt, 'standard')}
+              className="group text-left space-y-4 hover:-translate-y-1 transition-all duration-300"
+            >
+              <div className="aspect-[4/3] bg-stone-900/40 border border-stone-800/60 rounded-sm flex items-center justify-center overflow-hidden relative grayscale hover:grayscale-0 transition-all">
+                 <div className="absolute inset-0 bg-stone-950/40 group-hover:bg-transparent transition-colors"></div>
+                 <span className="font-display text-7xl text-stone-800 opacity-20 group-hover:opacity-40 transition-opacity">0{idx + 1}</span>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-display text-lg text-stone-200 group-hover:text-white transition-colors">{item.title}</h3>
+                <p className="text-xs text-stone-500 leading-relaxed line-clamp-2 italic font-serif">
                   {item.description}
                 </p>
-              </button>
-            ))}
+                <div className="pt-2 flex items-center gap-2 text-[9px] font-mono uppercase tracking-widest text-stone-600 group-hover:text-stone-400">
+                  <span>Begin Inquiry</span>
+                  <span className="material-symbols-outlined text-[12px]">east</span>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Mechanism / About section: Institutional Footer */}
+        <div className="w-full max-w-2xl mt-48 py-16 border-t border-stone-800/60 space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
+            <div className="space-y-4">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">The Council Protocol</span>
+              <p className="text-sm text-stone-400 leading-relaxed font-serif italic">
+                A multi-model dialectic architecture designed to identify technical contradictions, stress-test architectural claims, and synthesize high-integrity resolutions.
+              </p>
+            </div>
+            <div className="space-y-4 text-right sm:text-left">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">Provenance & Trust</span>
+              <p className="text-sm text-stone-400 leading-relaxed font-serif italic text-right">
+                Every claim is cross-referenced with real-time documentation and public specifications. Zero artificial consensus clamping.
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Inline Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-[16px] text-amber-400">warning</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Global Style Overlay */}
+      <div className="fixed inset-0 pointer-events-none border-[1.5rem] border-stone-950/20 z-10"></div>
     </div>
   );
 };

@@ -233,7 +233,7 @@ export const synapService = {
           temperature: 0.3,
         },
       });
-      return resp.text || 'Grounded synthesis completed based on your course sources.';
+      return resp.text || 'Grounded synthexis completed based on your course sources.';
     }
 
     // 2. If Anthropic
@@ -350,7 +350,7 @@ export const synapService = {
   },
 
   /**
-   * Export an active consensus audit report directly into a study notebook
+   * Export an active synthexis audit report directly into a study notebook
    */
   async exportResearchSession(prompt: string, output: string): Promise<SynapNotebook> {
     const cleanTitle = prompt.length > 50 ? prompt.slice(0, 50) + '...' : prompt;
@@ -359,7 +359,7 @@ export const synapService = {
     // Create a new source document with compiled research findings
     const newSource: SynapSource = {
       id: `src-${Date.now()}`,
-      title: 'Compiled Consensus Report',
+      title: 'Compiled Synthexis Report',
       text: '', // Stored chunked
       type: 'notes',
       addedAt: new Date().toLocaleDateString(),
@@ -393,9 +393,9 @@ export const synapService = {
       {
         id: `item-${Date.now()}-2`,
         type: 'flashcard',
-        prompt: `What is a core conclusion from the consensus report?`,
+        prompt: `What is a core conclusion from the synthexis report?`,
         answer: output.length > 250 ? output.slice(0, 250) + '...' : output,
-        topic: 'Synthesis Summary',
+        topic: 'Synthexis Summary',
         vulnerability: 'critical',
         history: [],
       }

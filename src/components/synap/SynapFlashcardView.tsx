@@ -332,7 +332,7 @@ export const SynapFlashcardView: React.FC<SynapFlashcardViewProps> = ({
                 <div className="w-full my-4 flex items-center gap-3">
                   <div className="flex-1 h-px bg-[#484552]/40 shadow-[0_1px_3px_rgba(157,133,242,0.15)]"></div>
                   <span className="font-mono text-[10px] text-[#cac4d4]/70 uppercase tracking-widest px-1 font-semibold">
-                    Target Answer &amp; Key Synthesis
+                    Target Answer &amp; Key Synthexis
                   </span>
                   <div className="flex-1 h-px bg-[#484552]/40 shadow-[0_1px_3px_rgba(157,133,242,0.15)]"></div>
                 </div>

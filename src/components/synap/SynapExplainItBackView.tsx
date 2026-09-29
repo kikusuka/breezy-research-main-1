@@ -387,7 +387,7 @@ Return STRICT valid JSON matching this schema exactly, with NO outer wrappers, N
               </div>
             ) : (
               <p className="text-xs text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-lg">
-                🎉 Brilliant! You covered all key points found in your referenced documents. Outstanding memory synthesis!
+                🎉 Brilliant! You covered all key points found in your referenced documents. Outstanding memory synthexis!
               </p>
             )}
           </div>

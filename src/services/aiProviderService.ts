@@ -16,7 +16,7 @@ export const aiProviderService = {
    */
   getStoredKeys(): ProviderKeyConfig {
     try {
-      const raw = localStorage.getItem('consensus_provider_keys') || localStorage.getItem('breezy_provider_keys');
+      const raw = localStorage.getItem('synthexis_provider_keys') || localStorage.getItem('consensus_provider_keys') || localStorage.getItem('breezy_provider_keys');
       if (raw) {
         return JSON.parse(raw);
       }
@@ -29,7 +29,7 @@ export const aiProviderService = {
    */
   saveStoredKeys(config: ProviderKeyConfig) {
     try {
-      localStorage.setItem('consensus_provider_keys', JSON.stringify(config));
+      localStorage.setItem('synthexis_provider_keys', JSON.stringify(config));
       localStorage.setItem('breezy_provider_keys', JSON.stringify(config));
     } catch {}
   },

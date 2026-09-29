@@ -187,7 +187,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
 
                 {activeClaim.reviewerVerdict && (
                   <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                    <span className="font-semibold text-emerald-400 block mb-0.5">Synthesis Finding:</span>
+                    <span className="font-semibold text-emerald-400 block mb-0.5">Synthexis Finding:</span>
                     <p className="text-stone-300 leading-relaxed">
                       {activeClaim.reviewerVerdict}
                     </p>
@@ -260,7 +260,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
               Where Sources or Arguments Disagreed ({contradictions.length})
             </span>
             <span className="text-[10px] uppercase font-mono text-stone-400">
-              Human Auditor Decisions Override AI Synthesis
+              Human Auditor Decisions Override AI Synthexis
             </span>
           </div>
           <div className="flex flex-col gap-3">
@@ -347,7 +347,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
                       {resolutionToShow && (
                         <div className="pt-2 border-t border-white/5 text-stone-300">
                           <span className="text-stone-400 font-bold uppercase tracking-wider text-[9px] block mb-1">
-                            {hasAuditorDecision ? '⚖️ Reconciled Auditor Verdict (Final Override)' : 'Relation & Synthesis'}
+                            {hasAuditorDecision ? '⚖️ Reconciled Auditor Verdict (Final Override)' : 'Relation & Synthexis'}
                           </span>
                           <p className="leading-relaxed">{resolutionToShow}</p>
                         </div>

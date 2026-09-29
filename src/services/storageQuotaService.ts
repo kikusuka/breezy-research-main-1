@@ -24,7 +24,7 @@ export const WARNING_THRESHOLD_PERCENT = 80;
  */
 export async function getStorageQuotaStatus(limitMB: number = DEFAULT_QUOTA_LIMIT_MB): Promise<StorageQuota> {
   try {
-    // Get actual Drive usage for Consensus folder
+    // Get actual Drive usage for Synthexis folder
     const driveUsage = await googleDriveService.getStorageUsage();
     
     const usedMB = driveUsage.usedMB;
