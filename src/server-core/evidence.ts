@@ -166,7 +166,7 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
 
     let claims = Array.isArray(parsed.claims) ? parsed.claims : [];
     
-    // Rigorous Code-Level Source Verification against discoveredSources (Fixes model grading its own work)
+    // Rigorous Code-Level Source Verification against discoveredSources
     const validUrls = new Set(discoveredSources.map((s) => s.url).filter(Boolean));
     const combinedSnippets = discoveredSources.map((s) => (s.snippet || '').toLowerCase()).join(' ');
 
@@ -181,19 +181,28 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
         };
       });
 
-      const hasVerifiedSource = verifiedSources.some((s: any) => s.verified);
+      const verifiedCount = verifiedSources.filter((s: any) => s.verified).length;
       let status = c.status;
-      let confidence = typeof c.confidence === 'number' ? c.confidence : 70;
 
-      if (!hasVerifiedSource && discoveredSources.length > 0) {
+      // Deterministic evidence confidence calculation (not arbitrary LLM hallucinated percentage)
+      let calculatedConfidence: number;
+      if (verifiedCount >= 2 && status === 'supported') {
+        calculatedConfidence = 90;
+      } else if (verifiedCount === 1 && status === 'supported') {
+        calculatedConfidence = 75;
+      } else if (status === 'contradicted') {
+        calculatedConfidence = 30;
+      } else if (status === 'unresolved') {
+        calculatedConfidence = 50;
+      } else {
         status = 'unverified';
-        confidence = Math.min(confidence, 45);
+        calculatedConfidence = 40;
       }
 
       return {
         ...c,
         status,
-        confidence,
+        confidence: calculatedConfidence,
         supportingSources: verifiedSources,
       };
     });
@@ -211,10 +220,10 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       ? Math.round(((claimsSupported + 0.5 * (claimsIdentified - claimsContradicted - claimsUnresolved)) / claimsIdentified) * 100)
       : null;
 
-    const primaryDomainsRegex = /(\.gov|\.edu|\.org|github\.com|arxiv\.org|apache\.org|ietf\.org|w3\.org|docs?\.)/i;
-    const primarySourcesCount = discoveredSources.filter((s: any) => {
+    const preferredDomainsRegex = /(\.gov|\.edu|\.org|github\.com|arxiv\.org|apache\.org|ietf\.org|w3\.org|docs?\.)/i;
+    const preferredDomainSourcesCount = discoveredSources.filter((s: any) => {
       const url = s.url || s.domain || s.title || '';
-      return primaryDomainsRegex.test(url);
+      return preferredDomainsRegex.test(url);
     }).length;
 
     const researchMetrics = {
@@ -224,7 +233,8 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       claimsContradicted,
       claimsUnresolved,
       sourcesConsulted,
-      primarySourcesCount,
+      primarySourcesCount: preferredDomainSourcesCount,
+      preferredDomainSourcesCount,
       synthexisRate,
     };
 

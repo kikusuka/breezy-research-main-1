@@ -51,6 +51,7 @@ export default function App() {
     window.location.hash = activeTab;
   }, [activeTab]);
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [productMode, setProductMode] = useState<ProductMode>(() => {
@@ -414,16 +415,20 @@ export default function App() {
           onDeleteChat={handleDeleteBreezyChat}
           onOpenProfile={() => setIsProfileSettingsOpen(true)}
           onSwitchToSynthexis={() => setProductMode('synthexis')}
-          isOpenMobile={isMobileMenuOpen}
-          onCloseMobile={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          isOpenMobile={isSidebarOpen}
+          onCloseMobile={() => setIsSidebarOpen(false)}
         />
 
-        <div className="pl-0 lg:pl-64 flex flex-col flex-1 min-h-screen">
+        <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
           <TopBar
             productMode={productMode}
             onSelectProductMode={setProductMode}
             onOpenSearch={() => setIsCommandPaletteOpen(true)}
-            onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+            onToggleMobileMenu={() => setIsSidebarOpen((prev) => !prev)}
           />
 
           <main className="relative pt-16 flex-1 flex flex-col min-h-0">
@@ -503,19 +508,23 @@ export default function App() {
         onNewSession={handleNewDebate}
         synthexisMode={synthexisMode}
         onToggleSynthexisMode={handleToggleSynthexisMode}
-        isOpenMobile={isMobileMenuOpen}
-        onCloseMobile={() => setIsMobileMenuOpen(false)}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        isOpenMobile={isSidebarOpen}
+        onCloseMobile={() => setIsSidebarOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
         onDeleteSession={handleDeleteSession}
         onSwitchToBreezy={() => setProductMode('breezy')}
       />
 
-      <div className="pl-0 lg:pl-64 flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
         <TopBar
           productMode={productMode}
           onSelectProductMode={setProductMode}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
-          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          onToggleMobileMenu={() => setIsSidebarOpen((prev) => !prev)}
         />
 
         <main className="relative pt-16 bg-stone-950 min-h-screen flex-1 flex flex-col">

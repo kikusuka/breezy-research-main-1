@@ -20,6 +20,8 @@ interface SidebarProps {
   onOpenProfile?: () => void;
   onDeleteSession?: (id: string, e: React.MouseEvent) => void;
   onSwitchToBreezy?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,58 +38,76 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfile,
   onDeleteSession,
   onSwitchToBreezy,
+  isOpen,
+  onClose,
 }) => {
+  const isSidebarVisible = isOpen ?? isOpenMobile ?? true;
+  const handleClose = onClose || onCloseMobile;
+
   return (
     <>
       {/* Mobile backdrop */}
-      {isOpenMobile && (
+      {isSidebarVisible && (
         <div
           className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs"
-          onClick={onCloseMobile}
+          onClick={handleClose}
         />
       )}
 
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-stone-950 z-50 flex flex-col justify-between border-r border-stone-800/60 transition-transform duration-200 ${
-          isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col flex-1 min-h-0">
           {/* Header: Editorial Wordmark */}
-          <div className="h-14 px-5 flex items-center justify-between border-b border-stone-800/40">
-            <button
-              type="button"
-              onClick={() => {
-                onSelectTab('landing');
-                onCloseMobile?.();
-              }}
-              className="text-left flex items-center gap-2.5 group"
-            >
-              <div className="w-6 h-6 rounded-sm bg-stone-100 flex items-center justify-center group-hover:scale-105 transition-transform">
-                 <span className="material-symbols-outlined text-stone-950 text-[16px] font-bold">adjust</span>
+          <div className="h-14 px-4 flex items-center justify-between border-b border-stone-800/40">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-sm bg-stone-100 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-stone-950 text-[15px] font-bold">adjust</span>
               </div>
-              <div className="flex flex-col">
-                <span className="font-display text-base tracking-tight text-stone-100 italic leading-none">
+              <div className="flex items-center gap-1.5 font-sans">
+                {onSwitchToBreezy ? (
+                  <button
+                    type="button"
+                    onClick={onSwitchToBreezy}
+                    className="text-xs font-semibold text-stone-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
+                    title="Switch to Breezy"
+                  >
+                    Breezy
+                  </button>
+                ) : (
+                  <span className="text-xs font-semibold text-stone-400 leading-none">Breezy</span>
+                )}
+                <span className="text-stone-600 font-semibold text-xs leading-none">/</span>
+                <span className="font-display text-sm tracking-tight text-stone-100 italic font-bold leading-none">
                   Synthexis
                 </span>
-                <span className="text-[10px] text-stone-400 font-sans mt-0.5 leading-none">
-                  & Breezy
-                </span>
               </div>
-            </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                onNewSession();
-                onSelectTab('chat');
-                onCloseMobile?.();
-              }}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-500 hover:text-stone-100 hover:bg-stone-800 transition-all border border-stone-800/40"
-              title="New Inquiry"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onNewSession();
+                  onSelectTab('chat');
+                  handleClose?.();
+                }}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-100 hover:bg-stone-800/60 transition-colors cursor-pointer"
+                title="New Session"
+              >
+                <span className="material-symbols-outlined text-[17px]">add</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-white hover:bg-stone-800/60 transition-colors cursor-pointer"
+                title="Close sidebar"
+              >
+                <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
+              </button>
+            </div>
           </div>
 
           {/* Primary Views Nav: Minimalist unboxed */}
@@ -153,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   title="Switch to Breezy Chat"
                 >
                   <div className="flex items-center gap-2">
-                    <BreezyLogoIcon className="w-3.5 h-3.5 text-sky-400" />
+                    <BreezyLogoIcon className="w-5 h-5 text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]" />
                     <span>Breezy Chat</span>
                   </div>
                   <span className="material-symbols-outlined text-[14px]">arrow_forward</span>

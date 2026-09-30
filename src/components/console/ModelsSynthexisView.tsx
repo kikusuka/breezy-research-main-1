@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { providerConfigService, CanonicalWorkspaceConfig } from '../../services/providerConfigService';
+import { effectiveProviderService } from '../../services/effectiveProviderService';
 import { apiClient } from '../../services/apiClient';
 
 interface ModelsSynthexisViewProps {

@@ -7,112 +7,170 @@ interface TopBarProps {
   productMode: ProductMode;
   onSelectProductMode: (mode: ProductMode) => void;
   onOpenSearch: () => void;
-  onToggleMobileMenu: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
   productMode,
   onSelectProductMode,
   onOpenSearch,
+  isSidebarOpen = true,
+  onToggleSidebar,
   onToggleMobileMenu,
 }) => {
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
+  const handleToggle = onToggleSidebar || onToggleMobileMenu;
 
   return (
     <header
-      className={`fixed top-0 left-0 lg:left-64 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-sky-200/60 bg-[#f0f7ff]/95 text-slate-900 shadow-sm transition-all duration-200`}
+      className={`fixed top-0 left-0 ${
+        isSidebarOpen ? 'lg:left-64' : 'left-0'
+      } right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-stone-800/80 bg-[#090d16]/90 text-stone-100 shadow-sm transition-all duration-300`}
     >
-      {/* Left: Mobile Menu + Brand + Workspace Selector */}
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-        <button
-          type="button"
-          onClick={onToggleMobileMenu}
-          className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-900 lg:hidden rounded-xl hover:bg-sky-200/40 active:bg-sky-200/60 cursor-pointer shrink-0 transition-colors"
-          aria-label="Toggle Navigation"
-        >
-          <span className="material-symbols-outlined text-[22px]">menu</span>
-        </button>
-
-        {/* Workspace Mode Dropdown */}
-        <div className="relative">
+      {/* Left: Mobile/Desktop Toggle + (when sidebar is closed) Breezy v dropdown */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {(!isSidebarOpen || true) && (
           <button
             type="button"
-            onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-            className="flex items-center gap-1.5 py-1 text-sm sm:text-base font-sans font-bold text-slate-900 hover:text-sky-700 transition-colors cursor-pointer"
-            title="Switch Workspace"
+            onClick={handleToggle}
+            className={`w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-100 rounded-xl hover:bg-stone-800/60 active:bg-stone-800 cursor-pointer shrink-0 transition-colors ${
+              isSidebarOpen ? 'lg:hidden' : 'flex'
+            }`}
+            title={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            aria-label="Toggle Navigation"
           >
-            <span>
-              {productMode === 'breezy' ? 'Breezy' : 'Synthexis'}
-            </span>
-            <span className="material-symbols-outlined text-[18px] text-slate-500">
-              expand_more
+            <span className="material-symbols-outlined text-[20px]">
+              {isSidebarOpen ? 'menu_open' : 'menu'}
             </span>
           </button>
+        )}
 
-          {/* Dropdown Menu */}
-          {isModeDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-30"
-                onClick={() => setIsModeDropdownOpen(false)}
-              />
-              <div className="absolute left-0 mt-2 w-64 rounded-2xl bg-stone-900/95 backdrop-blur-2xl border border-stone-800 p-2 shadow-2xl z-40 animate-in fade-in zoom-in-95">
-                <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-stone-400 border-b border-stone-800/70 mb-1 flex items-center justify-between">
-                  <span>Workspace</span>
-                  <span className="text-[9px] text-stone-500">Switch mode</span>
-                </div>
+        {/* When sidebar is closed: "Breezy v" / "Synthexis v" is visible! When sidebar is open, it is GONE! */}
+        {!isSidebarOpen && (
+          <div className="relative animate-in fade-in duration-200">
+            <button
+              type="button"
+              onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
+              className="group flex items-center gap-3 py-1.5 px-2.5 rounded-xl bg-transparent hover:bg-white/[0.04] transition-all cursor-pointer border-0 outline-none select-none"
+              title="Switch Workspace"
+            >
+              {productMode === 'breezy' ? (
+                <BreezyLogoIcon className="w-9 h-9 sm:w-9.5 sm:h-9.5 text-sky-400 group-hover:text-sky-300 drop-shadow-[0_0_14px_rgba(56,189,248,0.45)] transition-all shrink-0" />
+              ) : (
+                <SynthexisLogoIcon className="w-8 h-8 sm:w-8.5 sm:h-8.5 text-emerald-400 group-hover:text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)] transition-all shrink-0" />
+              )}
+              <span className="font-sans font-bold text-lg sm:text-[19px] tracking-tight text-white group-hover:text-sky-200 transition-colors">
+                {productMode === 'breezy' ? 'Breezy' : 'Synthexis'}
+              </span>
+              <span
+                className={`material-symbols-outlined text-[22px] text-stone-400 group-hover:text-stone-200 transition-transform duration-200 ${
+                  isModeDropdownOpen ? 'rotate-180' : ''
+                }`}
+              >
+                expand_more
+              </span>
+            </button>
 
-                {/* Option 1: Breezy */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelectProductMode('breezy');
-                    setIsModeDropdownOpen(false);
-                  }}
-                  className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
-                    productMode === 'breezy'
-                      ? 'bg-sky-500/15 border border-sky-500/30 text-white'
-                      : 'hover:bg-stone-800/60 text-stone-300 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0 text-sky-400">
-                      <BreezyLogoIcon className="w-3.5 h-3.5 text-sky-400" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">Breezy</span>
+            {/* Modern Seamless Glassmorphic Dropdown Menu */}
+            {isModeDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsModeDropdownOpen(false)}
+                />
+                <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-[#090d16]/95 backdrop-blur-2xl border border-white/[0.08] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_24px_rgba(56,189,248,0.08)] z-40 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Switch Workspace
+                    </span>
+                    <span className="text-[9px] text-stone-400 bg-white/[0.05] px-2 py-0.5 rounded-full border border-white/[0.06]">
+                      Destination
+                    </span>
                   </div>
+
+                  {/* If in Breezy window: show ONLY Synthexis */}
                   {productMode === 'breezy' && (
-                    <span className="material-symbols-outlined text-[16px] text-sky-400">check</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectProductMode('synthexis');
+                        setIsModeDropdownOpen(false);
+                      }}
+                      className="group relative w-full text-left p-3 rounded-xl transition-all duration-200 cursor-pointer bg-white/[0.02] hover:bg-emerald-500/[0.08] border border-white/[0.05] hover:border-emerald-500/30 shadow-sm flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <SynthexisLogoIcon className="w-6.5 h-6.5 text-emerald-400 shrink-0 group-hover:scale-105 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)] transition-transform" />
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-sans font-semibold text-xs text-stone-100 group-hover:text-emerald-300 transition-colors">
+                              Synthexis
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Research
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
+                            Multi-model adversarial debate & verification
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-lg bg-white/[0.04] group-hover:bg-emerald-500/20 border border-white/[0.06] group-hover:border-emerald-500/30 flex items-center justify-center text-stone-400 group-hover:text-emerald-300 transition-colors shrink-0">
+                        <span className="material-symbols-outlined text-[15px] group-hover:translate-x-0.5 transition-transform">
+                          arrow_forward
+                        </span>
+                      </div>
+                    </button>
                   )}
-                </button>
 
-                {/* Option 2: Synthexis */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelectProductMode('synthexis');
-                    setIsModeDropdownOpen(false);
-                  }}
-                  className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between cursor-pointer mt-1 ${
-                    productMode === 'synthexis'
-                      ? 'bg-emerald-500/15 border border-emerald-500/30 text-white'
-                      : 'hover:bg-stone-800/60 text-stone-300 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
-                      <SynthexisLogoIcon className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">Synthexis</span>
-                  </div>
+                  {/* If in Synthexis window: show ONLY Breezy */}
                   {productMode === 'synthexis' && (
-                    <span className="material-symbols-outlined text-[16px] text-emerald-400">check</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectProductMode('breezy');
+                        setIsModeDropdownOpen(false);
+                      }}
+                      className="group relative w-full text-left p-3 rounded-xl transition-all duration-200 cursor-pointer bg-white/[0.02] hover:bg-sky-500/[0.08] border border-white/[0.05] hover:border-sky-500/30 shadow-sm flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <BreezyLogoIcon className="w-7 h-7 text-sky-400 shrink-0 group-hover:scale-105 drop-shadow-[0_0_10px_rgba(56,189,248,0.45)] transition-transform" />
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-sans font-semibold text-xs text-stone-100 group-hover:text-sky-300 transition-colors">
+                              Breezy
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                              Workspace
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
+                            AI chat, creative canvas & code ideation
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-lg bg-white/[0.04] group-hover:bg-sky-500/20 border border-white/[0.06] group-hover:border-sky-500/30 flex items-center justify-center text-stone-400 group-hover:text-sky-300 transition-colors shrink-0">
+                        <span className="material-symbols-outlined text-[15px] group-hover:translate-x-0.5 transition-transform">
+                          arrow_forward
+                        </span>
+                      </div>
+                    </button>
                   )}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+
+                  {/* Modern subtle footer info */}
+                  <div className="px-2.5 pt-2 pb-0.5 mt-1.5 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-stone-400">
+                    <span>
+                      Current: <strong className="text-stone-200 capitalize">{productMode}</strong>
+                    </span>
+                    <span className="font-mono text-[9px] text-stone-400">Click to switch</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: Quick Search */}
@@ -120,12 +178,12 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           type="button"
           onClick={onOpenSearch}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all bg-white/50 border-sky-200/60 text-slate-600 hover:text-slate-900 hover:bg-white shadow-sm"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all bg-stone-950/60 border-stone-800 text-stone-400 hover:text-stone-100 hover:bg-stone-900 shadow-sm"
           title="Quick Jump / Search (⌘K)"
         >
           <span className="material-symbols-outlined text-[16px]">search</span>
           <span className="hidden sm:inline font-sans">Quick Jump</span>
-          <kbd className="hidden sm:inline font-mono text-[10px] text-slate-400 bg-sky-100/80 px-1 py-0.5 rounded border border-sky-200/50">
+          <kbd className="hidden sm:inline font-mono text-[10px] text-stone-400 bg-stone-900 px-1 py-0.5 rounded border border-stone-800">
             ⌘K
           </kbd>
         </button>

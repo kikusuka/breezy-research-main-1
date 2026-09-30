@@ -92,8 +92,9 @@ export interface ResearchMetrics {
   claimsContradicted: number;
   claimsUnresolved: number;
   sourcesConsulted: number;
-  primarySourcesCount: number;
-  synthexisRate?: number;
+  primarySourcesCount?: number;
+  preferredDomainSourcesCount?: number;
+  synthexisRate?: number | null;
 }
 
 export interface EvidenceGraph {

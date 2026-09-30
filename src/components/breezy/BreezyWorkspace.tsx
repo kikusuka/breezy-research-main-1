@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { providerConfigService, AVAILABLE_MODELS } from '../../services/providerConfigService';
+import { effectiveProviderService } from '../../services/effectiveProviderService';
 import { BreezyLogoIcon, SynthexisLogoIcon } from '../icons/ProductLogos';
 import { googleDriveService } from '../../services/googleDriveService';
 import { authService } from '../../services/authService';
@@ -90,13 +91,24 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const [webSearchActive, setWebSearchActive] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
-    const routable = providerConfigService.getActiveRoutableModel();
+    const routable = effectiveProviderService.getActiveRoutableModel();
     return routable ? routable.model : '';
   });
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
-    const routable = providerConfigService.getActiveRoutableModel();
+    const routable = effectiveProviderService.getActiveRoutableModel();
     return routable ? routable.provider : '';
   });
+
+  useEffect(() => {
+    const unsubscribe = effectiveProviderService.subscribe(() => {
+      const routable = effectiveProviderService.getActiveRoutableModel();
+      if (routable && (!selectedProvider || !effectiveProviderService.isRoutable(selectedProvider))) {
+        setSelectedProvider(routable.provider);
+        setSelectedModel(routable.model);
+      }
+    });
+    return unsubscribe;
+  }, [selectedProvider]);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
   const [speakingMessageIdx, setSpeakingMessageIdx] = useState<number | null>(null);
   const [isSavingToDrive, setIsSavingToDrive] = useState(false);
@@ -442,143 +454,43 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       {/* Subtle background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[760px] h-[340px] bg-gradient-to-b from-sky-500/10 via-indigo-950/15 to-transparent blur-3xl pointer-events-none z-0 rounded-full" />
 
-      {/* Top Model & Mode Bar */}
-      <div className="h-12 border-b border-slate-800/60 bg-[#0d1424]/60 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-20 shrink-0">
-        <div className="flex items-center gap-3">
-          {/* Model Selector Dropdown */}
-          <div className="relative">
-            {(() => {
-              const isConfigured = Boolean(selectedProvider && providerConfigService.isProviderConfigured(selectedProvider));
-              return (
-                <button
-                  type="button"
-                  onClick={() => setIsModelPickerOpen(!isModelPickerOpen)}
-                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer shadow-xs ${
-                    isConfigured
-                      ? 'text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700/60 bg-slate-900/60'
-                      : 'text-amber-300 hover:bg-amber-950/40 border-amber-500/40 bg-amber-950/20'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                  <span className="truncate max-w-[130px] font-sans">
-                    {isConfigured && selectedModel ? selectedModel : 'No Model Connected'}
-                  </span>
-                  <span className="material-symbols-outlined text-[16px] text-slate-400">
-                    {isModelPickerOpen ? 'expand_less' : 'expand_more'}
-                  </span>
-                </button>
-              );
-            })()}
+      {/* Floating Top Right Actions for Active Chat */}
+      {activeChat && activeChat.messages.length > 0 && (
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSaveToDrive}
+            disabled={isSavingToDrive}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-sky-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-sky-500/30 transition-all cursor-pointer shadow-lg disabled:opacity-50 backdrop-blur-md"
+            title="Save this conversation to your Google Drive"
+          >
+            <span className={`material-symbols-outlined text-[16px] ${isSavingToDrive ? 'animate-spin' : ''}`}>
+              {isSavingToDrive ? 'sync' : 'cloud_upload'}
+            </span>
+            <span className="hidden sm:inline">Save to Drive</span>
+          </button>
 
-            {isModelPickerOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-30"
-                  onClick={() => setIsModelPickerOpen(false)}
-                />
-                <div className="absolute left-0 mt-2 w-64 rounded-xl bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 shadow-2xl z-40 animate-in fade-in">
-                  <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1 flex items-center justify-between">
-                    <span>Select AI Model</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsModelPickerOpen(false);
-                        onOpenSettings();
-                      }}
-                      className="text-sky-400 hover:underline text-[9px] cursor-pointer"
-                    >
-                      Manage Keys
-                    </button>
-                  </div>
-                  {Object.entries(AVAILABLE_MODELS).flatMap(([prov, models]) =>
-                    models.map((m) => {
-                      const isCur = selectedModel === m.id;
-                      const hasKey = Boolean(providerConfigService.getKey(prov));
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedProvider(prov);
-                            setSelectedModel(m.id);
-                            setIsModelPickerOpen(false);
-                            toast(`Model switched to ${m.name}`);
-                          }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer transition-all ${
-                            isCur
-                              ? 'bg-sky-500/20 text-sky-300 font-semibold'
-                              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${hasKey ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`} />
-                            <div className="truncate">
-                              <div className="font-sans truncate">{m.name}</div>
-                              <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
-                                <span>{prov}</span>
-                                {!hasKey && (
-                                  <span className="text-amber-400/90 text-[9px]">· Requires Key</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {isCur && (
-                            <span className="material-symbols-outlined text-[16px] text-sky-400 shrink-0">check</span>
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={clearChat}
+            className="p-2 rounded-xl bg-slate-900/95 hover:bg-red-950/40 text-slate-400 hover:text-red-400 border border-slate-800 hover:border-red-500/40 transition-colors shadow-lg backdrop-blur-md cursor-pointer"
+            title="Clear conversation"
+          >
+            <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
+          </button>
         </div>
-
-        {/* Right side of chat header */}
-        <div className="flex items-center gap-2">
-          {activeChat && activeChat.messages.length > 0 && (
-            <>
-              <button
-                type="button"
-                onClick={handleSaveToDrive}
-                disabled={isSavingToDrive}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-sky-300 hover:text-white bg-sky-950/40 hover:bg-sky-900/60 border border-sky-500/30 transition-all cursor-pointer shadow-xs disabled:opacity-50"
-                title="Save this conversation to your Google Drive"
-              >
-                <span className={`material-symbols-outlined text-[16px] ${isSavingToDrive ? 'animate-spin' : ''}`}>
-                  {isSavingToDrive ? 'sync' : 'cloud_upload'}
-                </span>
-                <span className="hidden sm:inline">Save to Drive</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={clearChat}
-                className="text-slate-400 hover:text-red-400 p-1 rounded-md hover:bg-slate-800/60 transition-colors"
-                title="Clear conversation"
-              >
-                <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Main Conversation Stream */}
-      <div className="flex-1 flex flex-col w-full z-10">
+      <div className="flex-1 flex flex-col w-full z-10 pt-1">
         <main
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full pt-6 pb-44 scroll-smooth"
+          className="flex-1 overflow-y-auto w-full pt-2 pb-44 scroll-smooth"
         >
           <div className="w-full max-w-[768px] mx-auto px-4 sm:px-6 flex flex-col gap-6">
             {!activeChat || activeChat.messages.length === 0 ? (
               /* Centered Welcome Hero */
-              <div className="py-12 sm:py-16 flex flex-col items-center text-center animate-in fade-in duration-300">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-500/20 via-sky-400/30 to-indigo-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shadow-[0_0_24px_rgba(56,189,248,0.25)] mb-5">
-                  <BreezyLogoIcon className="w-9 h-9 text-sky-400" />
-                </div>
-
+              <div className="py-6 sm:py-8 flex flex-col items-center text-center animate-in fade-in duration-300">
                 <h1 className="font-sans text-2xl sm:text-3xl text-white font-bold tracking-tight">
                   What can I help you with today?
                 </h1>
@@ -690,8 +602,8 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                     className="flex items-start gap-3 max-w-[96%] self-start animate-in fade-in"
                   >
                     {/* Assistant Avatar */}
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-sky-400/40 shrink-0 flex items-center justify-center mt-0.5 shadow-sm text-sky-400">
-                      <BreezyLogoIcon className="w-4 h-4 text-sky-400" />
+                    <div className="w-8 h-8 rounded-full bg-slate-900/80 border border-sky-400/25 shrink-0 flex items-center justify-center mt-0.5 shadow-sm text-sky-400">
+                      <BreezyLogoIcon className="w-5.5 h-5.5 text-sky-400 drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]" />
                     </div>
 
                     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
@@ -879,6 +791,98 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  {/* Model Selector Dropdown */}
+                  <div className="relative">
+                    {(() => {
+                      const info = effectiveProviderService.getProviderInfo(selectedProvider);
+                      const isConfigured = info.hasKey;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setIsModelPickerOpen(!isModelPickerOpen)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer shadow-xs ${
+                            isConfigured
+                              ? 'text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700/60 bg-slate-900/60'
+                              : 'text-amber-300 hover:bg-amber-950/40 border-amber-500/40 bg-amber-950/20'
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                          <span className="truncate max-w-[110px] font-sans">
+                            {isConfigured && selectedModel ? selectedModel : 'No Model'}
+                          </span>
+                          <span className="material-symbols-outlined text-[16px] text-slate-400">
+                            {isModelPickerOpen ? 'expand_less' : 'expand_more'}
+                          </span>
+                        </button>
+                      );
+                    })()}
+
+                    {isModelPickerOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-30"
+                          onClick={() => setIsModelPickerOpen(false)}
+                        />
+                        <div className="absolute bottom-full mb-2 right-0 w-64 rounded-xl bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 shadow-2xl z-40 animate-in fade-in">
+                          <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1 flex items-center justify-between">
+                            <span>Select AI Model</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsModelPickerOpen(false);
+                                onOpenSettings();
+                              }}
+                              className="text-sky-400 hover:underline text-[9px] cursor-pointer"
+                            >
+                              Manage Keys
+                            </button>
+                          </div>
+                          {Object.entries(AVAILABLE_MODELS).flatMap(([prov, models]) =>
+                            models.map((m) => {
+                              const isCur = selectedModel === m.id;
+                              const pInfo = effectiveProviderService.getProviderInfo(prov);
+                              return (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedProvider(prov);
+                                    setSelectedModel(m.id);
+                                    setIsModelPickerOpen(false);
+                                    toast(`Model switched to ${m.name}`);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer transition-all ${
+                                    isCur
+                                      ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${pInfo.hasKey ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`} />
+                                    <div className="truncate">
+                                      <div className="font-sans truncate">{m.name}</div>
+                                      <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
+                                        <span>{prov}</span>
+                                        {!pInfo.hasKey ? (
+                                          <span className="text-amber-400/90 text-[9px]">· Requires Key</span>
+                                        ) : (
+                                          <span className="text-emerald-400/90 text-[9px]">· {pInfo.source === 'server' ? 'Server Connected' : 'BYOK Connected'}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {isCur && (
+                                    <span className="material-symbols-outlined text-[16px] text-sky-400 shrink-0">check</span>
+                                  )}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   {/* Mic toggle */}
                   <button
                     type="button"

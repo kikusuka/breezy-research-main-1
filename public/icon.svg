@@ -1,18 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0b1329" />
       <stop offset="50%" stop-color="#0e1b3d" />
       <stop offset="100%" stop-color="#020813" />
     </linearGradient>
-    <linearGradient id="glow" x1="0%" y1="100%" x2="100%" y2="0%">
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38bdf8" />
       <stop offset="100%" stop-color="#818cf8" />
     </linearGradient>
   </defs>
-  <rect width="100%" height="100%" fill="url(#bg)" rx="110" />
-  <!-- Wind / Breezy trails -->
-  <path d="M120 180h240c15 0 25-10 25-25s-10-25-25-25-25 10-25 25" fill="none" stroke="url(#glow)" stroke-width="20" stroke-linecap="round" />
-  <path d="M100 256h290c20 0 35-15 35-35s-15-35-35-35-35 15-35 35" fill="none" stroke="url(#glow)" stroke-width="24" stroke-linecap="round" />
-  <path d="M140 332h160c15 0 25-10 25-25s-10-25-25-25" fill="none" stroke="url(#glow)" stroke-width="20" stroke-linecap="round" />
+  <rect width="100%" height="100%" rx="24" fill="url(#bg)" />
+  
+  <!-- Robot Head -->
+  <circle cx="36" cy="38" r="18" stroke="url(#glow)" stroke-width="5.5" fill="none" />
+  <!-- Antenna Bulb and Stem -->
+  <circle cx="36" cy="11.5" r="3.8" fill="#38bdf8" />
+  <line x1="36" y1="15" x2="36" y2="19.5" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" />
+  <!-- Eyes -->
+  <circle cx="30" cy="38" r="3.2" fill="#38bdf8" />
+  <circle cx="42" cy="38" r="3.2" fill="#38bdf8" />
+  <!-- Dynamic Smooth Aerodynamic Wind Swooshes -->
+  <path
+    d="M 58,28 C 68,26 80,24 86,28 C 91,31 90,38 84,40 C 78,42 72,37 74,31"
+    stroke="url(#glow)"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <path
+    d="M 12,58 C 28,58 44,48 66,48 C 79,48 90,55 88,65 C 86,73 75,75 67,69 C 63,65 64,59 69,57"
+    stroke="url(#glow)"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <path
+    d="M 20,74 C 36,74 52,66 72,66 C 84,66 93,73 89,80 C 85,86 74,86 68,80"
+    stroke="url(#glow)"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
 </svg>

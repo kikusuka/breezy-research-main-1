@@ -63,17 +63,25 @@ export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<strin
 
   let resolvedOrigin = '*';
 
-  if (allowedOriginsConfig && allowedOriginsConfig !== '*') {
-    const allowedList = allowedOriginsConfig.split(',').map((o) => o.trim().toLowerCase());
-    if (requestOrigin) {
-      const lowerOrigin = requestOrigin.toLowerCase();
-      if (allowedList.includes(lowerOrigin) || allowedList.includes('*')) {
-        resolvedOrigin = requestOrigin;
+  if (allowedOriginsConfig) {
+    if (allowedOriginsConfig === '*') {
+      resolvedOrigin = '*';
+    } else {
+      const allowedList = allowedOriginsConfig.split(',').map((o) => o.trim().toLowerCase());
+      if (requestOrigin) {
+        const lowerOrigin = requestOrigin.toLowerCase();
+        if (allowedList.includes(lowerOrigin) || allowedList.includes('*')) {
+          resolvedOrigin = requestOrigin;
+        } else {
+          // Fail-closed: do not reflect untrusted origins
+          resolvedOrigin = 'null';
+        }
       } else {
         resolvedOrigin = allowedList[0] || 'null';
       }
     }
   } else if (requestOrigin) {
+    // In local dev without explicit ALLOWED_ORIGINS, allow request origin
     resolvedOrigin = requestOrigin;
   }
 

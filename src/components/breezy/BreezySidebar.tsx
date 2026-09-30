@@ -21,6 +21,8 @@ interface BreezySidebarProps {
   onDeleteChat: (id: string, e: React.MouseEvent) => void;
   onOpenProfile: () => void;
   onSwitchToSynthexis?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -35,9 +37,14 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
   onDeleteChat,
   onOpenProfile,
   onSwitchToSynthexis,
+  isOpen,
+  onClose,
   isOpenMobile,
   onCloseMobile,
 }) => {
+  const isSidebarVisible = isOpen ?? isOpenMobile ?? true;
+  const handleClose = onClose || onCloseMobile;
+
   const chatList = Object.values(chats).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -45,40 +52,51 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
   return (
     <>
       {/* Mobile backdrop */}
-      {isOpenMobile && (
+      {isSidebarVisible && (
         <div
           className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
-          onClick={onCloseMobile}
+          onClick={handleClose}
         />
       )}
 
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-[#0d1322]/95 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
-          isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col gap-3 flex-1 min-h-0">
           {/* Brand Header */}
           <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.25)]">
-                <BreezyLogoIcon className="w-4 h-4 text-sky-400" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-sans text-sm font-bold text-white tracking-tight leading-none">
+            <div className="flex items-center gap-3">
+              <BreezyLogoIcon className="w-8.5 h-8.5 text-sky-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.45)] shrink-0" />
+              <div className="flex items-center gap-1.5 font-sans">
+                <span className="text-base font-bold text-white tracking-tight leading-none">
                   Breezy
                 </span>
-                <span className="text-[10px] text-slate-400 font-sans mt-0.5 leading-none">
-                  & Synthexis
-                </span>
+                <span className="text-slate-500 font-semibold text-xs leading-none">/</span>
+                {onSwitchToSynthexis ? (
+                  <button
+                    type="button"
+                    onClick={onSwitchToSynthexis}
+                    className="text-xs font-semibold text-slate-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
+                    title="Switch to Synthexis Research Console"
+                  >
+                    Synthexis
+                  </button>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-400 leading-none">
+                    Synthexis
+                  </span>
+                )}
               </div>
             </div>
             <button
               type="button"
-              onClick={onCloseMobile}
-              className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-800"
+              onClick={handleClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+              title="Close sidebar"
             >
-              <span className="material-symbols-outlined text-lg">close</span>
+              <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
             </button>
           </div>
 

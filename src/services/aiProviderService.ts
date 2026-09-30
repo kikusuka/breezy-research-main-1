@@ -9,34 +9,27 @@
 
 import { ProviderKeyConfig } from '../types';
 import { apiClient } from './apiClient';
+import { effectiveProviderService } from './effectiveProviderService';
+import { providerConfigService } from './providerConfigService';
 
 export const aiProviderService = {
   /**
    * Get stored user provider keys from localStorage
    */
   getStoredKeys(): ProviderKeyConfig {
-    try {
-      const raw = localStorage.getItem('synthexis_provider_keys') || localStorage.getItem('consensus_provider_keys') || localStorage.getItem('breezy_provider_keys');
-      if (raw) {
-        return JSON.parse(raw);
-      }
-    } catch {}
-    return {};
+    return providerConfigService.getKeys();
   },
 
   /**
    * Save user provider keys
    */
   saveStoredKeys(config: ProviderKeyConfig) {
-    try {
-      localStorage.setItem('synthexis_provider_keys', JSON.stringify(config));
-      localStorage.setItem('breezy_provider_keys', JSON.stringify(config));
-    } catch {}
+    providerConfigService.saveKeys(config);
   },
 
   /**
-   * Generate content with genuine failover across available backend and BYOK providers.
-   * All requests are proxied via secure backend edge endpoints to avoid client-side CORS issues or key exposure.
+   * Generate content with genuine failover across only CONFIGURED and ROUTABLE providers.
+   * Never fabricates execution on unconfigured providers.
    */
   async generateWithFailover(
     prompt: string,
@@ -46,78 +39,64 @@ export const aiProviderService = {
     const keys = this.getStoredKeys();
     const errors: string[] = [];
 
-    // 1. Try Gemini via Edge Backend Proxy (with local BYOK fallback if present)
+    // Check if any provider is actually configured
+    const activeModel = effectiveProviderService.getActiveRoutableModel();
+    if (!activeModel) {
+      throw new Error('No AI providers configured. Please add an API key in Settings (BYOK) to run AI generation.');
+    }
+
+    // 1. Try primary active routable provider
     try {
       const res = await apiClient.chatBreezy({
         prompt,
         history: [],
-        provider: 'gemini',
-        model: 'gemini-3.8-flash',
-        apiKey: keys.gemini || undefined,
+        provider: activeModel.provider,
+        model: activeModel.model,
+        apiKey: keys[activeModel.provider] || undefined,
       });
 
       if (res && res.text) {
         const activeBackend = apiClient.getActiveEndpoint().name;
         return {
           text: res.text,
-          providerUsed: keys.gemini ? `Google Gemini (BYOK via ${activeBackend})` : `Google Gemini (${activeBackend})`,
-          modelUsed: 'gemini-3.8-flash',
+          providerUsed: `${activeModel.provider.toUpperCase()} (${activeModel.source === 'byok' ? 'BYOK via ' : ''}${activeBackend})`,
+          modelUsed: activeModel.model,
         };
       }
     } catch (err: any) {
-      errors.push(`Gemini Backend: ${err.message || 'Request failed'}`);
+      errors.push(`${activeModel.provider}: ${err.message || 'Request failed'}`);
     }
 
-    // 2. Try Groq via Edge Backend Proxy (BYOK)
-    if (keys.groq) {
+    // 2. Try secondary configured providers if available
+    const configured = ['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].filter(
+      (p) => p !== activeModel.provider && effectiveProviderService.isRoutable(p)
+    );
+
+    for (const p of configured) {
       try {
+        const apiKey = keys[p] || undefined;
         const res = await apiClient.chatBreezy({
           prompt,
           history: [],
-          provider: 'groq',
-          model: 'llama-3.3-70b-versatile',
-          apiKey: keys.groq,
+          provider: p,
+          model: p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-3.8-flash',
+          apiKey,
         });
 
         if (res && res.text) {
           const activeBackend = apiClient.getActiveEndpoint().name;
           return {
             text: res.text,
-            providerUsed: `Groq Cloud (BYOK via ${activeBackend})`,
-            modelUsed: 'llama-3.3-70b-versatile',
+            providerUsed: `${p.toUpperCase()} (BYOK via ${activeBackend})`,
+            modelUsed: p,
           };
         }
       } catch (err: any) {
-        errors.push(`Groq Backend: ${err.message || 'Request failed'}`);
+        errors.push(`${p}: ${err.message}`);
       }
     }
 
-    // 3. Try OpenRouter via Edge Backend Proxy (BYOK)
-    if (keys.openrouter) {
-      try {
-        const res = await apiClient.chatBreezy({
-          prompt,
-          history: [],
-          provider: 'openrouter',
-          model: 'meta-llama/llama-3.3-70b-instruct',
-          apiKey: keys.openrouter,
-        });
-
-        if (res && res.text) {
-          const activeBackend = apiClient.getActiveEndpoint().name;
-          return {
-            text: res.text,
-            providerUsed: `OpenRouter (BYOK via ${activeBackend})`,
-            modelUsed: 'meta-llama/llama-3.3-70b-instruct',
-          };
-        }
-      } catch (err: any) {
-        errors.push(`OpenRouter Backend: ${err.message || 'Request failed'}`);
-      }
-    }
-
-    // 4. Honest Failure
-    const summary = errors.length > 0 ? errors.join('; ') : 'No valid API keys configured';
-    throw new Error(`AI providers unavailable (${summary}). Please configure an active API key in Settings.`);
-  }
+    const summary = errors.length > 0 ? errors.join('; ') : 'All configured providers failed';
+    throw new Error(`AI generation failed (${summary}). Please check your API keys or switch providers in Settings.`);
+  },
 };
