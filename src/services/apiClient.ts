@@ -287,11 +287,12 @@ class ApiClient {
     this.lastCheckedHealthOk = false;
     this.notify('All backends unreachable');
 
-    throw new Error(
-      lastError?.message
-        ? `All backends unavailable: ${lastError.message}`
-        : 'All API backends are currently unreachable. Please check your network connection or configure client BYOK in Settings.'
-    );
+    let parsedMsg = lastError?.message || 'All API backends are currently unreachable.';
+    if (parsedMsg.includes('429') || parsedMsg.includes('RESOURCE_EXHAUSTED') || parsedMsg.includes('quota')) {
+      parsedMsg = '⚠️ Provider Rate Limit or Token Quota Reached (429). Please configure your personal API key in Settings (BYOK) or choose another connected provider.';
+    }
+
+    throw new Error(parsedMsg);
   }
 
   /**
@@ -318,7 +319,17 @@ class ApiClient {
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      throw new Error(`Research API failed (${res.status}): ${errText || 'Stream initiation error'}`);
+      let cleanMsg = errText || `HTTP ${res.status}`;
+      try {
+        const parsed = JSON.parse(errText);
+        cleanMsg = parsed.error || parsed.message || cleanMsg;
+      } catch {}
+
+      if (res.status === 429 || cleanMsg.includes('429') || cleanMsg.includes('RESOURCE_EXHAUSTED') || cleanMsg.includes('quota')) {
+        cleanMsg = '⚠️ Model rate limit or quota exceeded (429). Please switch to a connected BYOK key in Settings or choose another provider.';
+      }
+
+      throw new Error(`Research API Error: ${cleanMsg}`);
     }
 
     if (!res.body) {
@@ -377,7 +388,11 @@ class ApiClient {
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Server responded with ${res.status}`);
+      let msg = errData.error || `Server responded with status ${res.status}`;
+      if (res.status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+        msg = '⚠️ Provider quota or rate limit exceeded (429). Please configure your personal API key in Settings (BYOK) or switch models.';
+      }
+      throw new Error(msg);
     }
 
     return await res.json();

@@ -28,6 +28,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [email, setEmail] = useState(profile.email);
   const [roleTitle, setRoleTitle] = useState(profile.roleTitle);
   const [organization, setOrganization] = useState(profile.organization);
+  const [autoSaveToDrive, setAutoSaveToDrive] = useState(profile.autoSaveToDrive);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
 
   // Role Routing State
@@ -52,6 +53,37 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [serperKey, setSerperKey] = useState('');
   const [braveKey, setBraveKey] = useState('');
 
+  // Key testing state
+  const [isVerifyingKey, setIsVerifyingKey] = useState(false);
+  const [keyVerifyResult, setKeyVerifyResult] = useState<{ ok?: boolean; msg?: string } | null>(null);
+
+  const handleTestCurrentKey = async () => {
+    if (!key.trim()) {
+      setKeyVerifyResult({ ok: false, msg: 'Please enter an API key to test.' });
+      return;
+    }
+    setIsVerifyingKey(true);
+    setKeyVerifyResult(null);
+    try {
+      const res = await apiClient.verifyVaultKey(provider, key.trim());
+      if (res.valid) {
+        setKeyVerifyResult({
+          ok: true,
+          msg: `Valid credentials! Response latency: ${res.latencyMs || 250}ms.`,
+        });
+      } else {
+        setKeyVerifyResult({
+          ok: false,
+          msg: res.error || 'Invalid API key or unauthorized.',
+        });
+      }
+    } catch (err: any) {
+      setKeyVerifyResult({ ok: false, msg: err.message || 'Verification failed.' });
+    } finally {
+      setIsVerifyingKey(false);
+    }
+  };
+
   // Load current settings from canonical services
   useEffect(() => {
     if (isOpen) {
@@ -70,6 +102,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         setEmail(p.email);
         setRoleTitle(p.roleTitle);
         setOrganization(p.organization);
+        setAutoSaveToDrive(p.autoSaveToDrive);
 
         const canonical = providerConfigService.getConfig();
         const activeKeys = keys || canonical.keys;
@@ -117,6 +150,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       email: email.trim() || 'researcher@workspace.local',
       roleTitle: roleTitle.trim() || 'Research Systems Engineer',
       organization: organization.trim() || 'Breezy Research Workspace',
+      autoSaveToDrive,
       authorizationType: authUser ? 'google_oauth' : 'session_enclave',
     });
 
@@ -174,6 +208,15 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         (k) => k.startsWith('breezy') || k.startsWith('synthexis')
       );
       breezyKeys.forEach((k) => localStorage.removeItem(k));
+      
+      // Wipe IndexedDB databases
+      try {
+        indexedDB.deleteDatabase('synthexis_storage_db');
+        indexedDB.deleteDatabase('synap_storage_db');
+      } catch (e) {
+        console.warn('Failed to delete IndexedDB during wipe:', e);
+      }
+
       window.location.reload();
     }
   };
@@ -349,7 +392,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <button
                       type="button"
                       disabled={!isFirebaseConfigured}
@@ -374,6 +417,26 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                       <span className="material-symbols-outlined text-[16px]">key</span>
                       <span>Sign in with Google OAuth</span>
                     </button>
+
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/5 mt-1">
+                      <div className="flex flex-col">
+                        <span className="font-sans text-xs font-bold text-stone-200">Auto-save to Google Drive</span>
+                        <span className="font-sans text-[10px] text-stone-500 mt-0.5">Automatically backup all your chat and research sessions</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAutoSaveToDrive(!autoSaveToDrive)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                          autoSaveToDrive ? 'bg-[#ccbdff]' : 'bg-stone-700'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                            autoSaveToDrive ? 'translate-x-4.5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                     {!isFirebaseConfigured && (
                       <span className="text-[10px] text-amber-500/80 bg-amber-950/20 border border-amber-500/10 p-2 rounded-lg text-center font-medium leading-relaxed">
                         ⚠️ Cloud features are disabled. Start a local-sandbox container or configure real Firebase credential variables VITE_FIREBASE_* to enable cloud Google Auth.
@@ -546,17 +609,47 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
-                  BYOK API Key
-                </label>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
+                    BYOK API Key
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleTestCurrentKey}
+                    disabled={isVerifyingKey || !key.trim()}
+                    className="text-[10px] font-mono text-[#ccbdff] hover:underline disabled:opacity-40 disabled:no-underline cursor-pointer flex items-center gap-1"
+                  >
+                    <span className={`material-symbols-outlined text-[13px] ${isVerifyingKey ? 'animate-spin' : ''}`}>
+                      {isVerifyingKey ? 'sync' : 'network_check'}
+                    </span>
+                    <span>{isVerifyingKey ? 'Testing...' : 'Test Key & Latency'}</span>
+                  </button>
+                </div>
                 <input
                   type="password"
                   value={key}
-                  onChange={(e) => setKey(e.target.value)}
+                  onChange={(e) => {
+                    setKey(e.target.value);
+                    setKeyVerifyResult(null);
+                  }}
                   placeholder="Paste your personal key credentials (sk-... / AIza...)"
                   className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
                 />
+                {keyVerifyResult && (
+                  <div
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-mono border flex items-center gap-2 ${
+                      keyVerifyResult.ok
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">
+                      {keyVerifyResult.ok ? 'check_circle' : 'error'}
+                    </span>
+                    <span>{keyVerifyResult.msg}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-1">

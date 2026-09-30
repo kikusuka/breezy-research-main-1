@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { providerConfigService, AVAILABLE_MODELS } from '../../services/providerConfigService';
 import { BreezyLogoIcon, SynthexisLogoIcon } from '../icons/ProductLogos';
+import { googleDriveService } from '../../services/googleDriveService';
+import { authService } from '../../services/authService';
+import { userProfileService } from '../../services/userProfileService';
 
 export interface BreezyMessage {
   role: 'user' | 'assistant';
@@ -88,14 +91,42 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     const config = providerConfigService.getConfig();
-    return config.defaultModel || 'gemini-3.8-flash';
+    const hasKeys = Object.keys(config.keys || {}).some(k => Boolean(config.keys[k]));
+    return config.defaultModel || (hasKeys ? 'gemini-3.8-flash' : '');
   });
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
     const config = providerConfigService.getConfig();
-    return config.defaultProvider || 'gemini';
+    const hasKeys = Object.keys(config.keys || {}).some(k => Boolean(config.keys[k]));
+    return config.defaultProvider || (hasKeys ? 'gemini' : '');
   });
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
   const [speakingMessageIdx, setSpeakingMessageIdx] = useState<number | null>(null);
+  const [isSavingToDrive, setIsSavingToDrive] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string } | null>(null);
+  const breezyFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Background Auto-save to Drive logic
+  useEffect(() => {
+    const profile = userProfileService.getProfile();
+    const autoSave = profile.autoSaveToDrive;
+    if (!autoSave || !activeId || !chats[activeId] || chats[activeId].messages.length === 0) return;
+
+    const token = authService.getAccessToken();
+    if (!token || authService.isTokenExpired()) return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        const chat = chats[activeId];
+        await googleDriveService.initialize(token);
+        await googleDriveService.saveChat(chat);
+        console.log('Breezy background auto-save complete.');
+      } catch (e) {
+        console.warn('Breezy auto-save failed:', e);
+      }
+    }, 5000); // 5s debounce
+
+    return () => clearTimeout(timeout);
+  }, [chats, activeId]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -103,6 +134,51 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const getActiveChat = (): BreezyChat | null => {
     if (!activeId || !chats[activeId]) return null;
     return chats[activeId];
+  };
+
+  const handleSaveToDrive = async () => {
+    const chat = getActiveChat();
+    if (!chat || chat.messages.length === 0) return;
+
+    const token = authService.getAccessToken();
+    if (!token || authService.isTokenExpired()) {
+      toast('Google Workspace authorization required or session expired. Please sign in via Settings.');
+      onOpenSettings();
+      return;
+    }
+
+    setIsSavingToDrive(true);
+    try {
+      await googleDriveService.initialize(token);
+      await googleDriveService.saveChat(chat);
+      toast('Chat successfully backed up to Google Drive.');
+    } catch (error: any) {
+      console.error('Drive save error:', error);
+      toast(`Drive backup failed: ${error.message}`);
+    } finally {
+      setIsSavingToDrive(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = typeof event.target?.result === 'string' ? event.target.result : '';
+        const truncated = text.length > 40000 ? text.slice(0, 40000) + '\n... [Context truncated for length]' : text;
+        setAttachedFile({
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          content: truncated,
+        });
+        toast(`Attached ${file.name} for chat context.`);
+      };
+      reader.onerror = () => {
+        toast('Could not read file. Please choose a text, code, or document file.');
+      };
+      reader.readAsText(file);
+    }
   };
 
   const handleCreateNewChat = () => {
@@ -138,7 +214,11 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
   const handleSend = async (customPrompt?: string) => {
     const promptToSend = customPrompt || inputVal;
-    if (!promptToSend.trim() || isThinking) return;
+    if ((!promptToSend.trim() && !attachedFile) || isThinking) return;
+
+    const fullPrompt = attachedFile?.content
+      ? `${promptToSend.trim()}\n\n--- [Attached Reference File: ${attachedFile.name}] ---\n${attachedFile.content}\n--- [End of Reference File] ---`
+      : promptToSend.trim();
 
     let currentId = activeId;
     let nextChats = { ...chats };
@@ -147,7 +227,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       currentId = `chat-${Date.now()}`;
       const newChat: BreezyChat = {
         id: currentId,
-        title: promptToSend.trim().slice(0, 32),
+        title: promptToSend.trim().slice(0, 32) || attachedFile?.name || 'New conversation',
         messages: [],
         createdAt: new Date().toISOString(),
       };
@@ -157,7 +237,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
     const userMsg: BreezyMessage = {
       role: 'user',
-      content: promptToSend.trim(),
+      content: fullPrompt,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -167,7 +247,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
     const updatedChat: BreezyChat = {
       ...targetChat,
-      title: isFirstMsg ? promptToSend.trim().slice(0, 32) : targetChat.title,
+      title: isFirstMsg ? (promptToSend.trim().slice(0, 32) || attachedFile?.name || 'Chat') : targetChat.title,
       messages: updatedMessages,
     };
 
@@ -188,6 +268,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
     saveChats(chatsWithPending);
     setInputVal('');
+    setAttachedFile(null);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     setTimeout(() => {
@@ -238,7 +319,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
             ...updatedMessages,
             {
               role: 'assistant',
-              content: `⚠️ Generation Note: ${e.message}`,
+              content: `${e.message}`,
               timestamp: 'Just now',
             },
           ],
@@ -366,12 +447,23 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                   onClick={() => setIsModelPickerOpen(false)}
                 />
                 <div className="absolute left-0 mt-2 w-64 rounded-xl bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 shadow-2xl z-40 animate-in fade-in">
-                  <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
-                    Select AI Model
+                  <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1 flex items-center justify-between">
+                    <span>Select AI Model</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsModelPickerOpen(false);
+                        onOpenSettings();
+                      }}
+                      className="text-sky-400 hover:underline text-[9px] cursor-pointer"
+                    >
+                      Manage Keys
+                    </button>
                   </div>
                   {Object.entries(AVAILABLE_MODELS).flatMap(([prov, models]) =>
                     models.map((m) => {
                       const isCur = selectedModel === m.id;
+                      const hasKey = Boolean(providerConfigService.getKey(prov));
                       return (
                         <button
                           key={m.id}
@@ -388,12 +480,20 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                               : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                           }`}
                         >
-                          <div>
-                            <div className="font-sans">{m.name}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{prov}</div>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${hasKey ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`} />
+                            <div className="truncate">
+                              <div className="font-sans truncate">{m.name}</div>
+                              <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
+                                <span>{prov}</span>
+                                {!hasKey && (
+                                  <span className="text-amber-400/90 text-[9px]">· Requires Key</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                           {isCur && (
-                            <span className="material-symbols-outlined text-[16px] text-sky-400">check</span>
+                            <span className="material-symbols-outlined text-[16px] text-sky-400 shrink-0">check</span>
                           )}
                         </button>
                       );
@@ -408,14 +508,29 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
         {/* Right side of chat header */}
         <div className="flex items-center gap-2">
           {activeChat && activeChat.messages.length > 0 && (
-            <button
-              type="button"
-              onClick={clearChat}
-              className="text-slate-400 hover:text-red-400 p-1 rounded-md hover:bg-slate-800/60 transition-colors"
-              title="Clear conversation"
-            >
-              <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleSaveToDrive}
+                disabled={isSavingToDrive}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-sky-300 hover:text-white bg-sky-950/40 hover:bg-sky-900/60 border border-sky-500/30 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                title="Save this conversation to your Google Drive"
+              >
+                <span className={`material-symbols-outlined text-[16px] ${isSavingToDrive ? 'animate-spin' : ''}`}>
+                  {isSavingToDrive ? 'sync' : 'cloud_upload'}
+                </span>
+                <span className="hidden sm:inline">Save to Drive</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={clearChat}
+                className="text-slate-400 hover:text-red-400 p-1 rounded-md hover:bg-slate-800/60 transition-colors"
+                title="Clear conversation"
+              >
+                <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -526,6 +641,9 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                       key={idx}
                       className="flex flex-col items-end gap-1.5 max-w-[85%] self-end animate-in fade-in"
                     >
+                      <div className="flex items-center gap-2 text-[10px] font-sans pr-1 mb-0.5 justify-end">
+                        <span className="font-bold text-slate-400 uppercase tracking-wider">{userProfileService.getProfile().displayName}</span>
+                      </div>
                       <div className="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-slate-800 border border-slate-700/80 text-white shadow-sm">
                         <p className="font-sans text-sm leading-relaxed whitespace-pre-wrap">
                           {m.content}
@@ -643,10 +761,33 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
         </main>
 
         {/* Floating Bottom Composer */}
-        <div className="fixed bottom-0 left-0 lg:left-72 right-0 p-4 pointer-events-none flex flex-col items-center z-30">
+        <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 pointer-events-none flex flex-col items-center z-30">
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={breezyFileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv,.js,.ts,.tsx,.jsx,.py,.html,.css,.sql"
+          />
+
           <div className="w-full max-w-[768px] pointer-events-auto flex flex-col items-center gap-2">
             {/* Input Capsule Box */}
             <div className="w-full rounded-2xl bg-[#0d1424]/95 backdrop-blur-2xl p-2.5 border border-slate-700/80 shadow-[0_12px_36px_rgba(0,0,0,0.7)] flex flex-col gap-2 focus-within:border-sky-400/60 focus-within:shadow-[0_0_24px_rgba(56,189,248,0.2)] transition-all">
+              {attachedFile && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-xs text-sky-200 self-start">
+                  <span className="material-symbols-outlined text-[15px] text-sky-400">attach_file</span>
+                  <span className="truncate max-w-[200px] font-medium">{attachedFile.name} ({attachedFile.size})</span>
+                  <button
+                    type="button"
+                    onClick={() => setAttachedFile(null)}
+                    className="text-slate-400 hover:text-white font-bold ml-1 cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -657,7 +798,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                   e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`;
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 768) {
                     e.preventDefault();
                     handleSend();
                   }
@@ -682,6 +823,17 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                   >
                     <span className="material-symbols-outlined text-[15px]">public</span>
                     <span>Search {webSearchActive ? 'On' : 'Off'}</span>
+                  </button>
+
+                  {/* Attach File button */}
+                  <button
+                    type="button"
+                    onClick={() => breezyFileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
+                    title="Attach reference document or code"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">attach_file</span>
+                    <span className="hidden sm:inline">Attach</span>
                   </button>
 
                   {/* Settings / BYOK */}
@@ -715,9 +867,9 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                   <button
                     type="button"
                     onClick={() => handleSend()}
-                    disabled={!inputVal.trim() || isThinking}
+                    disabled={(!inputVal.trim() && !attachedFile) || isThinking}
                     className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                      inputVal.trim() && !isThinking
+                      (inputVal.trim() || attachedFile) && !isThinking
                         ? 'bg-white text-slate-950 hover:bg-slate-200 shadow-md font-bold'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     }`}

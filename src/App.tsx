@@ -18,6 +18,8 @@ import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
 import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace';
 import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
 import { authService } from './services/authService';
+import { userProfileService } from './services/userProfileService';
+import { googleDriveService } from './services/googleDriveService';
 
 import {
   DebateSession,
@@ -77,24 +79,18 @@ export default function App() {
   // Breezy chat states
   const [breezyChats, setBreezyChats] = useState<Record<string, any>>(() => {
     try {
-      const raw = localStorage.getItem('breezy:chats');
-      return raw ? JSON.parse(raw) : {};
+      const profile = userProfileService.getProfile();
+      if (profile.autoSaveToDrive) {
+        const raw = localStorage.getItem('breezy:chats');
+        return raw ? JSON.parse(raw) : {};
+      }
+      return {};
     } catch {
       return {};
     }
   });
 
-  const [breezyActiveId, setBreezyActiveId] = useState<string | null>(() => {
-    try {
-      const raw = localStorage.getItem('breezy:chats');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const keys = Object.keys(parsed);
-        return keys.length > 0 ? keys[0] : null;
-      }
-    } catch {}
-    return null;
-  });
+  const [breezyActiveId, setBreezyActiveId] = useState<string | null>(null);
 
   const handleNewBreezyChat = () => {
     const newId = `chat-${Date.now()}`;
@@ -107,9 +103,13 @@ export default function App() {
     const next = { [newId]: newChat, ...breezyChats };
     setBreezyChats(next);
     setBreezyActiveId(newId);
-    try {
-      localStorage.setItem('breezy:chats', JSON.stringify(next));
-    } catch {}
+    
+    const profile = userProfileService.getProfile();
+    if (profile.autoSaveToDrive) {
+      try {
+        localStorage.setItem('breezy:chats', JSON.stringify(next));
+      } catch {}
+    }
   };
 
   const handleDeleteBreezyChat = (id: string, e: React.MouseEvent) => {
@@ -127,28 +127,60 @@ export default function App() {
   };
 
   // Sessions and debate states
-  const [sessions, setSessions] = useState<DebateSession[]>(() => loadSessions() || [createNewSession('First Inquiry', 'trio', [], 'balanced')]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => loadActiveSessionId() || sessions[0]?.id || null);
+  const [sessions, setSessions] = useState<DebateSession[]>(() => {
+    const profile = userProfileService.getProfile();
+    if (profile.autoSaveToDrive) {
+      return loadSessions() || [createNewSession('First Inquiry', 'trio', [], 'balanced')];
+    }
+    return [createNewSession('First Inquiry', 'trio', [], 'balanced')];
+  });
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => sessions[0]?.id || null);
   const [synthexisMode, setSynthexisMode] = useState(true);
 
   const handleToggleSynthexisMode = () => setSynthexisMode((prev) => !prev);
 
-  useEffect(() => {
-    saveSessions(sessions);
-  }, [sessions]);
-
-  useEffect(() => {
-    if (activeSessionId) saveActiveSessionId(activeSessionId);
-  }, [activeSessionId]);
-
   const currentSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
-
   const [isDeliberating, setIsDeliberating] = useState(false);
   const [activeRound, setActiveRound] = useState(1);
   const [streamingText, setStreamingText] = useState('');
   const [streamingRole, setStreamingRole] = useState('Analyst');
   const [researchEvents, setResearchEvents] = useState<string[]>([]);
   const [appToast, setAppToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const profile = userProfileService.getProfile();
+    if (profile.autoSaveToDrive) {
+      saveSessions(sessions);
+    }
+  }, [sessions]);
+
+  useEffect(() => {
+    const profile = userProfileService.getProfile();
+    if (profile.autoSaveToDrive && activeSessionId) {
+      saveActiveSessionId(activeSessionId);
+    }
+  }, [activeSessionId]);
+
+  // Global Auto-save to Drive logic for Synthexis Research
+  useEffect(() => {
+    const profile = userProfileService.getProfile();
+    if (!profile.autoSaveToDrive || !currentSession || isDeliberating) return;
+    
+    const token = authService.getAccessToken();
+    if (!token) return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        await googleDriveService.initialize(token);
+        await googleDriveService.saveResearch(currentSession);
+        console.log('Synthexis background auto-save complete.');
+      } catch (e) {
+        console.warn('Synthexis auto-save failed:', e);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [sessions, activeSessionId, isDeliberating]);
 
   const toast = (msg: string) => {
     setAppToast(msg);
@@ -373,7 +405,7 @@ export default function App() {
           onCloseMobile={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <div className="pl-0 lg:pl-72 flex flex-col flex-1 min-h-screen">
+        <div className="pl-0 lg:pl-64 flex flex-col flex-1 min-h-screen">
           <TopBar
             productMode={productMode}
             onSelectProductMode={setProductMode}
@@ -391,9 +423,12 @@ export default function App() {
                 onSelectChat={setBreezyActiveId}
                 onUpdateChats={(next) => {
                   setBreezyChats(next);
-                  try {
-                    localStorage.setItem('breezy:chats', JSON.stringify(next));
-                  } catch {}
+                  const profile = userProfileService.getProfile();
+                  if (profile.autoSaveToDrive) {
+                    try {
+                      localStorage.setItem('breezy:chats', JSON.stringify(next));
+                    } catch {}
+                  }
                 }}
                 onNewChat={handleNewBreezyChat}
                 onSwitchToSynthexis={() => {
@@ -508,6 +543,25 @@ export default function App() {
                   localStorage.setItem('breezy_ide_active_code', codeContent);
                   setProductMode('breezy');
                   setBreezyTab('ide');
+                }}
+                onPinToCanvas={(s) => {
+                  const newCard = {
+                    id: `card-${Date.now()}`,
+                    type: 'research',
+                    title: s.prompt.slice(0, 60),
+                    content: s.finalOutput?.slice(0, 400) || s.prompt,
+                    color: 'violet',
+                    tags: ['Synthexis', s.protocol || 'Research'],
+                    createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                  };
+                  try {
+                    const raw = localStorage.getItem('breezy:canvas:cards');
+                    const existing = raw ? JSON.parse(raw) : [];
+                    localStorage.setItem('breezy:canvas:cards', JSON.stringify([newCard, ...existing]));
+                  } catch {}
+                  setProductMode('breezy');
+                  setBreezyTab('canvas');
+                  toast('Pinned research findings to Breezy Canvas.');
                 }}
               />
             ) : (

@@ -42,6 +42,27 @@ export async function syncSessionsToIDB(sessions: DebateSession[]): Promise<void
 }
 
 /**
+ * Load full-fidelity sessions from IndexedDB
+ */
+export async function loadSessionsFromIDB(): Promise<DebateSession[]> {
+  try {
+    const db = await openDatabase();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const results = req.result || [];
+        resolve(results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+      };
+      req.onerror = () => resolve([]);
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Load all saved research sessions from LocalStorage.
  */
 export function loadSessions(): DebateSession[] {

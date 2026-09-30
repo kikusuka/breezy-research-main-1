@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { googleDriveService } from '../../services/googleDriveService';
+import { authService } from '../../services/authService';
+import { userProfileService } from '../../services/userProfileService';
 
 export type CanvasCardType = 'idea' | 'research' | 'code' | 'task';
 export type CanvasCardColor = 'sky' | 'emerald' | 'amber' | 'violet' | 'slate';
@@ -18,7 +21,7 @@ interface BreezyCanvasWorkspaceProps {
   onOpenSettings?: () => void;
 }
 
-export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () => {
+export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = ({ onOpenSettings }) => {
   const [cards, setCards] = useState<CanvasCard[]>(() => {
     try {
       const stored = localStorage.getItem('breezy:canvas:cards');
@@ -266,6 +269,31 @@ export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = () =>
             >
               <span className="material-symbols-outlined text-[16px]">download</span>
               <span className="hidden sm:inline">Export</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                const token = authService.getAccessToken();
+                if (!token || authService.isTokenExpired()) {
+                  showToast('Google Workspace authorization required. Please connect in Settings.');
+                  onOpenSettings?.();
+                  return;
+                }
+                try {
+                  await googleDriveService.initialize(token);
+                  const { appFolderId } = await googleDriveService.ensureFolderStructure();
+                  await googleDriveService.saveFile('breezy_canvas_cards.json', cards, appFolderId);
+                  showToast('Canvas board backed up to Google Drive!');
+                } catch (e: any) {
+                  showToast(`Drive backup failed: ${e.message}`);
+                }
+              }}
+              className="px-3 py-2 bg-sky-950/40 hover:bg-sky-900/60 text-sky-300 font-sans text-xs font-medium rounded-xl transition-all border border-sky-500/30 flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+              title="Backup Canvas to Google Drive"
+            >
+              <span className="material-symbols-outlined text-[16px]">cloud_upload</span>
+              <span className="hidden sm:inline">Save to Drive</span>
             </button>
           </div>
         </div>

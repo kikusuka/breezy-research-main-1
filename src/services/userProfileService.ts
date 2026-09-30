@@ -10,6 +10,7 @@ export interface UserProfile {
   organization: string;
   photoURL?: string;
   authorizationType: 'google_oauth' | 'github_oauth' | 'session_enclave' | 'guest';
+  autoSaveToDrive: boolean;
 }
 
 const PROFILE_STORAGE_KEY = 'breezy_user_profile';
@@ -27,6 +28,7 @@ export const userProfileService = {
           organization: parsed.organization || 'Breezy Research Workspace',
           photoURL: parsed.photoURL || undefined,
           authorizationType: parsed.authorizationType || 'guest',
+          autoSaveToDrive: Boolean(parsed.autoSaveToDrive),
         };
       }
     } catch {}
@@ -37,6 +39,7 @@ export const userProfileService = {
       roleTitle: 'Research Systems Engineer',
       organization: 'Breezy Research Workspace',
       authorizationType: 'guest',
+      autoSaveToDrive: false,
     };
   },
 

@@ -20,16 +20,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header
-      className={`fixed top-0 left-0 ${
-        productMode === 'breezy' ? 'lg:left-72' : 'lg:left-64'
-      } right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-stone-800/60 bg-stone-950/90 text-stone-100 shadow-xs transition-all duration-200`}
+      className={`fixed top-0 left-0 lg:left-64 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-sky-200/60 bg-[#f0f7ff]/95 text-slate-900 shadow-sm transition-all duration-200`}
     >
       {/* Left: Mobile Menu + Brand + Workspace Selector */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <button
           type="button"
           onClick={onToggleMobileMenu}
-          className="w-10 h-10 flex items-center justify-center text-stone-400 hover:text-stone-100 lg:hidden rounded-xl hover:bg-stone-800/50 active:bg-stone-800 cursor-pointer shrink-0 transition-colors"
+          className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-900 lg:hidden rounded-xl hover:bg-sky-200/40 active:bg-sky-200/60 cursor-pointer shrink-0 transition-colors"
           aria-label="Toggle Navigation"
         >
           <span className="material-symbols-outlined text-[22px]">menu</span>
@@ -40,13 +38,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-            className="flex items-center gap-1.5 py-1 text-sm sm:text-base font-sans font-bold text-stone-100 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 py-1 text-sm sm:text-base font-sans font-bold text-slate-900 hover:text-sky-700 transition-colors cursor-pointer"
             title="Switch Workspace"
           >
             <span>
               {productMode === 'breezy' ? 'Breezy' : 'Synthexis'}
             </span>
-            <span className="material-symbols-outlined text-[18px] text-stone-400">
+            <span className="material-symbols-outlined text-[18px] text-slate-500">
               expand_more
             </span>
           </button>
@@ -122,12 +120,12 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           type="button"
           onClick={onOpenSearch}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all bg-stone-900/60 border-stone-800 text-stone-300 hover:text-stone-100"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all bg-white/50 border-sky-200/60 text-slate-600 hover:text-slate-900 hover:bg-white shadow-sm"
           title="Quick Jump / Search (⌘K)"
         >
           <span className="material-symbols-outlined text-[16px]">search</span>
           <span className="hidden sm:inline font-sans">Quick Jump</span>
-          <kbd className="hidden sm:inline font-mono text-[10px] text-stone-400 bg-stone-800/60 px-1 py-0.5 rounded border border-stone-700/50">
+          <kbd className="hidden sm:inline font-mono text-[10px] text-slate-400 bg-sky-100/80 px-1 py-0.5 rounded border border-sky-200/50">
             ⌘K
           </kbd>
         </button>

@@ -1,36 +1,219 @@
 /**
- * Google Drive Service for Synthexis
- * Handles authentication, file operations, and sync with Google Drive
+ * Google Drive Direct REST API Service
+ * 100% Web Standard Fetch with OAuth Bearer Authentication
+ * No external GAPI script dependency required
  */
 
-import { google } from 'googleapis';
-import type { DebateSession as Session, SessionMetadata } from '../types';
-
-const APP_FOLDER_NAME = 'Synthexis_Data';
-const SESSIONS_FOLDER_NAME = 'sessions';
-const METADATA_FILE_NAME = 'synthexis_metadata.json';
+const APP_FOLDER_NAME = 'Breezy_Synthexis_Data';
+const CHATS_FOLDER_NAME = 'chats';
+const RESEARCH_FOLDER_NAME = 'research';
 
 export class GoogleDriveService {
   private accessToken: string | null = null;
-  private gapiClient: any = null;
-
-  constructor() {
-    // Initialize GAPI client when needed
-  }
 
   /**
-   * Check if Drive service is connected
+   * Initialize Drive service with valid Google OAuth Access Token
    */
-  async isConnected(): Promise<boolean> {
-    return Boolean(this.accessToken);
+  async initialize(accessToken: string): Promise<void> {
+    if (!accessToken || typeof accessToken !== 'string') {
+      throw new Error('Valid Google OAuth access token is required.');
+    }
+    this.accessToken = accessToken;
+  }
+
+  private getHeaders(): Record<string, string> {
+    if (!this.accessToken) {
+      throw new Error('Google Drive access token not set. Please authorize via Google Workspace in Settings.');
+    }
+    return {
+      Authorization: `Bearer ${this.accessToken}`,
+    };
   }
 
   /**
-   * Get total storage usage in MB
+   * Ensure folder structure exists
+   */
+  async ensureFolderStructure(): Promise<{ appFolderId: string; chatsFolderId: string; researchFolderId: string }> {
+    const appFolder = await this.findOrCreateFolder(APP_FOLDER_NAME, 'root');
+    const chatsFolder = await this.findOrCreateFolder(CHATS_FOLDER_NAME, appFolder.id);
+    const researchFolder = await this.findOrCreateFolder(RESEARCH_FOLDER_NAME, appFolder.id);
+
+    return {
+      appFolderId: appFolder.id,
+      chatsFolderId: chatsFolder.id,
+      researchFolderId: researchFolder.id,
+    };
+  }
+
+  private async findOrCreateFolder(name: string, parentId: string): Promise<{ id: string; name: string }> {
+    const q = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${name}' and '${parentId}' in parents and trashed=false`);
+    const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`, {
+      headers: this.getHeaders(),
+    });
+
+    if (listRes.ok) {
+      const data = await listRes.json();
+      if (data.files && data.files.length > 0) {
+        return data.files[0];
+      }
+    }
+
+    // Create folder
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        ...this.getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId],
+      }),
+    });
+
+    if (!createRes.ok) {
+      const errText = await createRes.text().catch(() => '');
+      throw new Error(`Failed to create Drive folder "${name}" (${createRes.status}): ${errText}`);
+    }
+
+    return await createRes.json();
+  }
+
+  /**
+   * Save JSON file to Google Drive using multipart upload or update
+   */
+  async saveFile(name: string, data: any, folderId: string): Promise<any> {
+    const existingFile = await this.findFileByName(name, folderId);
+    const fileContent = JSON.stringify(data, null, 2);
+
+    if (existingFile) {
+      // Update content via upload
+      const updateRes = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=media`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...this.getHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: fileContent,
+        }
+      );
+
+      if (!updateRes.ok) {
+        throw new Error(`Failed to update file in Drive (${updateRes.status})`);
+      }
+      return await updateRes.json();
+    } else {
+      // Create metadata and content via multipart
+      const boundary = '-------BreezyDriveUploadBoundary' + Math.random().toString(36).slice(2);
+      const delimiter = `\r\n--${boundary}\r\n`;
+      const closeDelim = `\r\n--${boundary}--`;
+
+      const metadata = {
+        name,
+        parents: [folderId],
+        mimeType: 'application/json',
+      };
+
+      const multipartBody =
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: application/json\r\n\r\n' +
+        fileContent +
+        closeDelim;
+
+      const createRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {
+          method: 'POST',
+          headers: {
+            ...this.getHeaders(),
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+          },
+          body: multipartBody,
+        }
+      );
+
+      if (!createRes.ok) {
+        const err = await createRes.text().catch(() => '');
+        throw new Error(`Failed to upload file to Drive (${createRes.status}): ${err}`);
+      }
+
+      return await createRes.json();
+    }
+  }
+
+  private async findFileByName(name: string, folderId: string): Promise<{ id: string; name: string } | null> {
+    const q = encodeURIComponent(`name='${name}' and '${folderId}' in parents and trashed=false`);
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`, {
+      headers: this.getHeaders(),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.files && data.files.length > 0) {
+        return data.files[0];
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Save a chat session specifically
+   */
+  async saveChat(chat: any): Promise<void> {
+    const { chatsFolderId } = await this.ensureFolderStructure();
+    await this.saveFile(`chat_${chat.id}.json`, chat, chatsFolderId);
+  }
+
+  /**
+   * Save a research session specifically
+   */
+  async saveResearch(session: any): Promise<void> {
+    const { researchFolderId } = await this.ensureFolderStructure();
+    await this.saveFile(`research_${session.id}.json`, session, researchFolderId);
+  }
+
+  /**
+   * Compatibility alias for saveSession
+   */
+  async saveSession(session: any, folderId?: string): Promise<any> {
+    if (folderId) {
+      return await this.saveFile(`research_${session.id}.json`, session, folderId);
+    }
+    return await this.saveResearch(session);
+  }
+
+  /**
+   * List sessions from Drive
+   */
+  async listSessions(): Promise<any[]> {
+    try {
+      const { researchFolderId } = await this.ensureFolderStructure();
+      const q = encodeURIComponent(`'${researchFolderId}' in parents and trashed=false`);
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,size,modifiedTime)&spaces=drive`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.files || [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Get approximate storage usage in MB
    */
   async getStorageUsage(): Promise<{ usedMB: number }> {
     try {
-      const files = await this.listAllSessions('sessions');
+      const files = await this.listSessions();
       const totalBytes = files.reduce((acc: number, f: any) => acc + (Number(f.size) || 0), 0);
       return { usedMB: totalBytes / (1024 * 1024) };
     } catch {
@@ -39,390 +222,42 @@ export class GoogleDriveService {
   }
 
   /**
-   * List sessions
+   * Compatibility alias for listing all session files
    */
-  async listSessions(): Promise<any[]> {
-    try {
-      return await this.listAllSessions('sessions');
-    } catch {
-      return [];
-    }
+  async listAllSessions(folderIdOrName?: string): Promise<any[]> {
+    return await this.listSessions();
   }
 
   /**
-   * Initialize the Google API client with access token
-   */
-  async initialize(accessToken: string): Promise<void> {
-    this.accessToken = accessToken;
-    
-    // Load GAPI client dynamically
-    if (!(window as any).gapi) {
-      await this.loadGAPIScript();
-    }
-    
-    this.gapiClient = (window as any).gapi.client;
-  }
-
-  /**
-   * Load Google API script dynamically
-   */
-  private loadGAPIScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if ((window as any).gapi) {
-        resolve();
-        return;
-      }
-      
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.onload = () => {
-        (window as any).gapi.load('client', resolve);
-      };
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  }
-
-  /**
-   * Ensure the app folder structure exists in Drive
-   */
-  async ensureAppFolderStructure(): Promise<{ appFolderId: string; sessionsFolderId: string }> {
-    await this.initGAPIClient();
-    
-    // Find or create main app folder
-    const appFolder = await this.findOrCreateFolder(APP_FOLDER_NAME, 'root');
-    
-    // Find or create sessions subfolder
-    const sessionsFolder = await this.findOrCreateFolder(SESSIONS_FOLDER_NAME, appFolder.id);
-    
-    return {
-      appFolderId: appFolder.id,
-      sessionsFolderId: sessionsFolder.id
-    };
-  }
-
-  /**
-   * Initialize GAPI client
-   */
-  private async initGAPIClient(): Promise<void> {
-    if (!this.accessToken) {
-      throw new Error('Access token not set. Call initialize() first.');
-    }
-    
-    await this.gapiClient.init({
-      apiKey: '', // Not needed for OAuth
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-    });
-    
-    this.gapiClient.setToken({ access_token: this.accessToken });
-  }
-
-  /**
-   * Find existing folder or create new one
-   */
-  private async findOrCreateFolder(name: string, parentId: string): Promise<any> {
-    // Try to find existing folder
-    const response = await this.gapiClient.drive.files.list({
-      q: `mimeType='application/vnd.google-apps.folder' and name='${name}' and '${parentId}' in parents and trashed=false`,
-      fields: 'files(id, name)',
-      spaces: 'drive',
-    });
-    
-    if (response.result.files && response.result.files.length > 0) {
-      return response.result.files[0];
-    }
-    
-    // Create new folder
-    const createResponse = await this.gapiClient.drive.files.create({
-      resource: {
-        name: name,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [parentId],
-      },
-      fields: 'id, name',
-    });
-    
-    return createResponse.result;
-  }
-
-  /**
-   * Search for existing metadata file
-   */
-  async findMetadataFile(sessionsFolderId: string): Promise<any | null> {
-    const response = await this.gapiClient.drive.files.list({
-      q: `name='${METADATA_FILE_NAME}' and '${sessionsFolderId}' in parents and trashed=false`,
-      fields: 'files(id, name, modifiedTime)',
-      spaces: 'drive',
-    });
-    
-    if (response.result.files && response.result.files.length > 0) {
-      return response.result.files[0];
-    }
-    
-    return null;
-  }
-
-  /**
-   * Read metadata file content
-   */
-  async readMetadataFile(fileId: string): Promise<SessionMetadata[]> {
-    const response = await this.gapiClient.drive.files.get({
-      fileId: fileId,
-      alt: 'media',
-    });
-    
-    return response.result.sessions || [];
-  }
-
-  /**
-   * Create new metadata file
-   */
-  async createMetadataFile(sessionsFolderId: string, sessions: SessionMetadata[] = []): Promise<any> {
-    const boundary = '-------314159265358979323846';
-    const delimiter = '\r\n--' + boundary + '\r\n';
-    const close_delim = '\r\n--' + boundary + '--';
-    
-    const metadata = {
-      sessions: sessions,
-      lastSync: new Date().toISOString(),
-      version: '1.0'
-    };
-    
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(metadata) +
-      close_delim;
-    
-    const response = await this.gapiClient.request({
-      path: '/upload/drive/v3/files',
-      method: 'POST',
-      params: {
-        uploadType: 'multipart',
-        fields: 'id, name, modifiedTime',
-      },
-      headers: {
-        'Content-Type': 'multipart/related; boundary="' + boundary + '"',
-      },
-      body: multipartRequestBody,
-    });
-    
-    // Set file metadata
-    await this.gapiClient.drive.files.update({
-      fileId: response.result.id,
-      addParents: sessionsFolderId,
-      removeParents: 'root',
-    });
-    
-    return response.result;
-  }
-
-  /**
-   * Update metadata file
-   */
-  async updateMetadataFile(fileId: string, sessions: SessionMetadata[]): Promise<void> {
-    const metadata = {
-      sessions: sessions,
-      lastSync: new Date().toISOString(),
-      version: '1.0'
-    };
-    
-    const mediaBody = JSON.stringify(metadata);
-    
-    await this.gapiClient.drive.files.update({
-      fileId: fileId,
-      media: {
-        mimeType: 'application/json',
-        body: mediaBody,
-      },
-    });
-  }
-
-  /**
-   * Save session file to Drive
-   */
-  async saveSession(session: Session, sessionsFolderId: string): Promise<any> {
-    const fileName = `session_${session.id}.json`;
-    
-    // Check if file already exists
-    const existingFile = await this.findSessionFile(fileName, sessionsFolderId);
-    
-    const mediaBody = JSON.stringify(session, null, 2);
-    
-    if (existingFile) {
-      // Update existing file
-      return await this.gapiClient.drive.files.update({
-        fileId: existingFile.id,
-        media: {
-          mimeType: 'application/json',
-          body: mediaBody,
-        },
-      });
-    } else {
-      // Create new file
-      const response = await this.gapiClient.drive.files.create({
-        resource: {
-          name: fileName,
-          mimeType: 'application/json',
-          parents: [sessionsFolderId],
-        },
-        media: {
-          mimeType: 'application/json',
-          body: mediaBody,
-        },
-        fields: 'id, name, modifiedTime',
-      });
-      
-      return response.result;
-    }
-  }
-
-  /**
-   * Find session file by name
-   */
-  private async findSessionFile(fileName: string, sessionsFolderId: string): Promise<any | null> {
-    const response = await this.gapiClient.drive.files.list({
-      q: `name='${fileName}' and '${sessionsFolderId}' in parents and trashed=false`,
-      fields: 'files(id, name, modifiedTime)',
-      spaces: 'drive',
-    });
-    
-    if (response.result.files && response.result.files.length > 0) {
-      return response.result.files[0];
-    }
-    
-    return null;
-  }
-
-  /**
-   * Load session from Drive
-   */
-  async loadSession(sessionId: string, sessionsFolderId: string): Promise<Session | null> {
-    const fileName = `session_${sessionId}.json`;
-    const file = await this.findSessionFile(fileName, sessionsFolderId);
-    
-    if (!file) {
-      return null;
-    }
-    
-    const response = await this.gapiClient.drive.files.get({
-      fileId: file.id,
-      alt: 'media',
-    });
-    
-    return response.result as Session;
-  }
-
-  /**
-   * List all session files in Drive (convenience method with size info)
-   */
-  async listAllSessions(sessionsFolderIdOrName: string): Promise<any[]> {
-    // If it's a folder name, get the ID first
-    let folderId = sessionsFolderIdOrName;
-    if (!sessionsFolderIdOrName.includes('-')) {
-      // It's likely a name, try to get folder
-      try {
-        const { sessionsFolderId } = await this.ensureAppFolderStructure();
-        folderId = sessionsFolderId;
-      } catch (e) {
-        console.error('Could not get folder structure:', e);
-        return [];
-      }
-    }
-    
-    const response = await this.gapiClient.drive.files.list({
-      q: `name starts with 'session_' and name ends with '.json' and '${folderId}' in parents and trashed=false`,
-      fields: 'files(id, name, modifiedTime, size)',
-      spaces: 'drive',
-      orderBy: 'modifiedTime desc',
-    });
-    
-    return response.result.files || [];
-  }
-
-  /**
-   * Delete session file by ID (convenience method)
+   * Delete session file by ID from Drive
    */
   async deleteSessionById(sessionId: string): Promise<void> {
-    const { sessionsFolderId } = await this.ensureAppFolderStructure();
-    await this.deleteSession(sessionId, sessionsFolderId);
-  }
-
-  /**
-   * List all session metadata (legacy method)
-   */
-  async listSessionMetadata(sessionsFolderId: string): Promise<SessionMetadata[]> {
-    const files = await this.listAllSessions(sessionsFolderId);
-    
-    return files.map((file: any) => {
-      const match = file.name.match(/session_(.+)\.json/);
-      return {
-        id: match ? match[1] : file.id,
-        title: `Session ${match ? match[1].substring(0, 8) : 'unknown'}...`,
-        createdAt: file.modifiedTime,
-        updatedAt: file.modifiedTime,
-        promptCount: 0,
-      };
-    });
-  }
-
-  /**
-   * Delete session file
-   */
-  async deleteSession(sessionId: string, sessionsFolderId: string): Promise<void> {
-    const fileName = `session_${sessionId}.json`;
-    const file = await this.findSessionFile(fileName, sessionsFolderId);
-    
-    if (file) {
-      await this.gapiClient.drive.files.delete({
-        fileId: file.id,
-      });
-    }
-  }
-
-  /**
-   * Sync local sessions with Drive
-   */
-  async syncWithDrive(
-    localSessions: Session[],
-    accessToken: string
-  ): Promise<{ sessions: SessionMetadata[]; conflicts: string[] }> {
-    await this.initialize(accessToken);
-    const { sessionsFolderId } = await this.ensureAppFolderStructure();
-    
-    const conflicts: string[] = [];
-    const remoteSessions = await this.listAllSessions(sessionsFolderId);
-    
-    // Upload all local sessions
-    for (const session of localSessions) {
-      try {
-        await this.saveSession(session, sessionsFolderId);
-      } catch (error) {
-        console.error(`Failed to sync session ${session.id}:`, error);
-        conflicts.push(session.id);
+    try {
+      const { researchFolderId } = await this.ensureFolderStructure();
+      const existing = await this.findFileByName(`research_${sessionId}.json`, researchFolderId);
+      if (existing) {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${existing.id}`, {
+          method: 'DELETE',
+          headers: this.getHeaders(),
+        });
       }
+    } catch (e) {
+      console.warn('Failed to delete session from Drive:', e);
     }
-    
-    // Update metadata file
-    const metadataFile = await this.findMetadataFile(sessionsFolderId);
-    const sessionMetadata: SessionMetadata[] = localSessions.map(s => ({
-      id: s.id,
-      title: (s as any).title || s.prompt?.substring(0, 30) || `Session ${s.id.substring(0, 8)}`,
-      createdAt: new Date(s.createdAt).toISOString(),
-      updatedAt: s.updatedAt ? new Date(s.updatedAt).toISOString() : new Date().toISOString(),
-      promptCount: s.steps?.length || 0,
-    }));
-    
-    if (metadataFile) {
-      await this.updateMetadataFile(metadataFile.id, sessionMetadata);
-    } else {
-      await this.createMetadataFile(sessionsFolderId, sessionMetadata);
-    }
-    
-    return { sessions: sessionMetadata, conflicts };
+  }
+
+  /**
+   * Compatibility method for ensuring folder structure
+   */
+  async ensureAppFolderStructure(): Promise<{ appFolderId: string; sessionsFolderId: string }> {
+    const { appFolderId, researchFolderId } = await this.ensureFolderStructure();
+    return {
+      appFolderId,
+      sessionsFolderId: researchFolderId,
+    };
   }
 }
 
-export const driveService = new GoogleDriveService();
-export const googleDriveService = driveService;
+export const googleDriveService = new GoogleDriveService();
+export const driveService = googleDriveService;
 

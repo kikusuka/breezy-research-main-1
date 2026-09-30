@@ -68,10 +68,11 @@ if (isFirebaseConfigured) {
   };
 }
 
-// Google provider with basic profile scopes only upfront
+// Google provider with profile and drive.file scopes
 const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
 });
 
 export interface AuthUser {
@@ -82,12 +83,23 @@ export interface AuthUser {
   emailVerified: boolean;
 }
 
-// In-memory token cache
+// In-memory token cache with timestamp
 let cachedAccessToken: string | null = null;
+let tokenIssuedAt: number = 0;
+const TOKEN_TTL_MS = 3500 * 1000; // 3500s (~58 mins, safety buffer before 3600s Google expiry)
 
 export const authService = {
   /**
-   * Sign in with Google popup (basic profile scopes only)
+   * Check if token is expired or close to expiration
+   */
+  isTokenExpired(): boolean {
+    if (!cachedAccessToken) return true;
+    if (!tokenIssuedAt) return false;
+    return Date.now() - tokenIssuedAt > TOKEN_TTL_MS;
+  },
+
+  /**
+   * Sign in with Google popup (with drive.file scope)
    */
   async signInWithGoogle(): Promise<{ user: AuthUser; accessToken: string } | null> {
     if (!isFirebaseConfigured) {
@@ -98,9 +110,11 @@ export const authService = {
       const user = result.user;
       const credential = GoogleAuthProvider.credentialFromResult(result);
       cachedAccessToken = credential?.accessToken || null;
+      tokenIssuedAt = Date.now();
       
       if (cachedAccessToken) {
         sessionStorage.setItem('synthexis_g_token', cachedAccessToken);
+        sessionStorage.setItem('synthexis_g_token_time', String(tokenIssuedAt));
       }
 
       return {
@@ -140,7 +154,9 @@ export const authService = {
       const token = credential?.accessToken || null;
       if (token) {
         cachedAccessToken = token;
+        tokenIssuedAt = Date.now();
         sessionStorage.setItem('synthexis_g_token', token);
+        sessionStorage.setItem('synthexis_g_token_time', String(tokenIssuedAt));
       }
       return token;
     } catch (error: any) {
@@ -155,13 +171,17 @@ export const authService = {
   async signOut(): Promise<void> {
     if (!isFirebaseConfigured) {
       cachedAccessToken = null;
+      tokenIssuedAt = 0;
       sessionStorage.removeItem('synthexis_g_token');
+      sessionStorage.removeItem('synthexis_g_token_time');
       return;
     }
     try {
       await signOut(auth);
       cachedAccessToken = null;
+      tokenIssuedAt = 0;
       sessionStorage.removeItem('synthexis_g_token');
+      sessionStorage.removeItem('synthexis_g_token_time');
     } catch (error: any) {
       console.error('Sign-out error:', error);
       throw new Error('Failed to sign out');
@@ -179,6 +199,8 @@ export const authService = {
     return onAuthStateChanged(auth, (firebaseUser) => {
       if (!cachedAccessToken) {
         cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
+        const storedTime = sessionStorage.getItem('synthexis_g_token_time');
+        if (storedTime) tokenIssuedAt = Number(storedTime);
       }
 
       if (firebaseUser) {
@@ -201,6 +223,8 @@ export const authService = {
   getAccessToken(): string | null {
     if (!cachedAccessToken) {
       cachedAccessToken = sessionStorage.getItem('synthexis_g_token');
+      const storedTime = sessionStorage.getItem('synthexis_g_token_time');
+      if (storedTime) tokenIssuedAt = Number(storedTime);
     }
     return cachedAccessToken;
   },
@@ -210,10 +234,13 @@ export const authService = {
    */
   setAccessToken(token: string | null) {
     cachedAccessToken = token;
+    tokenIssuedAt = Date.now();
     if (token) {
       sessionStorage.setItem('synthexis_g_token', token);
+      sessionStorage.setItem('synthexis_g_token_time', String(tokenIssuedAt));
     } else {
       sessionStorage.removeItem('synthexis_g_token');
+      sessionStorage.removeItem('synthexis_g_token_time');
     }
   },
 

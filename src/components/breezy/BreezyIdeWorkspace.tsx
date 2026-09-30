@@ -744,9 +744,19 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
         {/* Left Sidebar: Repo / Files Browser */}
         <div className={`w-full md:w-64 border-r border-slate-800/80 flex flex-col bg-[#0b0f19] shrink-0 ${activeWorkspaceTab === 'files' ? 'flex' : 'hidden md:flex'}`}>
           <div className="p-3 border-b border-slate-800/80 flex flex-col gap-2">
-            <span className="font-mono text-[10px] uppercase text-slate-400 font-bold tracking-wider">
-              Repositories & Sources
-            </span>
+            <div className="flex items-center justify-between md:block">
+              <span className="font-mono text-[10px] uppercase text-slate-400 font-bold tracking-wider">
+                Repositories & Sources
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceTab('code')}
+                className="md:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 text-sky-400 text-[10px] font-bold border border-sky-500/20 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+                <span>Back to IDE</span>
+              </button>
+            </div>
             <select
               value={selectedRepo}
               onChange={(e) => handleSelectRepo(e.target.value)}

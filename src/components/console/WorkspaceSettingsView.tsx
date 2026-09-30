@@ -29,6 +29,9 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
 
   // Role routing & presets
   const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>(canonical.preset || 'balanced');
+  const [autoSaveToDrive, setAutoSaveToDrive] = useState<boolean>(() => {
+    return localStorage.getItem('breezy_auto_save_drive') === 'true';
+  });
   const [roles, setRoles] = useState(canonical.roles || {
     architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
     skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
@@ -220,6 +223,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
 
     localStorage.setItem('breezy_webhook_url', webhookUrl.trim());
     localStorage.setItem('breezy_webhook_active', String(webhookActive));
+    localStorage.setItem('breezy_auto_save_drive', String(autoSaveToDrive));
     setIsDirty(false);
     setToastMessage('Settings updated: Configuration saved.');
     setShowToast(true);
@@ -296,7 +300,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const isSyncing = isLoadingGoogle || isLoadingGithub;
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] pb-24 text-stone-200">
+    <div className="flex flex-col w-full min-h-[calc(100vh-4rem)] pb-24 text-stone-200">
       {/* Toast Notification */}
       {showToast && (
         <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-stone-900 text-stone-100 shadow-2xl flex items-center gap-3 border border-stone-800 animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md">
@@ -463,6 +467,42 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                       >
                         Calendar events
                       </button>
+                    </div>
+
+                    {/* Auto-save & Firebase Bridge */}
+                    <div className="flex flex-col gap-3 p-4 rounded-xl bg-sky-950/20 border border-sky-500/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-sky-200 uppercase tracking-widest">Auto-save to Drive</span>
+                          <span className="text-[10px] text-sky-400/80">Automatically sync research and chats to Google Drive</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAutoSaveToDrive(!autoSaveToDrive);
+                            setIsDirty(true);
+                          }}
+                          className={`w-10 h-5 rounded-full p-0.5 transition-colors cursor-pointer ${
+                            autoSaveToDrive ? 'bg-sky-500' : 'bg-stone-800'
+                          }`}
+                        >
+                          <div
+                            className={`w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                              autoSaveToDrive ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="pt-3 border-t border-sky-500/10 flex items-start gap-2">
+                        <span className="material-symbols-outlined text-sky-400 text-[16px]">integration_instructions</span>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-sky-100 uppercase tracking-tight">Firebase Cloud Bridge</span>
+                          <p className="text-[9px] text-sky-400/70 leading-relaxed italic">
+                            Since you are authenticated via Google, you can bridge your Firebase instance to enable unified backend synchronization across all endpoints.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Content lists */}

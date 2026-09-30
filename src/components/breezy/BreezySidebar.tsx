@@ -53,7 +53,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-full w-72 bg-[#0d1322]/95 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-[#0d1322]/95 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >

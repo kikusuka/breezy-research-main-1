@@ -194,7 +194,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   onKeyDown={handleKeyDown}
                   placeholder="Execute research protocol or technical inquiry..."
                   rows={2}
-                  className="w-full bg-transparent text-stone-100 placeholder-stone-700 text-lg sm:text-xl font-serif italic resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0 uppercase tracking-tighter"
+                  className="w-full bg-transparent text-stone-100 placeholder-stone-700 text-lg sm:text-xl font-serif italic resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
                 />
 
                 <div className="flex items-center justify-between pt-4 border-t border-stone-800/40">

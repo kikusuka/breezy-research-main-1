@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DebateSession, ProviderKeyConfig, EvidenceSource } from '../../types';
 import { EvidenceGraphView } from './EvidenceGraphView';
+import { googleDriveService } from '../../services/googleDriveService';
+import { authService } from '../../services/authService';
 
 interface ResearchConversationViewProps {
   session?: DebateSession | null;
@@ -17,6 +19,7 @@ interface ResearchConversationViewProps {
   onOpenNotes?: () => void;
   onOpenInBreezy?: (session: DebateSession) => void;
   onOpenInIde?: (session: DebateSession) => void;
+  onPinToCanvas?: (session: DebateSession) => void;
 }
 
 export const ResearchConversationView: React.FC<ResearchConversationViewProps> = ({
@@ -33,6 +36,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   onOpenNotes,
   onOpenInBreezy,
   onOpenInIde,
+  onPinToCanvas,
 }) => {
   const [inputText, setInputText] = useState('');
   const [researchDepth, setResearchDepth] = useState<'solo' | 'standard' | 'deep'>('standard');
@@ -41,7 +45,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   const [selectedSource, setSelectedSource] = useState<EvidenceSource | null>(null);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -81,16 +85,20 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       return;
     }
 
+    const fullPromptWithContext = attachedFile?.content
+      ? `${prompt}\n\n--- [Attached Document: ${attachedFile.name}] ---\n${attachedFile.content}\n--- [End of Document Context] ---`
+      : prompt;
+
     setInputText('');
     setAttachedFile(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    onStartDebate(prompt, researchDepth);
+    onStartDebate(fullPromptWithContext, researchDepth);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 768) {
       e.preventDefault();
       handleSend();
     }
@@ -114,10 +122,22 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAttachedFile({
-        name: file.name,
-        size: `${(file.size / 1024).toFixed(1)} KB`,
-      });
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = typeof event.target?.result === 'string' ? event.target.result : '';
+        // Limit text to 40,000 chars to avoid overflowing model context
+        const truncated = text.length > 40000 ? text.slice(0, 40000) + '\n... [Context truncated for length]' : text;
+        setAttachedFile({
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          content: truncated,
+        });
+        showToast(`Loaded ${file.name} for research context.`);
+      };
+      reader.onerror = () => {
+        showToast('Could not parse selected file. Please select a text, code, or document file.');
+      };
+      reader.readAsText(file);
     }
   };
 
@@ -389,10 +409,33 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     type="button"
                     onClick={handleSave}
                     className="flex items-center gap-1 hover:text-stone-200 transition-colors text-xs text-stone-400 font-medium cursor-pointer"
-                    title="Save report"
+                    title="Save report to local journal"
                   >
                     <span className="material-symbols-outlined text-[14px]">bookmark</span>
-                    <span>{saved ? 'Saved' : 'Save'}</span>
+                    <span>{saved ? 'Saved' : 'Journal'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const token = authService.getAccessToken();
+                      if (!token) {
+                        showToast('Please connect Google Workspace in Settings.');
+                        return;
+                      }
+                      if (!session) return;
+                      try {
+                        await googleDriveService.initialize(token);
+                        await googleDriveService.saveResearch(session);
+                        showToast('Research report backed up to Google Drive!');
+                      } catch (e: any) {
+                        showToast(`Backup failed: ${e.message}`);
+                      }
+                    }}
+                    className="flex items-center gap-1 hover:text-stone-200 transition-colors text-xs text-stone-400 font-medium cursor-pointer"
+                    title="Save report to Google Drive"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">cloud_upload</span>
+                    <span>Drive</span>
                   </button>
                   {onExportMarkdown && (
                     <button
@@ -492,6 +535,16 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     >
                       <span className="material-symbols-outlined text-[16px]">terminal</span>
                       <span>Open in Terminal IDE</span>
+                    </button>
+                  )}
+                  {onPinToCanvas && (
+                    <button
+                      type="button"
+                      onClick={() => onPinToCanvas(session)}
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 text-violet-200 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md border border-violet-500/40 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">dashboard_customize</span>
+                      <span>Pin to Canvas</span>
                     </button>
                   )}
                 </div>
