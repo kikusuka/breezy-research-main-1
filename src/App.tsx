@@ -225,6 +225,19 @@ export default function App() {
     const promptText = customPrompt || currentSession?.prompt;
     if (!promptText || !promptText.trim()) return;
 
+    const configuredList = providerConfigService.getConfiguredProviders();
+    let serverGeminiAvailable = false;
+    try {
+      const health = await apiClient.getHealth();
+      serverGeminiAvailable = !!health.serverGeminiConfigured;
+    } catch {}
+
+    if (configuredList.length === 0 && !serverGeminiAvailable) {
+      toast('No AI providers configured. Please add an API key in Settings (BYOK) to run deliberations.');
+      setIsProfileSettingsOpen(true);
+      return;
+    }
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }

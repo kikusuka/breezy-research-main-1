@@ -12,8 +12,13 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; latencyMs?: number; msg?: string }>>({});
 
+  const [serverGeminiActive, setServerGeminiActive] = useState(false);
+
   useEffect(() => {
     setConfig(providerConfigService.getConfig());
+    apiClient.getHealth().then((h) => {
+      setServerGeminiActive(!!h.serverGeminiConfigured);
+    }).catch(() => {});
   }, []);
 
   const showToast = (msg: string) => {
@@ -26,21 +31,27 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
     const results: Record<string, { ok: boolean; latencyMs?: number; msg?: string }> = {};
     const keys = config.keys || {};
 
-    // First check server health to see if server-side Gemini is available
-    let serverGeminiActive = false;
+    let serverGemini = false;
     try {
       const health = await apiClient.getHealth();
-      serverGeminiActive = !!health.serverGeminiConfigured;
+      serverGemini = !!health.serverGeminiConfigured;
+      setServerGeminiActive(serverGemini);
     } catch {}
 
     const providersToTest = ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'].filter(
-      (p) => Boolean(keys[p]) || (p === 'gemini' && serverGeminiActive)
+      (p) => Boolean(keys[p]) || (p === 'gemini' && serverGemini)
     );
+
+    if (providersToTest.length === 0) {
+      setIsBenchmarking(false);
+      showToast('No API keys configured to test. Please add credentials in Settings.');
+      return;
+    }
 
     for (const p of providersToTest) {
       const apiKey = keys[p] || '';
-      if (p === 'gemini' && !apiKey && serverGeminiActive) {
-        results[p] = { ok: true, msg: 'Server Gemini API Key configured.' };
+      if (p === 'gemini' && !apiKey && serverGemini) {
+        results[p] = { ok: true, msg: 'Server Gemini Key Active' };
         continue;
       }
       try {
@@ -62,10 +73,10 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
   };
 
   const rolesMap = config.roles || {
-    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    architect: { provider: '', model: '' },
+    skeptic: { provider: '', model: '' },
+    verifier: { provider: '', model: '' },
+    arbiter: { provider: '', model: '' },
   };
 
   return (
@@ -143,7 +154,8 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               { roleKey: 'arbiter', title: 'Synthesizer', sub: 'Resolution', desc: 'Reconciles conflicting perspectives into a unified, high-fidelity research output.' },
             ].map((item) => {
               const seat = rolesMap[item.roleKey as keyof typeof rolesMap] || { provider: '', model: '' };
-              const isConfigured = Boolean(seat.provider && seat.model);
+              const hasProviderKey = Boolean(config.keys?.[seat.provider]) || (seat.provider === 'gemini' && serverGeminiActive);
+              const isConfigured = Boolean(seat.provider && seat.model && hasProviderKey);
               const testInfo = testResults[seat.provider];
               return (
                 <div key={item.roleKey} className="p-6 rounded-xl bg-stone-900/10 border border-stone-800/40 flex flex-col gap-6 hover:border-stone-700/60 transition-all">
@@ -153,8 +165,9 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                       <h3 className="font-serif italic text-xl text-stone-200">{item.title}</h3>
                     </div>
                     <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-950 border border-stone-800">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-stone-600'}`} />
                       <span className="font-mono text-[10px] text-stone-400 uppercase font-bold tracking-tight">
-                        {isConfigured ? seat.provider : 'Not connected'}
+                        {seat.provider ? seat.provider : 'Unassigned'}
                       </span>
                     </div>
                   </div>
@@ -165,22 +178,26 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                     <div className="flex flex-col">
                       <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Assigned Model</span>
                       <span className="font-mono text-[11px] text-stone-300 font-bold tracking-tighter">
-                        {isConfigured ? seat.model : '—'}
+                        {seat.model || '—'}
                       </span>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Status</span>
-                      {!isConfigured ? (
-                        <span className="font-mono text-[11px] text-amber-500 font-bold uppercase tracking-widest italic">
-                          Unconfigured
+                      {!seat.provider || !seat.model ? (
+                        <span className="font-mono text-[10px] text-stone-600 font-bold uppercase tracking-widest">
+                          UNASSIGNED
+                        </span>
+                      ) : !hasProviderKey ? (
+                        <span className="font-mono text-[10px] text-amber-400/90 font-bold uppercase tracking-widest">
+                          NOT CONNECTED
                         </span>
                       ) : testInfo ? (
-                        <span className={`font-mono text-[11px] font-bold ${testInfo.ok ? 'text-stone-100' : 'text-amber-600'}`}>
-                          {testInfo.ok ? `${testInfo.latencyMs ? `${testInfo.latencyMs}ms` : 'Verified'}` : 'Verification Failed'}
+                        <span className={`font-mono text-[10px] font-bold ${testInfo.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {testInfo.ok ? `CONNECTED (${testInfo.latencyMs ? `${testInfo.latencyMs}ms` : 'OK'})` : 'ERROR'}
                         </span>
                       ) : (
-                        <span className="font-mono text-[11px] text-stone-600 font-bold uppercase tracking-widest italic">
-                          Not Tested
+                        <span className="font-mono text-[10px] text-sky-400 font-bold uppercase tracking-widest">
+                          CONFIGURED
                         </span>
                       )}
                     </div>

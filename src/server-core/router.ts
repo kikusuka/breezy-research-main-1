@@ -120,14 +120,22 @@ export async function handleBackendRequest(
   // 1. Health & Status
   if (path === '/api/health' && req.method === 'GET') {
     const hasServerGemini = Boolean(env.GEMINI_API_KEY);
+    const configuredProviders: string[] = [];
+    if (env.GEMINI_API_KEY) configuredProviders.push('gemini');
+    if (env.ANTHROPIC_API_KEY) configuredProviders.push('anthropic');
+    if (env.GROQ_API_KEY) configuredProviders.push('groq');
+    if (env.SAMBANOVA_API_KEY) configuredProviders.push('sambanova');
+    if (env.OPENROUTER_API_KEY) configuredProviders.push('openrouter');
+
     const healthData: HealthResponse = {
       ok: true,
       status: 'ok',
       backend: backendName,
       version: '2.5.0-universal',
       serverGeminiConfigured: hasServerGemini,
-      defaultModel: 'gemini-3.8-flash',
-      providers: ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'],
+      defaultModel: hasServerGemini ? 'gemini-3.8-flash' : '',
+      providers: configuredProviders,
+      supportedProviders: ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'],
       timestamp: Date.now(),
     };
     return createJsonResponse(healthData, 200, req, env);

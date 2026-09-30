@@ -55,5 +55,6 @@ export interface HealthResponse {
   serverGeminiConfigured: boolean;
   defaultModel: string;
   providers: string[];
+  supportedProviders?: string[];
   timestamp: number;
 }

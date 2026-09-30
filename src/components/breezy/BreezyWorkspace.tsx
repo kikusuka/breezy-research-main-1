@@ -90,14 +90,12 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const [webSearchActive, setWebSearchActive] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
-    const config = providerConfigService.getConfig();
-    const hasKeys = Object.keys(config.keys || {}).some(k => Boolean(config.keys[k]));
-    return config.defaultModel || (hasKeys ? 'gemini-3.8-flash' : '');
+    const routable = providerConfigService.getActiveRoutableModel();
+    return routable ? routable.model : '';
   });
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
-    const config = providerConfigService.getConfig();
-    const hasKeys = Object.keys(config.keys || {}).some(k => Boolean(config.keys[k]));
-    return config.defaultProvider || (hasKeys ? 'gemini' : '');
+    const routable = providerConfigService.getActiveRoutableModel();
+    return routable ? routable.provider : '';
   });
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
   const [speakingMessageIdx, setSpeakingMessageIdx] = useState<number | null>(null);
@@ -279,6 +277,27 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
     setIsThinking(true);
 
+    if (!selectedProvider || !providerConfigService.isProviderConfigured(selectedProvider)) {
+      toast(`No API key configured for ${selectedProvider || 'an AI provider'}. Please connect your key in Settings.`);
+      onOpenSettings();
+      saveChats({
+        ...nextChats,
+        [currentId]: {
+          ...updatedChat,
+          messages: [
+            ...updatedMessages,
+            {
+              role: 'assistant',
+              content: `⚠️ Provider Not Connected: Please add an API key in Settings (BYOK) for ${selectedProvider || 'your preferred model'} to generate responses.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            },
+          ],
+        },
+      });
+      setIsThinking(false);
+      return;
+    }
+
     try {
       const apiKey = providerConfigService.getKey(selectedProvider) || undefined;
       const data = await apiClient.chatBreezy(
@@ -428,17 +447,28 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
         <div className="flex items-center gap-3">
           {/* Model Selector Dropdown */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsModelPickerOpen(!isModelPickerOpen)}
-              className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800/80 transition-all border border-slate-700/60 bg-slate-900/60 cursor-pointer shadow-xs"
-            >
-              <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-              <span>{selectedModel}</span>
-              <span className="material-symbols-outlined text-[16px] text-slate-400">
-                {isModelPickerOpen ? 'expand_less' : 'expand_more'}
-              </span>
-            </button>
+            {(() => {
+              const isConfigured = Boolean(selectedProvider && providerConfigService.isProviderConfigured(selectedProvider));
+              return (
+                <button
+                  type="button"
+                  onClick={() => setIsModelPickerOpen(!isModelPickerOpen)}
+                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer shadow-xs ${
+                    isConfigured
+                      ? 'text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700/60 bg-slate-900/60'
+                      : 'text-amber-300 hover:bg-amber-950/40 border-amber-500/40 bg-amber-950/20'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                  <span className="truncate max-w-[130px] font-sans">
+                    {isConfigured && selectedModel ? selectedModel : 'No Model Connected'}
+                  </span>
+                  <span className="material-symbols-outlined text-[16px] text-slate-400">
+                    {isModelPickerOpen ? 'expand_less' : 'expand_more'}
+                  </span>
+                </button>
+              );
+            })()}
 
             {isModelPickerOpen && (
               <>

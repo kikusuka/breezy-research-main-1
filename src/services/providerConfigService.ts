@@ -187,26 +187,62 @@ export const providerConfigService = {
   },
 
   /**
-   * Build seats payload for streamDebate API request
+   * Build seats payload for streamDebate API request truthfully
    */
   getSeatsPayload(config?: CanonicalWorkspaceConfig) {
     const current = config || this.getConfig();
-    const roles = current.roles || DEFAULT_ROLES;
+    const roles = current.roles || UNCONFIGURED_ROLES;
 
-    const resolveSeat = (roleKey: keyof CanonicalWorkspaceConfig['roles'], fallbackModel: string) => {
+    const resolveSeat = (roleKey: keyof CanonicalWorkspaceConfig['roles']) => {
       const assigned = roles[roleKey];
       if (assigned && assigned.provider && assigned.model) {
         return { provider: assigned.provider, model: assigned.model };
       }
-      return { provider: 'gemini', model: fallbackModel };
+      return { provider: '' as any, model: '' };
     };
 
     return {
-      architect: resolveSeat('architect', 'gemini-3.8-flash'),
-      skeptic: resolveSeat('skeptic', 'gemini-3.8-flash'),
-      verifier: resolveSeat('verifier', 'gemini-3.8-flash'),
-      arbiter: resolveSeat('arbiter', 'gemini-3.8-flash'),
+      architect: resolveSeat('architect'),
+      skeptic: resolveSeat('skeptic'),
+      verifier: resolveSeat('verifier'),
+      arbiter: resolveSeat('arbiter'),
     };
+  },
+
+  /**
+   * Check if a specific provider has a configured API key
+   */
+  isProviderConfigured(provider: string): boolean {
+    if (!provider) return false;
+    const keys = this.getKeys();
+    return Boolean(keys[provider]);
+  },
+
+  /**
+   * Get list of all providers with active keys configured
+   */
+  getConfiguredProviders(): string[] {
+    const keys = this.getKeys();
+    return Object.keys(keys).filter((p) => Boolean(keys[p]));
+  },
+
+  /**
+   * Get the active routable provider and model, or null if none is configured
+   */
+  getActiveRoutableModel(): { provider: string; model: string } | null {
+    const config = this.getConfig();
+    const configured = this.getConfiguredProviders();
+    if (config.defaultProvider && config.defaultModel && configured.includes(config.defaultProvider)) {
+      return { provider: config.defaultProvider, model: config.defaultModel };
+    }
+    if (configured.length > 0) {
+      const firstProv = configured[0];
+      const models = AVAILABLE_MODELS[firstProv];
+      if (models && models.length > 0) {
+        return { provider: firstProv, model: models[0].id };
+      }
+    }
+    return null;
   },
 
   /**
