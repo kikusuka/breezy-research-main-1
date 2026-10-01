@@ -1,6 +1,6 @@
 import React from 'react';
 import { DebateSession } from '../../types';
-import { SynthexisLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
+import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -173,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   title="Switch to Breezy Chat"
                 >
                   <div className="flex items-center gap-2">
-                    <BreezyLogoIcon className="w-5 h-5 text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]" />
+                    <span className="material-symbols-outlined text-[17px] text-sky-400">chat</span>
                     <span>Breezy Chat</span>
                   </div>
                   <span className="material-symbols-outlined text-[14px]">arrow_forward</span>

@@ -453,6 +453,7 @@ export default function App() {
                   setProductMode('synthexis');
                   toast('Switched to Synthexis Research Console.');
                 }}
+                isSidebarOpen={isSidebarOpen}
               />
             )}
 

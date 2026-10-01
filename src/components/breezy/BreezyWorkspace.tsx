@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { providerConfigService, AVAILABLE_MODELS } from '../../services/providerConfigService';
 import { effectiveProviderService } from '../../services/effectiveProviderService';
-import { BreezyLogoIcon, SynthexisLogoIcon } from '../icons/ProductLogos';
+import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { googleDriveService } from '../../services/googleDriveService';
 import { authService } from '../../services/authService';
 import { userProfileService } from '../../services/userProfileService';
@@ -30,6 +30,7 @@ interface BreezyWorkspaceProps {
   onUpdateChats?: (chats: Record<string, BreezyChat>) => void;
   onNewChat?: () => void;
   onSwitchToSynthexis?: () => void;
+  isSidebarOpen?: boolean;
 }
 
 export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
@@ -41,6 +42,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   onUpdateChats: parentUpdateChats,
   onNewChat: parentNewChat,
   onSwitchToSynthexis,
+  isSidebarOpen = true,
 }) => {
   // Local state fallback if parent props are not supplied
   const [localChats, setLocalChats] = useState<Record<string, BreezyChat>>(() => {
@@ -485,21 +487,21 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       <div className="flex-1 flex flex-col w-full z-10 pt-1">
         <main
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full pt-2 pb-44 scroll-smooth"
+          className="flex-1 overflow-y-auto w-full pt-1 sm:pt-2 pb-48 scroll-smooth"
         >
-          <div className="w-full max-w-[768px] mx-auto px-4 sm:px-6 flex flex-col gap-6">
+          <div className="w-full max-w-[920px] lg:max-w-[980px] mx-auto px-4 sm:px-6 flex flex-col gap-5">
             {!activeChat || activeChat.messages.length === 0 ? (
               /* Centered Welcome Hero */
-              <div className="py-6 sm:py-8 flex flex-col items-center text-center animate-in fade-in duration-300">
-                <h1 className="font-sans text-2xl sm:text-3xl text-white font-bold tracking-tight">
+              <div className="pt-2 sm:pt-4 pb-2 sm:pb-3 flex flex-col items-center text-center animate-in fade-in duration-200">
+                <h1 className="font-sans text-2xl sm:text-3xl lg:text-4xl text-white font-bold tracking-tight">
                   What can I help you with today?
                 </h1>
-                <p className="font-sans text-sm text-slate-300 mt-2 max-w-md">
+                <p className="font-sans text-sm sm:text-base text-slate-300 mt-2 max-w-lg leading-relaxed">
                   Ask questions, draft code, brainstorm ideas, and build powerful applications.
                 </p>
 
                 {/* Prompt Cards */}
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 text-left">
+                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 sm:mt-5 text-left">
                   <button
                     type="button"
                     onClick={() => handleSend('Explain quantum computing with a simple, intuitive metaphor.')}
@@ -602,8 +604,8 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                     className="flex items-start gap-3 max-w-[96%] self-start animate-in fade-in"
                   >
                     {/* Assistant Avatar */}
-                    <div className="w-8 h-8 rounded-full bg-slate-900/80 border border-sky-400/25 shrink-0 flex items-center justify-center mt-0.5 shadow-sm text-sky-400">
-                      <BreezyLogoIcon className="w-5.5 h-5.5 text-sky-400 drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]" />
+                    <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-400/25 shrink-0 flex items-center justify-center mt-0.5 shadow-xs text-sky-400 font-bold text-xs select-none">
+                      B
                     </div>
 
                     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
@@ -703,7 +705,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
         </main>
 
         {/* Floating Bottom Composer */}
-        <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 pointer-events-none flex flex-col items-center z-30">
+        <div className={`fixed bottom-0 ${isSidebarOpen ? 'lg:left-64' : 'left-0'} left-0 right-0 p-3 sm:p-4 pointer-events-none flex flex-col items-center z-30 transition-all duration-300`}>
           {/* Hidden File Input */}
           <input
             type="file"
@@ -713,9 +715,9 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
             accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv,.js,.ts,.tsx,.jsx,.py,.html,.css,.sql"
           />
 
-          <div className="w-full max-w-[768px] pointer-events-auto flex flex-col items-center gap-2">
+          <div className="w-full max-w-[920px] lg:max-w-[980px] pointer-events-auto flex flex-col items-center gap-2">
             {/* Input Capsule Box */}
-            <div className="w-full rounded-2xl bg-[#0d1424]/95 backdrop-blur-2xl p-2.5 border border-slate-700/80 shadow-[0_12px_36px_rgba(0,0,0,0.7)] flex flex-col gap-2 focus-within:border-sky-400/60 focus-within:shadow-[0_0_24px_rgba(56,189,248,0.2)] transition-all">
+            <div className="w-full rounded-2xl sm:rounded-3xl bg-[#0d1424]/95 backdrop-blur-2xl p-3.5 sm:p-4 border border-slate-700/80 shadow-[0_16px_40px_rgba(0,0,0,0.75)] flex flex-col gap-2.5 focus-within:border-sky-400/60 focus-within:shadow-[0_0_28px_rgba(56,189,248,0.22)] transition-all">
               {attachedFile && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-xs text-sky-200 self-start">
                   <span className="material-symbols-outlined text-[15px] text-sky-400">attach_file</span>
@@ -732,12 +734,12 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
               <textarea
                 ref={textareaRef}
-                rows={1}
+                rows={2}
                 value={inputVal}
                 onChange={(e) => {
                   setInputVal(e.target.value);
                   e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`;
+                  e.target.style.height = `${Math.min(Math.max(e.target.scrollHeight, 60), 220)}px`;
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 768) {
@@ -746,11 +748,11 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                   }
                 }}
                 placeholder="Ask Breezy anything... (Shift+Enter for new line)"
-                className="w-full bg-transparent resize-none outline-none font-sans text-sm text-slate-100 placeholder:text-slate-400 max-h-44 px-2 pt-1 leading-relaxed"
+                className="w-full bg-transparent resize-none outline-none font-sans text-sm sm:text-base text-slate-100 placeholder:text-slate-400 min-h-[58px] sm:min-h-[64px] max-h-56 px-2.5 py-1 leading-relaxed"
               />
 
               {/* Tools row */}
-              <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-xs">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   {/* Web search toggle */}
                   <button
@@ -887,14 +889,14 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                   <button
                     type="button"
                     onClick={handleMicToggle}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
                       isMicActive
                         ? 'bg-red-500/20 text-red-400 border border-red-500/40'
                         : 'text-slate-400 hover:text-sky-400 hover:bg-slate-800/80'
                     }`}
                     title="Voice input"
                   >
-                    <span className="material-symbols-outlined text-[18px]">mic</span>
+                    <span className="material-symbols-outlined text-[19px] sm:text-[20px]">mic</span>
                   </button>
 
                   {/* Send Button */}
@@ -902,14 +904,14 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                     type="button"
                     onClick={() => handleSend()}
                     disabled={(!inputVal.trim() && !attachedFile) || isThinking}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                       (inputVal.trim() || attachedFile) && !isThinking
                         ? 'bg-white text-slate-950 hover:bg-slate-200 shadow-md font-bold'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     }`}
                     title="Send message"
                   >
-                    <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                    <span className="material-symbols-outlined text-[19px] sm:text-[20px]">arrow_upward</span>
                   </button>
                 </div>
               </div>

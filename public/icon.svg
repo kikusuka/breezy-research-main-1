@@ -13,16 +13,16 @@
   <rect width="100%" height="100%" rx="24" fill="url(#bg)" />
   
   <!-- Robot Head -->
-  <circle cx="36" cy="38" r="18" stroke="url(#glow)" stroke-width="5.5" fill="none" />
+  <circle cx="36" cy="38" r="17" stroke="url(#glow)" stroke-width="5" fill="none" />
   <!-- Antenna Bulb and Stem -->
-  <circle cx="36" cy="11.5" r="3.8" fill="#38bdf8" />
-  <line x1="36" y1="15" x2="36" y2="19.5" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" />
+  <circle cx="36" cy="12" r="3.8" fill="#38bdf8" />
+  <line x1="36" y1="15.8" x2="36" y2="21" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
   <!-- Eyes -->
-  <circle cx="30" cy="38" r="3.2" fill="#38bdf8" />
-  <circle cx="42" cy="38" r="3.2" fill="#38bdf8" />
+  <circle cx="30.5" cy="38" r="3" fill="#38bdf8" />
+  <circle cx="42.5" cy="38" r="3" fill="#38bdf8" />
   <!-- Dynamic Smooth Aerodynamic Wind Swooshes -->
   <path
-    d="M 58,28 C 68,26 80,24 86,28 C 91,31 90,38 84,40 C 78,42 72,37 74,31"
+    d="M 52,24 C 64,20 80,20 89,27 C 94,31 92,39 85,41 C 79,42 74,37 76,32"
     stroke="url(#glow)"
     stroke-width="4.5"
     stroke-linecap="round"
@@ -30,7 +30,7 @@
     fill="none"
   />
   <path
-    d="M 12,58 C 28,58 44,48 66,48 C 79,48 90,55 88,65 C 86,73 75,75 67,69 C 63,65 64,59 69,57"
+    d="M 10,56 C 26,56 46,48 66,48 C 80,48 92,56 89,66 C 86,73 76,74 69,68 C 65,64 67,58 72,56"
     stroke="url(#glow)"
     stroke-width="5"
     stroke-linecap="round"
@@ -38,7 +38,7 @@
     fill="none"
   />
   <path
-    d="M 20,74 C 36,74 52,66 72,66 C 84,66 93,73 89,80 C 85,86 74,86 68,80"
+    d="M 18,72 C 34,72 52,66 70,66 C 83,66 91,73 88,80 C 85,86 74,86 68,80"
     stroke="url(#glow)"
     stroke-width="4.5"
     stroke-linecap="round"

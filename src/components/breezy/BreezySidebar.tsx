@@ -1,5 +1,5 @@
 import React from 'react';
-import { BreezyLogoIcon, SynthexisLogoIcon } from '../icons/ProductLogos';
+import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 
 export type BreezyTab = 'chat' | 'ide' | 'canvas';
@@ -67,28 +67,25 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
         <div className="flex flex-col gap-3 flex-1 min-h-0">
           {/* Brand Header */}
           <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-3">
-              <BreezyLogoIcon className="w-8.5 h-8.5 text-sky-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.45)] shrink-0" />
-              <div className="flex items-center gap-1.5 font-sans">
-                <span className="text-base font-bold text-white tracking-tight leading-none">
-                  Breezy
+            <div className="flex items-center gap-1.5 font-sans">
+              <span className="text-base font-bold text-white tracking-tight leading-none">
+                Breezy
+              </span>
+              <span className="text-slate-500 font-semibold text-xs leading-none">/</span>
+              {onSwitchToSynthexis ? (
+                <button
+                  type="button"
+                  onClick={onSwitchToSynthexis}
+                  className="text-xs font-semibold text-slate-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
+                  title="Switch to Synthexis Research Console"
+                >
+                  Synthexis
+                </button>
+              ) : (
+                <span className="text-xs font-semibold text-slate-400 leading-none">
+                  Synthexis
                 </span>
-                <span className="text-slate-500 font-semibold text-xs leading-none">/</span>
-                {onSwitchToSynthexis ? (
-                  <button
-                    type="button"
-                    onClick={onSwitchToSynthexis}
-                    className="text-xs font-semibold text-slate-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
-                    title="Switch to Synthexis Research Console"
-                  >
-                    Synthexis
-                  </button>
-                ) : (
-                  <span className="text-xs font-semibold text-slate-400 leading-none">
-                    Synthexis
-                  </span>
-                )}
-              </div>
+              )}
             </div>
             <button
               type="button"
