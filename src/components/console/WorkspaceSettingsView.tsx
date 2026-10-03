@@ -793,10 +793,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                           <div className="font-mono text-[10px] text-stone-400">{role.desc}</div>
                         </div>
                         <select
-                          value={roles[role.key as keyof typeof roles]?.provider || 'gemini'}
+                          value={roles[role.key as keyof typeof roles]?.provider || ''}
                           onChange={(e) => {
                             const p = e.target.value as any;
-                            const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash';
+                            const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'sambanova' ? 'Meta-Llama-3.3-70B-Instruct' : p === 'openrouter' ? 'meta-llama/llama-3.3-70b-instruct' : p === 'gemini' ? 'gemini-2.5-flash' : '';
                             const nextRoles = {
                               ...roles,
                               [role.key]: { provider: p, model: defaultM },
@@ -813,6 +813,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                           }}
                           className="bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 outline-none focus:border-[#ccbdff] cursor-pointer"
                         >
+                          <option value="">Unassigned</option>
                           <option value="gemini">Google Gemini</option>
                           <option value="anthropic">Anthropic Claude</option>
                           <option value="groq">Groq (Llama 3.3)</option>
