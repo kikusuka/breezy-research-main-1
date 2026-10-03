@@ -265,35 +265,22 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </div>
         </div>
 
-        {/* Feature Grid: Museum Catalog Style */}
-        <div className="w-full max-w-4xl mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="col-span-1 md:col-span-3 pb-4 border-b border-stone-800/60 flex items-center justify-between">
-            <span className="text-sm font-semibold text-stone-400">Recommended Inquiries</span>
-            <span className="font-mono text-[9px] uppercase tracking-widest text-stone-600">Technical Index</span>
+        <div className="w-full max-w-4xl mt-24">
+          <div className="pb-4 border-b border-stone-800/60 flex items-center justify-between">
+            <span className="text-sm font-semibold text-stone-400">Start with a workflow</span>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-stone-600">Change it in Model & Research Controls</span>
           </div>
-          
-          {realScenarios.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => onLaunchWorkspace(item.prompt, 'standard')}
-              className="group text-left space-y-4 hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="aspect-[4/3] bg-stone-900/40 border border-stone-800/60 rounded-sm flex items-center justify-center overflow-hidden relative grayscale hover:grayscale-0 transition-all">
-                 <div className="absolute inset-0 bg-stone-950/40 group-hover:bg-transparent transition-colors"></div>
-                 <span className="font-display text-7xl text-stone-800 opacity-20 group-hover:opacity-40 transition-opacity">0{idx + 1}</span>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-display text-lg text-stone-200 group-hover:text-white transition-colors">{item.title}</h3>
-                <p className="text-xs text-stone-500 leading-relaxed line-clamp-2 italic font-serif">
-                  {item.description}
-                </p>
-                <div className="pt-2 flex items-center gap-2 text-[9px] font-mono uppercase tracking-widest text-stone-600 group-hover:text-stone-400">
-                  <span>Run Analysis</span>
-                  <span className="material-symbols-outlined text-[12px]">east</span>
-                </div>
-              </div>
-            </button>
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+            {researchWorkflows.map((item) => (
+              <button key={item.title} type="button" onClick={() => {
+                setResearchDepth(item.depth);
+                textareaRef.current?.focus();
+              }} className="text-left p-4 border border-stone-800/60 rounded-lg hover:border-stone-700 hover:bg-stone-900/30 transition-colors group">
+                <span className="text-sm font-medium text-stone-300 group-hover:text-stone-100">{item.title}</span>
+                <p className="text-xs text-stone-500 leading-relaxed mt-2">{item.description}</p>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Mechanism / About section: Institutional Footer */}
