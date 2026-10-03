@@ -118,8 +118,7 @@ class EffectiveProviderService {
     const byokKey = providerConfigService.getKey(provider) || '';
     if (info.source === 'server') {
       this.verificationCache.set(provider, {
-        status: 'CONNECTED',
-        latencyMs: 120,
+        status: 'CONFIGURED',
         timestamp: Date.now(),
       });
       this.notify();
