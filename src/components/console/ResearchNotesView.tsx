@@ -307,7 +307,8 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                 if (!role?.provider || !role?.model) return 'Not configured';
                 if (!providerConfigService.isProviderConfigured(role.provider)) return 'Key not set';
                 return role.model;
-              };\n              return (
+              };
+              return (
                 <div className="flex flex-col gap-2.5 text-[10px] tracking-tight">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-stone-500 uppercase">
