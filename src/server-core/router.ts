@@ -646,7 +646,7 @@ Analyze this deliberation and output the JSON object.`;
       prompt,
       protocol = 'trio',
       tone = 'balanced',
-      searchEngine = 'google',
+      searchEngine = 'duckduckgo',
       keys = {},
       seats = {},
       enableSearchGrounding = false,
