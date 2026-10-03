@@ -4,6 +4,7 @@ import { DebateSession, ProviderKeyConfig, EvidenceSource } from '../../types';
 import { EvidenceGraphView } from './EvidenceGraphView';
 import { googleDriveService } from '../../services/googleDriveService';
 import { authService } from '../../services/authService';
+import { providerConfigService } from '../../services/providerConfigService';
 
 interface ResearchConversationViewProps {
   session?: DebateSession | null;
@@ -347,7 +348,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                   </button>
                 ))}
               </div>
-            </div>            </div>
+            </div>
           </div>
         ) : (
           /* Active Research Article & Conversation Thread */

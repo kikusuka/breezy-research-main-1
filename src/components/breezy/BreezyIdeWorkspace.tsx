@@ -860,7 +860,6 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
             <div className="h-10 border-t border-slate-800/80 bg-[#0d1117] px-4 flex items-center text-[10px] text-slate-500">Output from real local runs and the live preview appears here.</div>
           </div>
         </div>
-      </div>
 
         {showAgentPanel && (
           <aside className="w-full md:w-[360px] shrink-0 border-l border-slate-800/80 bg-[#0b0f19] flex flex-col min-h-0">
