@@ -1,6 +1,6 @@
 {
-  "name": "Synthexis Workspace",
-  "description": "Premium multi-model research workspace, interactive dialectic audits & synthexis playground.",
+  "name": "Breezy Research",
+  "description": "Conversational AI and grounded multi-model research workspace.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
