@@ -110,14 +110,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         setPreset(canonical.preset || 'balanced');
         if (canonical.roles) {
           setRoles({
-            architect: canonical.roles.architect || { provider: 'gemini', model: 'gemini-2.5-flash' },
-            skeptic: canonical.roles.skeptic || { provider: 'gemini', model: 'gemini-2.5-flash' },
-            verifier: canonical.roles.verifier || { provider: 'gemini', model: 'gemini-2.5-flash' },
-            arbiter: canonical.roles.arbiter || { provider: 'gemini', model: 'gemini-2.5-flash' },
+            architect: canonical.roles.architect || { provider: '' as any, model: '' },
+            skeptic: canonical.roles.skeptic || { provider: '' as any, model: '' },
+            verifier: canonical.roles.verifier || { provider: '' as any, model: '' },
+            arbiter: canonical.roles.arbiter || { provider: '' as any, model: '' },
           });
         }
-        setProvider(canonical.defaultProvider || 'gemini');
-        setModel(canonical.defaultModel || 'gemini-2.5-flash');
+        setProvider(canonical.defaultProvider || '');
+        setModel(canonical.defaultModel || '');
         setTavilyKey(activeKeys.tavily || '');
         setSerperKey(activeKeys.serper || '');
         setBraveKey(activeKeys.brave || '');
@@ -146,10 +146,10 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const handleSave = () => {
     // Save user profile
     userProfileService.saveProfile({
-      displayName: displayName.trim() || 'Guest Researcher',
-      email: email.trim() || 'researcher@workspace.local',
-      roleTitle: roleTitle.trim() || 'Research Systems Engineer',
-      organization: organization.trim() || 'Breezy Research Workspace',
+      displayName: displayName.trim(),
+      email: email.trim(),
+      roleTitle: roleTitle.trim(),
+      organization: organization.trim(),
       autoSaveToDrive,
       authorizationType: authUser ? 'google_oauth' : 'session_enclave',
     });
@@ -177,12 +177,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       }
 
       providerConfigService.saveConfig({
-        defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
-        defaultModel: model.trim() || 'gemini-2.5-flash',
+        defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) && key.trim()) ? provider as any : '' as any,
+        defaultModel: key.trim() ? model.trim() : '',
         preset,
         roles: roles as any,
-        fallback: { enabled: true, provider: 'gemini', model: 'gemini-2.5-flash' },
+        fallback: { enabled: false, provider: '' as any, model: '' },
         keys: updatedKeys,
+        searchEngine: providerConfigService.getConfig().searchEngine || 'duckduckgo',
+        researchMethod: providerConfigService.getConfig().researchMethod || 'adaptive',
       });
 
       localStorage.setItem('synthexis_byok_keys', JSON.stringify(updatedKeys));
@@ -313,7 +315,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     </span>
                   </div>
                   <p className="font-sans text-[11px] text-stone-400 truncate mt-0.5">
-                    {email || 'researcher@workspace.local'}
+                    {email || 'Not set'}
                   </p>
                 </div>
               </div>
