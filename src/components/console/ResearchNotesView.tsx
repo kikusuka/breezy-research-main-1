@@ -297,8 +297,8 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           <div className="bg-stone-900/40 p-4 rounded-xl flex flex-col gap-3 border border-stone-800/40 font-mono backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-stone-800/40 pb-2">
               <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">Backend_Connection</span>
-              <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${isOnline ? 'text-stone-200 bg-stone-800 border-stone-700' : 'text-stone-500 bg-stone-950 border-stone-900'}`}>
-                {isOnline ? 'Verified' : 'Offline'}
+              <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${backendStatus === 'online' ? 'text-stone-200 bg-stone-800 border-stone-700' : backendStatus === 'checking' ? 'text-stone-400 bg-stone-900 border-stone-800' : 'text-stone-500 bg-stone-950 border-stone-900'}`}>
+                {backendStatus === 'online' ? 'Online' : backendStatus === 'checking' ? 'Checking' : 'Offline'}
               </span>
             </div>
             {(() => {
