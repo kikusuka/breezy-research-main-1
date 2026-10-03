@@ -57,6 +57,7 @@ export async function generateRealEvidenceGraph(opts: {
   env?: BackendEnv;
   provider?: 'gemini' | 'anthropic' | 'groq' | 'sambanova' | 'openrouter';
   model?: string;
+  researchPlan?: string[];
 }): Promise<{ evidenceGraph: any; researchMetrics: any }> {
   const {
     prompt,
@@ -70,13 +71,14 @@ export async function generateRealEvidenceGraph(opts: {
     env = {},
     provider = 'gemini',
     model = 'gemini-2.5-flash',
+    researchPlan: suppliedResearchPlan = [],
   } = opts;
 
   // In solo mode, there is no multi-agent debate synthexis rate
   if (isSolo) {
     return {
       evidenceGraph: {
-        researchPlan: [`Single-model inquiry: ${prompt.slice(0, 80)}`],
+        researchPlan: suppliedResearchPlan.length > 0 ? suppliedResearchPlan : [`Single-model inquiry: ${prompt.slice(0, 80)}`],
         claims: [],
         contradictions: [],
         sourcesConsulted: discoveredSources,
@@ -160,9 +162,8 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
     const cleaned = rawResult.replace(/```json/gi, '').replace(/```/gi, '').trim();
     const parsed = JSON.parse(cleaned);
 
-    const researchPlan = Array.isArray(parsed.researchPlan) && parsed.researchPlan.length > 0
-      ? parsed.researchPlan
-      : [];
+    const extractedPlan = Array.isArray(parsed.researchPlan) && parsed.researchPlan.length > 0 ? parsed.researchPlan : [];
+    const researchPlan = suppliedResearchPlan.length > 0 ? suppliedResearchPlan : extractedPlan;
 
     let claims = Array.isArray(parsed.claims) ? parsed.claims : [];
     
