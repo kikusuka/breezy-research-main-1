@@ -8,6 +8,7 @@ import 'prismjs/components/prism-css';
 import 'prismjs/themes/prism-tomorrow.css';
 
 import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
+import { puterService } from '../../services/puterService';
 
 interface BreezyIdeWorkspaceProps {
   onOpenSettings?: () => void;
@@ -116,6 +117,12 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showAgentPanel, setShowAgentPanel] = useState(false);
+  const [agentInput, setAgentInput] = useState('');
+  const [agentMessages, setAgentMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [agentBusy, setAgentBusy] = useState(false);
+  const [puterSignedIn, setPuterSignedIn] = useState(false);
+  const [puterModel, setPuterModel] = useState('gpt-5-nano');
 
   // Pyodide local WASM states
   const [pyodideInstance, setPyodideInstance] = useState<any>(null);
@@ -295,6 +302,32 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   useEffect(() => {
     terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalHistory, previewLogs]);
+
+  const handleAgentSend = async (preset?: string) => {
+    const prompt = (preset || agentInput).trim();
+    if (!prompt || agentBusy) return;
+    const context = selectedFilePath
+      ? 'Repository: ' + selectedRepo + '\nFile: ' + selectedFilePath + '\nCurrent file:\n' + editorContent.slice(0, 30000)
+      : 'Repository: ' + (selectedRepo || 'none selected') + '\nNo file is currently open.';
+    setAgentInput('');
+    setAgentMessages((prev) => [...prev, { role: 'user', content: prompt }]);
+    setAgentBusy(true);
+    try {
+      const signedIn = await puterService.isSignedIn();
+      if (!signedIn) await puterService.signIn();
+      setPuterSignedIn(true);
+      const answer = await puterService.chat(prompt + '\n\nUse this live IDE context when relevant:\n' + context, {
+        model: puterModel.trim() || 'gpt-5-nano',
+        system: 'You are the Breezy IDE Agent. Help the developer understand, modify, debug, and plan code. Be concrete. Never claim an edit was applied unless Breezy actually changed the editor.',
+      });
+      setAgentMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
+    } catch (err: any) {
+      setPuterSignedIn(false);
+      setAgentMessages((prev) => [...prev, { role: 'assistant', content: 'Agent unavailable: ' + (err?.message || 'Puter.js request failed.') }]);
+    } finally {
+      setAgentBusy(false);
+    }
+  };
 
   const handleDisconnect = () => {
     localStorage.removeItem('breezy_github_token');
@@ -503,7 +536,18 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
           </div>
         </div>
         <div className="flex items-center gap-2">
-          ${selectedRepo && (
+          {isConnected && (
+            <button
+              type="button"
+              onClick={() => setShowAgentPanel((open) => !open)}
+              className={showAgentPanel ? 'px-2.5 py-1.5 rounded-md text-xs border cursor-pointer flex items-center gap-1.5 bg-sky-500/15 text-sky-300 border-sky-500/30' : 'px-2.5 py-1.5 rounded-md text-xs border cursor-pointer flex items-center gap-1.5 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-800'}
+              title="Open Breezy coding agent"
+            >
+              <span className="material-symbols-outlined text-[15px]">smart_toy</span>
+              Agent
+            </button>
+          )}
+          {selectedRepo && (
             <button type="button" onClick={() => { setShowNewFile(true); setActiveWorkspaceTab('files'); }} className="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white border border-slate-700 rounded-md cursor-pointer">New file</button>
           )}
           {!isConnected ? (
@@ -796,6 +840,39 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
             <div className="h-10 border-t border-slate-800/80 bg-[#0d1117] px-4 flex items-center text-[10px] text-slate-500">Output from real local runs and the live preview appears here.</div>
           </div>
         </div>
+      </div>
+
+        {showAgentPanel && (
+          <aside className="w-full md:w-[360px] shrink-0 border-l border-slate-800/80 bg-[#0b0f19] flex flex-col min-h-0">
+            <div className="h-11 border-b border-slate-800/80 px-3 flex items-center justify-between bg-[#0d1117]">
+              <div className="flex items-center gap-2"><span className="material-symbols-outlined text-sky-400 text-[17px]">smart_toy</span><div><div className="text-xs font-semibold text-slate-200">Breezy Agent</div><div className="text-[9px] text-slate-500">Coding side panel</div></div></div>
+              <button type="button" onClick={() => setShowAgentPanel(false)} className="p-1 text-slate-500 hover:text-slate-200 cursor-pointer" aria-label="Close agent"><span className="material-symbols-outlined text-[17px]">close</span></button>
+            </div>
+            <div className="p-3 border-b border-slate-800/80 space-y-2">
+              <div className="flex items-center justify-between gap-2"><span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono">Agent model</span><span className={puterSignedIn ? 'text-[9px] font-mono text-emerald-400' : 'text-[9px] font-mono text-slate-500'}>{puterSignedIn ? 'Puter connected' : 'Puter sign-in on first use'}</span></div>
+              <input value={puterModel} onChange={(e) => setPuterModel(e.target.value)} className="w-full bg-[#050811] border border-slate-700 rounded-md px-2.5 py-2 text-[11px] text-slate-200 outline-none focus:border-sky-500/50" placeholder="Puter model ID, e.g. gpt-5-nano" />
+              <div className="flex gap-1.5">
+                <button type="button" onClick={() => handleAgentSend('Explain the current file and point out the three most important things I should understand.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Explain</button>
+                <button type="button" onClick={() => handleAgentSend('Review the current file for bugs, dead code, and risky assumptions. Give concrete fixes.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Review</button>
+                <button type="button" onClick={() => handleAgentSend('Propose a focused patch for the current file without inventing features or fake data.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Patch</button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+              {agentMessages.length === 0 ? <div className="py-8 text-center"><div className="text-sm text-slate-300">Ask about the code.</div><p className="text-[10px] text-slate-500 mt-2 leading-relaxed">The selected file is included as live context. The agent can explain, review, debug, and propose changes.</p></div> : agentMessages.map((message, index) => (
+                <div key={index} className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                  <div className={message.role === 'user' ? 'max-w-[90%] bg-slate-800 text-slate-100 rounded-lg px-3 py-2 text-[11px] leading-relaxed' : 'max-w-[95%] bg-[#111827] border border-slate-800 text-slate-300 rounded-lg px-3 py-2 text-[11px] leading-relaxed whitespace-pre-wrap'}>{message.content}</div>
+                </div>
+              ))}
+              {agentBusy && <div className="text-[10px] text-slate-500 flex items-center gap-2"><span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>Agent is thinking…</div>}
+            </div>
+            <div className="p-3 border-t border-slate-800/80 bg-[#0d1117]">
+              <div className="border border-slate-700 rounded-lg bg-[#050811] p-2 focus-within:border-sky-500/40">
+                <textarea value={agentInput} onChange={(e) => setAgentInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAgentSend(); } }} rows={3} placeholder="Ask the agent…" className="w-full bg-transparent resize-none outline-none text-[11px] text-slate-200 placeholder:text-slate-600" />
+                <div className="flex items-center justify-between pt-2"><span className="text-[9px] text-slate-600">Enter to send · Shift+Enter for newline</span><button type="button" disabled={!agentInput.trim() || agentBusy} onClick={() => handleAgentSend()} className="w-7 h-7 rounded-md bg-slate-100 text-slate-950 disabled:opacity-30 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"><span className="material-symbols-outlined text-[15px]">arrow_upward</span></button></div>
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
 
       ) : (
