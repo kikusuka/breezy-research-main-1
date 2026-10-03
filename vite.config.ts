@@ -14,8 +14,8 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'Breezy & Synthexis Workspace',
-          short_name: 'Synthexis',
+          name: 'Breezy Research',
+          short_name: 'Breezy Research',
           description: 'High-fidelity multi-model research workspace and conversational AI platform.',
           theme_color: '#0c0a09',
           background_color: '#0c0a09',
