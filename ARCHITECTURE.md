@@ -43,7 +43,7 @@ Breezy Playground is designed around five core principles:
                       │  - Firebase Auth & Google Drive Sync  │
                       │  - GitHub Service (REST / PAT)        │
                       │  - Search Grounding Interface         │
-                      │  - Execution Preview Service          │
+                      │  - Local Code Preview / Runtime      │
                       └───────────────────┬───────────────────┘
                                           │
                                           ▼
@@ -70,10 +70,10 @@ Breezy Playground is designed around five core principles:
 * **Evidence Graph**: Direct mapping from claims to verifiable source documents with honest citation tracking.
 * **Structured Export**: Markdown export formatted with full source citations.
 
-### 3. Build (Breezy IDE & Execution Preview)
+### 3. Build (Breezy IDE & Local Preview)
 * **Prism.js Code Editor**: Syntax highlighting for Python, TypeScript, JavaScript, HTML, CSS, and JSON.
 * **Live Sandboxed Preview Runner**: Isolated iframe execution environment with live console log interception.
-* **Execution Preview (Simulation)**: Explicitly labeled job lifecycle simulator for testing compute workflows without remote GPU spinning.
+* **Local execution**: Python can run in-browser through WebAssembly; HTML/JS files can be inspected in a sandboxed live preview. GitHub is the source of truth for project files.
 * **ANSI Terminal**: Terminal emulator supporting ANSI color codes, text filtering, clearing (`Cmd+K`), and navigation shortcuts.
 * **GitHub Integration**: Browse repositories and commit file changes using personal access tokens.
 
