@@ -38,8 +38,7 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 
 ### 3. Build (Synthexis IDE)
 * **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
-* **Simulated ANSI Terminal**: Real-time log streamer supporting ANSI color escape codes, live text filter search, auto-scrolling, and keyboard shortcuts (`Cmd+K` / `Ctrl+K` to clear, `Cmd+Shift+Down` to jump to bottom).
-* **Execution Preview (Simulation)**: Simulated cloud-runner workflow for testing the Build workspace UI and job lifecycle previews. No remote code execution or remote GPU provisioning occurs.
+* **Local Output & Preview**: The Build workspace shows output from real browser-local Python runs and the sandboxed HTML preview. It does not pretend to provision remote compute.
 
 ---
 
