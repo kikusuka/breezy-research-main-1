@@ -266,7 +266,7 @@ export default function App() {
 
     const protocol = !synthexisMode ? 'solo' : depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
     const tone: DebateTone = 'balanced';
-    const searchEngine: SearchEngineProvider = 'google';
+    const searchEngine: SearchEngineProvider = providerConfigService.getConfig().searchEngine || 'duckduckgo';
     const seats = providerConfigService.getSeatsPayload();
 
     const config = providerConfigService.getConfig();
@@ -291,6 +291,7 @@ export default function App() {
           agreementThreshold,
           autoResolve,
           selectedRound,
+          researchMethod: config.researchMethod || 'adaptive',
         },
         {
           signal: controller.signal,
