@@ -84,7 +84,7 @@ class CloudExecutionService {
 
       setTimeout(() => {
         status.state = 'succeeded';
-        status.executionTimeMs = 1200;
+        status.executionTimeMs = 0;
         status.memoryUsedMb = 0;
         status.logs.push(`\u001b[1m\u001b[32m[Preview Complete]\u001b[0m Simulation ended cleanly. To run code on live hardware, use local terminal or connected remote runners.`);
         this.notify(status);
