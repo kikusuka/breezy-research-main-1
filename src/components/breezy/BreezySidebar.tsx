@@ -79,13 +79,13 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
                   type="button"
                   onClick={onSwitchToSynthexis}
                   className="text-xs font-semibold text-slate-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
-                  title="Switch to Synthexis Research Console"
+                  title="Switch to Breezy Research"
                 >
-                  Synthexis
+                  Research
                 </button>
               ) : (
                 <span className="text-xs font-semibold text-slate-400 leading-none">
-                  Synthexis
+                  Research
                 </span>
               )}
             </div>
