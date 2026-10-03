@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
                 <span className="text-stone-600 font-semibold text-xs leading-none">/</span>
                 <span className="font-display text-sm tracking-tight text-stone-100 italic font-bold leading-none">
-                  Synthexis
+                  Breezy Research
                 </span>
               </div>
             </div>
@@ -184,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* Synthexis Mode Toggle: Minimal */}
+          {/* Breezy Research Mode Toggle: Minimal */}
           <div className="mx-3 mt-4 mb-2 px-3 py-3 rounded-xl bg-stone-900/60 border border-stone-800/60 flex flex-col gap-2 shrink-0 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <span className="font-mono text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">Engine Mode</span>
