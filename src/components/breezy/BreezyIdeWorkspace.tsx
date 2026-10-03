@@ -577,6 +577,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
       </div>
 
       {/* Main Workspace Area */}
+      {isConnected ? (
       <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-[#090d16]">
         {/* Left Sidebar: Repo / Files Browser */}
         <div className={`w-full md:w-64 border-r border-slate-800/80 flex flex-col bg-[#0b0f19] shrink-0 ${activeWorkspaceTab === 'files' ? 'flex' : 'hidden md:flex'}`}>
@@ -599,7 +600,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
               onChange={(e) => handleSelectRepo(e.target.value)}
               className="w-full bg-[#111827] border border-slate-700/80 rounded-md p-2 text-xs text-slate-200 outline-none focus:border-sky-400/50"
             >
-              <option value="">-- Local Scratchpad / Templates --</option>
+              <option value="">Select a repository…</option>
               {repos.map((r) => (
                 <option key={r.id} value={r.full_name}>{r.full_name}</option>
               ))}
@@ -849,7 +850,27 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
           </div>
         </div>
       </div>
-      {showNewFile && selectedRepo && (
+
+      ) : (
+        <div className="flex-1 flex items-center justify-center bg-[#0b0f14] p-6">
+          <div className="w-full max-w-md text-center">
+            <span className="material-symbols-outlined text-4xl text-slate-500">folder_open</span>
+            <h1 className="mt-4 text-xl font-semibold text-slate-100">Connect GitHub to open the Build workspace</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">Breezy edits real repository files. Connect GitHub first, choose a repository, then open or create a file.</p>
+            <button type="button" onClick={() => {
+              const token = prompt('Enter a GitHub Personal Access Token with repository contents read/write access.');
+              if (token?.trim()) {
+                localStorage.setItem('breezy_github_token', token.trim());
+                setGithubToken(token.trim());
+                setIsConnected(true);
+                setShowOnboarding(true);
+                showToast('GitHub connected.');
+              }
+            }} className="mt-6 px-4 py-2.5 bg-slate-100 hover:bg-white text-slate-950 rounded-md text-xs font-semibold cursor-pointer">Connect GitHub</button>
+            <p className="mt-3 text-[11px] text-slate-600">Your token stays in this browser and is used for GitHub API requests.</p>
+          </div>
+        </div>
+      )}      {showNewFile && selectedRepo && (
         <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#11161d] border border-slate-700 rounded-lg shadow-lg p-5">
             <h2 className="text-sm font-semibold text-slate-100">Create a file</h2>
