@@ -7,20 +7,12 @@
 import { CallAgentParams, BackendEnv } from './types';
 
 /**
- * Sanitize model names to valid supported versions
+ * Sanitize model names to valid supported versions without destructive rewriting
  */
 export function sanitizeGeminiModel(m?: string): string {
-  if (!m) return 'gemini-3.8-flash';
+  if (!m) return 'gemini-2.5-flash';
   const clean = m.trim();
-  if (
-    clean.includes('gemini-2.5') ||
-    clean.includes('gemini-2.0') ||
-    clean.includes('gemini-1.5') ||
-    clean.includes('gemini-pro')
-  ) {
-    return 'gemini-3.8-flash';
-  }
-  return clean;
+  return clean || 'gemini-2.5-flash';
 }
 
 /**
@@ -301,9 +293,9 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     const rawModel = sanitizeGeminiModel(model);
     const fallbackCandidates = [
       rawModel,
-      'gemini-3.8-flash',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
       'gemini-flash-latest',
-      'gemini-3.1-flash-lite',
     ];
     const modelsToTry = Array.from(new Set(fallbackCandidates.filter(Boolean)));
     let lastError: any = null;

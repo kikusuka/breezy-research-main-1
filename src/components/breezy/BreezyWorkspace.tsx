@@ -94,11 +94,11 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     const routable = effectiveProviderService.getActiveRoutableModel();
-    return routable ? routable.model : '';
+    return routable ? routable.model : 'gemini-2.5-flash';
   });
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
     const routable = effectiveProviderService.getActiveRoutableModel();
-    return routable ? routable.provider : '';
+    return routable ? routable.provider : 'gemini';
   });
 
   useEffect(() => {
@@ -452,13 +452,13 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const activeChat = getActiveChat();
 
   return (
-    <div className="flex-1 flex flex-col w-full relative min-h-screen bg-[#090d16] text-slate-100 antialiased font-sans">
+    <div className="flex-1 flex flex-col w-full relative h-[calc(100vh-4rem)] bg-[#090d16] text-slate-100 antialiased font-sans overflow-hidden">
       {/* Subtle background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[760px] h-[340px] bg-gradient-to-b from-sky-500/10 via-indigo-950/15 to-transparent blur-3xl pointer-events-none z-0 rounded-full" />
 
       {/* Floating Top Right Actions for Active Chat */}
       {activeChat && activeChat.messages.length > 0 && (
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <div className="absolute top-3 right-4 z-20 flex items-center gap-2">
           <button
             type="button"
             onClick={handleSaveToDrive}
@@ -484,10 +484,10 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       )}
 
       {/* Main Conversation Stream */}
-      <div className="flex-1 flex flex-col w-full z-10 pt-1">
+      <div className="flex-1 flex flex-col w-full z-10 min-h-0 overflow-hidden">
         <main
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full pt-1 sm:pt-2 pb-48 scroll-smooth"
+          className="flex-1 overflow-y-auto w-full pt-2 sm:pt-4 pb-44 scroll-smooth"
         >
           <div className="w-full max-w-[920px] lg:max-w-[980px] mx-auto px-4 sm:px-6 flex flex-col gap-5">
             {!activeChat || activeChat.messages.length === 0 ? (
@@ -798,6 +798,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                     {(() => {
                       const info = effectiveProviderService.getProviderInfo(selectedProvider);
                       const isConfigured = info.hasKey;
+                      const displayLabel = selectedModel || 'gemini-2.5-flash';
                       return (
                         <button
                           type="button"
@@ -805,12 +806,13 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer shadow-xs ${
                             isConfigured
                               ? 'text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700/60 bg-slate-900/60'
-                              : 'text-amber-300 hover:bg-amber-950/40 border-amber-500/40 bg-amber-950/20'
+                              : 'text-sky-300 hover:text-white hover:bg-sky-950/40 border-sky-500/40 bg-sky-950/20'
                           }`}
+                          title={isConfigured ? `Active Model: ${displayLabel}` : `Model: ${displayLabel} (Connect key or use server)`}
                         >
-                          <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                          <span className="truncate max-w-[110px] font-sans">
-                            {isConfigured && selectedModel ? selectedModel : 'No Model'}
+                          <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400'}`} />
+                          <span className="truncate max-w-[120px] font-sans">
+                            {displayLabel}
                           </span>
                           <span className="material-symbols-outlined text-[16px] text-slate-400">
                             {isModelPickerOpen ? 'expand_less' : 'expand_more'}

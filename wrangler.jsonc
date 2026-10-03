@@ -5,6 +5,7 @@
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "ALLOWED_ORIGINS": "https://ais-dev-2s32zghkweujquqqk7gwey-622465448374.asia-southeast1.run.app,https://ais-pre-2s32zghkweujquqqk7gwey-622465448374.asia-southeast1.run.app,http://localhost:3000,http://localhost:5173"
+    // Production frontend domain + local dev origins. Replace 'https://synthexis.yourdomain.com' with your actual domain upon deployment.
+    "ALLOWED_ORIGINS": "https://synthexis.yourdomain.com,http://localhost:3000,http://localhost:5173"
   }
 }

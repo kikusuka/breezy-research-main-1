@@ -173,7 +173,7 @@ class EffectiveProviderService {
       const models = AVAILABLE_MODELS[currentProvider];
       const model = config.defaultModel && models?.some((m) => m.id === config.defaultModel)
         ? config.defaultModel
-        : models?.[0]?.id || 'gemini-3.8-flash';
+        : models?.[0]?.id || 'gemini-2.5-flash';
       const info = this.getProviderInfo(currentProvider);
       return { provider: currentProvider, model, source: info.source as 'byok' | 'server' };
     }

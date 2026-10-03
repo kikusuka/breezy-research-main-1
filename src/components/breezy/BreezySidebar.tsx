@@ -42,8 +42,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
 }) => {
-  const isSidebarVisible = isOpen ?? isOpenMobile ?? true;
-  const handleClose = onClose || onCloseMobile;
+  const handleClose = onCloseMobile || onClose;
 
   const chatList = Object.values(chats).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -52,8 +51,9 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
   return (
     <>
       {/* Mobile backdrop */}
-      {isSidebarVisible && (
+      {isOpenMobile && (
         <div
+          aria-hidden="true"
           className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={handleClose}
         />
@@ -61,7 +61,9 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
 
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-[#0d1322]/95 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
-          isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
+          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
         }`}
       >
         <div className="flex flex-col gap-3 flex-1 min-h-0">

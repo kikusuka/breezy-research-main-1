@@ -33,10 +33,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     return localStorage.getItem('breezy_auto_save_drive') === 'true';
   });
   const [roles, setRoles] = useState(canonical.roles || {
-    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
   });
 
   // Key inputs
@@ -796,7 +796,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                           value={roles[role.key as keyof typeof roles]?.provider || 'gemini'}
                           onChange={(e) => {
                             const p = e.target.value as any;
-                            const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash';
+                            const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash';
                             const nextRoles = {
                               ...roles,
                               [role.key]: { provider: p, model: defaultM },

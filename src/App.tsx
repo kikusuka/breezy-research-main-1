@@ -51,9 +51,19 @@ export default function App() {
     window.location.hash = activeTab;
   }, [activeTab]);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  const handleToggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsMobileMenuOpen((prev) => !prev);
+    } else {
+      setIsSidebarOpen((prev) => !prev);
+    }
+  };
   const [productMode, setProductMode] = useState<ProductMode>(() => {
     const params = new URLSearchParams(window.location.search);
     const modeParam = params.get('mode');
@@ -417,8 +427,8 @@ export default function App() {
           onSwitchToSynthexis={() => setProductMode('synthexis')}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
-          isOpenMobile={isSidebarOpen}
-          onCloseMobile={() => setIsSidebarOpen(false)}
+          isOpenMobile={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
         <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
@@ -427,8 +437,8 @@ export default function App() {
             onSelectProductMode={setProductMode}
             onOpenSearch={() => setIsCommandPaletteOpen(true)}
             isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-            onToggleMobileMenu={() => setIsSidebarOpen((prev) => !prev)}
+            onToggleSidebar={handleToggleSidebar}
+            onToggleMobileMenu={handleToggleSidebar}
           />
 
           <main className="relative pt-16 flex-1 flex flex-col min-h-0">
@@ -511,8 +521,8 @@ export default function App() {
         onToggleSynthexisMode={handleToggleSynthexisMode}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        isOpenMobile={isSidebarOpen}
-        onCloseMobile={() => setIsSidebarOpen(false)}
+        isOpenMobile={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
         onDeleteSession={handleDeleteSession}
         onSwitchToBreezy={() => setProductMode('breezy')}
@@ -524,8 +534,8 @@ export default function App() {
           onSelectProductMode={setProductMode}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-          onToggleMobileMenu={() => setIsSidebarOpen((prev) => !prev)}
+          onToggleSidebar={handleToggleSidebar}
+          onToggleMobileMenu={handleToggleSidebar}
         />
 
         <main className="relative pt-16 bg-stone-950 min-h-screen flex-1 flex flex-col">

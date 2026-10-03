@@ -41,14 +41,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onClose,
 }) => {
-  const isSidebarVisible = isOpen ?? isOpenMobile ?? true;
-  const handleClose = onClose || onCloseMobile;
+  const handleClose = onCloseMobile || onClose;
 
   return (
     <>
       {/* Mobile backdrop */}
-      {isSidebarVisible && (
+      {isOpenMobile && (
         <div
+          aria-hidden="true"
           className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs"
           onClick={handleClose}
         />
@@ -56,7 +56,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-stone-950 z-50 flex flex-col justify-between border-r border-stone-800/60 transition-transform duration-200 ${
-          isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
+          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
         }`}
       >
         <div className="flex flex-col flex-1 min-h-0">
@@ -119,10 +121,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab('chat');
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
                   activeTab === 'chat'
                     ? 'bg-stone-800 text-stone-100 font-bold'
-                    : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
+                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">psychology</span>
@@ -135,10 +137,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab('notes');
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
                   activeTab === 'notes'
                     ? 'bg-stone-800 text-stone-100 font-bold'
-                    : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
+                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">folder_special</span>
@@ -151,10 +153,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab('models');
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
                   activeTab === 'models'
                     ? 'bg-stone-800 text-stone-100 font-bold'
-                    : 'text-stone-500 hover:bg-stone-900/50 hover:text-stone-200'
+                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">hub</span>
@@ -209,13 +211,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Research History List: Editorial List */}
           <div className="flex-1 overflow-y-auto p-3 mt-4 flex flex-col gap-3">
-            <span className="text-[10px] font-sans text-stone-500 uppercase tracking-[0.15em] px-3 font-bold">
+            <span className="text-xs font-sans text-stone-300 uppercase tracking-wider px-3 font-bold">
               Journal
             </span>
 
             <div className="flex flex-col gap-0.5">
               {sessions.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-stone-600 font-sans italic">
+                <p className="px-3 py-4 text-xs text-stone-400 font-sans italic">
                   No recorded entries.
                 </p>
               ) : (
@@ -233,18 +235,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`group w-full text-left px-3 py-2 rounded-lg transition-all flex items-start justify-between gap-2 cursor-pointer border border-transparent ${
                         isActive
                           ? 'bg-stone-800/40 text-stone-100 border-stone-700/50 shadow-sm'
-                          : 'text-stone-400 hover:text-stone-200 hover:bg-stone-900/50'
+                          : 'text-stone-300 hover:text-white hover:bg-stone-900/50'
                       }`}
                     >
                       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <span className="truncate text-[13px] leading-snug font-medium">
                           {s.prompt}
                         </span>
-                        <div className="flex items-center gap-2 text-[10px] text-stone-500 font-mono uppercase tracking-tight">
+                        <div className="flex items-center gap-2 text-[10px] text-stone-400 font-mono uppercase tracking-tight">
                           <span>{new Date(s.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                           {s.evidenceGraph?.sourcesConsulted && s.evidenceGraph.sourcesConsulted.length > 0 && (
                             <>
-                              <span className="text-stone-700">/</span>
+                              <span className="text-stone-500">/</span>
                               <span>{s.evidenceGraph.sourcesConsulted.length} SRC</span>
                             </>
                           )}

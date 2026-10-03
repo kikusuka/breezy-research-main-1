@@ -1,6 +1,6 @@
 /**
  * Canonical Provider Configuration Service
- * Unified configuration layer for Breezy, Research, and Synap workspaces.
+ * Unified configuration layer for Breezy and Synthexis research workspaces.
  * Eliminates duplicate storage keys and ensures a single source of truth.
  */
 
@@ -23,8 +23,9 @@ export interface CanonicalProviderKeys {
 
 export const AVAILABLE_MODELS: Record<string, { id: string; name: string; description: string }[]> = {
   gemini: [
-    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', description: 'Fast, highly intelligent reasoning & code' },
-    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', description: 'Ultra-lightweight low-latency model' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Fast, highly intelligent multimodal reasoning & code' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Deep reasoning, thinking, and complex synthesis' },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', description: 'Ultra-lightweight low-latency model' },
   ],
   anthropic: [
     { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Best-in-class deep reasoning & analytical synthexis' },
@@ -78,22 +79,22 @@ const UNCONFIGURED_ROLES: CanonicalWorkspaceConfig['roles'] = {
 
 export const PRESET_ROLE_CONFIGS: Record<string, CanonicalWorkspaceConfig['roles']> = {
   fast: {
-    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
   },
   balanced: {
-    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
     skeptic: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
-    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
   },
   deep: {
     architect: { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022' },
     skeptic: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
     verifier: { provider: 'sambanova', model: 'Qwen2.5-72B-Instruct' },
-    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
   },
 };
 
@@ -126,7 +127,7 @@ export const providerConfigService = {
         const hasKeys = parsed.keys && Object.keys(parsed.keys).some((k) => Boolean(parsed.keys[k]));
         return {
           defaultProvider: parsed.defaultProvider || (hasKeys ? 'gemini' : ''),
-          defaultModel: parsed.defaultModel || (hasKeys ? 'gemini-3.8-flash' : ''),
+          defaultModel: parsed.defaultModel || (hasKeys ? 'gemini-2.5-flash' : ''),
           preset: parsed.preset || 'balanced',
           roles: parsed.roles || (hasKeys ? DEFAULT_ROLES : UNCONFIGURED_ROLES),
           fallback: parsed.fallback || { enabled: false, provider: '', model: '' },
@@ -148,7 +149,7 @@ export const providerConfigService = {
 
       const initialConfig: CanonicalWorkspaceConfig = {
         defaultProvider: hasAnyKey ? 'gemini' : ('' as any),
-        defaultModel: hasAnyKey ? 'gemini-3.8-flash' : '',
+        defaultModel: hasAnyKey ? 'gemini-2.5-flash' : '',
         preset: 'balanced',
         roles: hasAnyKey ? DEFAULT_ROLES : UNCONFIGURED_ROLES,
         fallback: { enabled: false, provider: '' as any, model: '' },

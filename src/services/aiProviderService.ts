@@ -79,7 +79,7 @@ export const aiProviderService = {
           prompt,
           history: [],
           provider: p,
-          model: p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-3.8-flash',
+          model: p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-2.5-flash',
           apiKey,
         });
 

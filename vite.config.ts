@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'Synthexis Research Console',
+          name: 'Breezy & Synthexis Workspace',
           short_name: 'Synthexis',
-          description: 'High-fidelity multi-model research workspace and dialectic audit suite.',
+          description: 'High-fidelity multi-model research workspace and conversational AI platform.',
           theme_color: '#0c0a09',
           background_color: '#0c0a09',
           display: 'standalone',
@@ -86,9 +86,30 @@ export default defineConfig(() => {
         '@': path.resolve(import.meta.dirname, '.'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('node_modules/pdfjs-dist')) {
+              return 'vendor-pdfjs';
+            }
+            if (id.includes('node_modules/prismjs')) {
+              return 'vendor-prism';
+            }
+            if (id.includes('node_modules/react-markdown')) {
+              return 'vendor-markdown';
+            }
+          },
+        },
+      },
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify - file watching is disabled to prevent flickering during agent edits.
       hmr: false,
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},

@@ -35,16 +35,16 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>('balanced');
   const [serverGeminiActive, setServerGeminiActive] = useState(false);
   const [roles, setRoles] = useState({
-    architect: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    skeptic: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    verifier: { provider: 'gemini', model: 'gemini-3.8-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-3.8-flash' },
+    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
   });
 
   // LLM AI Core keys
   const [provider, setProvider] = useState('gemini');
   const [baseUrl, setBaseUrl] = useState('');
-  const [model, setModel] = useState('gemini-3.8-flash');
+  const [model, setModel] = useState('gemini-2.5-flash');
   const [key, setKey] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful, encouraging cognitive study coach.');
 
@@ -110,14 +110,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         setPreset(canonical.preset || 'balanced');
         if (canonical.roles) {
           setRoles({
-            architect: canonical.roles.architect || { provider: 'gemini', model: 'gemini-3.8-flash' },
-            skeptic: canonical.roles.skeptic || { provider: 'gemini', model: 'gemini-3.8-flash' },
-            verifier: canonical.roles.verifier || { provider: 'gemini', model: 'gemini-3.8-flash' },
-            arbiter: canonical.roles.arbiter || { provider: 'gemini', model: 'gemini-3.8-flash' },
+            architect: canonical.roles.architect || { provider: 'gemini', model: 'gemini-2.5-flash' },
+            skeptic: canonical.roles.skeptic || { provider: 'gemini', model: 'gemini-2.5-flash' },
+            verifier: canonical.roles.verifier || { provider: 'gemini', model: 'gemini-2.5-flash' },
+            arbiter: canonical.roles.arbiter || { provider: 'gemini', model: 'gemini-2.5-flash' },
           });
         }
         setProvider(canonical.defaultProvider || 'gemini');
-        setModel(canonical.defaultModel || 'gemini-3.8-flash');
+        setModel(canonical.defaultModel || 'gemini-2.5-flash');
         setTavilyKey(activeKeys.tavily || '');
         setSerperKey(activeKeys.serper || '');
         setBraveKey(activeKeys.brave || '');
@@ -178,10 +178,10 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
       providerConfigService.saveConfig({
         defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
-        defaultModel: model.trim() || 'gemini-3.8-flash',
+        defaultModel: model.trim() || 'gemini-2.5-flash',
         preset,
         roles: roles as any,
-        fallback: { enabled: true, provider: 'gemini', model: 'gemini-3.8-flash' },
+        fallback: { enabled: true, provider: 'gemini', model: 'gemini-2.5-flash' },
         keys: updatedKeys,
       });
 
@@ -212,7 +212,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       // Wipe IndexedDB databases
       try {
         indexedDB.deleteDatabase('synthexis_storage_db');
-        indexedDB.deleteDatabase('synap_storage_db');
       } catch (e) {
         console.warn('Failed to delete IndexedDB during wipe:', e);
       }
@@ -491,9 +490,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     { key: 'verifier', title: 'Verifier', desc: 'Checks facts & constraints' },
                     { key: 'arbiter', title: 'Synthesizer', desc: 'Produces final answer' },
                   ].map((role) => {
-                    const currentSeat = roles[role.key as keyof typeof roles] || { provider: 'gemini', model: 'gemini-3.8-flash' };
+                    const currentSeat = roles[role.key as keyof typeof roles] || { provider: 'gemini', model: 'gemini-2.5-flash' };
                     const currentProvider = currentSeat.provider || 'gemini';
-                    const currentModel = currentSeat.model || 'gemini-3.8-flash';
+                    const currentModel = currentSeat.model || 'gemini-2.5-flash';
                     const activeKey = providerConfigService.getKey(currentProvider);
                     const hasKey = Boolean(activeKey) || (currentProvider === 'gemini' && serverGeminiActive);
                     const modelsList = AVAILABLE_MODELS[currentProvider] || [];
@@ -517,7 +516,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                             value={currentProvider}
                             onChange={(e) => {
                               const p = e.target.value as any;
-                              const defaultM = (AVAILABLE_MODELS[p] && AVAILABLE_MODELS[p][0]?.id) || 'gemini-3.8-flash';
+                              const defaultM = (AVAILABLE_MODELS[p] && AVAILABLE_MODELS[p][0]?.id) || 'gemini-2.5-flash';
                               setRoles((prev) => ({
                                 ...prev,
                                 [role.key]: { provider: p, model: defaultM },
@@ -569,7 +568,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   onChange={(e) => {
                     const val = e.target.value;
                     setProvider(val);
-                    if (val === 'gemini') setModel('gemini-3.8-flash');
+                    if (val === 'gemini') setModel('gemini-2.5-flash');
                     else if (val === 'anthropic') setModel('claude-3-5-sonnet-20241022');
                     else setModel('gpt-4o-mini');
                   }}
@@ -604,7 +603,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   type="text"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder="gpt-4o-mini / gemini-3.8-flash"
+                  placeholder="gpt-4o-mini / gemini-2.5-flash"
                   className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
                 />
               </div>

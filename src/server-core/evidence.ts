@@ -13,7 +13,7 @@ export async function summarizeStage(
   apiKey?: string,
   env: BackendEnv = {},
   provider: 'gemini' | 'anthropic' | 'groq' | 'sambanova' | 'openrouter' = 'gemini',
-  model: string = 'gemini-3.8-flash'
+  model: string = 'gemini-2.5-flash'
 ): Promise<string> {
   if (!content || content.length < 300) return content;
   try {
@@ -69,7 +69,7 @@ export async function generateRealEvidenceGraph(opts: {
     apiKey,
     env = {},
     provider = 'gemini',
-    model = 'gemini-3.8-flash',
+    model = 'gemini-2.5-flash',
   } = opts;
 
   // In solo mode, there is no multi-agent debate synthexis rate

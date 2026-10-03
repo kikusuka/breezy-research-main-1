@@ -13,11 +13,12 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 ```text
                              SYNTHEXIS WORKSPACE
                                       │
-      ┌──────────────────┬───────────┴───────────┬──────────────────┐
-      │                  │                       │                  │
-    Breezy           Synthexis                 Build              Synap
-(Conversational    (Technical Research      (Cloud IDE &      (Study & Knowledge
-   Workspace)      & Evidence Engine)    Ephemeral Runner)         Engine)
+                      ┌───────────────┼───────────────┐
+                      │               │               │
+                    Breezy        Synthexis         Build
+               (Conversational   (Technical      (Cloud IDE &
+                  Workspace)     Research &       Ephemeral
+                                  Evidence)        Runner)
 ```
 
 ### 1. Breezy (Core Interactive Workspace)
@@ -39,11 +40,6 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 * **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
 * **Simulated ANSI Terminal**: Real-time log streamer supporting ANSI color escape codes, live text filter search, auto-scrolling, and keyboard shortcuts (`Cmd+K` / `Ctrl+K` to clear, `Cmd+Shift+Down` to jump to bottom).
 * **Execution Preview (Simulation)**: Simulated cloud-runner workflow for testing the Build workspace UI and job lifecycle previews. No remote code execution or remote GPU provisioning occurs.
-
-### 4. Synap (Knowledge & Study Workspace)
-* **Source-Grounded Notebooks**: Ingest documents, text files, and reference notes.
-* **Weak-Spot Diagnostic**: Evaluates mastery levels and flags topics requiring review.
-* **Recall & Spaced Repetition**: Flashcards and quizzes linked directly to study items.
 
 ---
 
@@ -72,11 +68,11 @@ Synthexis Workspace consists of a static React frontend with multi-tier edge bac
 
 | Layer | Technologies & Runtime |
 | :--- | :--- |
-| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Motion, Prism.js, D3.js |
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Prism.js |
 | **Primary Backend** | Cloudflare Workers (`workers/index.ts`) - V8 edge isolate, 100k req/day free |
 | **Secondary Backend** | Deno Deploy (`deno/main.ts`) - 1M req/month free backup |
 | **Emergency Fallback** | Node.js Express (`server.ts`) - Render Web Service / local dev |
-| **AI Integration** | Google Gemini (`gemini-3.8-flash`), Groq, SambaNova, OpenRouter |
+| **AI Integration** | Google Gemini (`gemini-2.5-flash`), Groq, SambaNova, OpenRouter |
 | **Persistence** | IndexedDB, LocalStorage, optional Firebase / Google Drive sync |
 
 ---

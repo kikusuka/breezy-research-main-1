@@ -40,7 +40,7 @@ function getClientIdentifier(req: Request): string {
  */
 function getExtractionConfig(keys: any, env: BackendEnv) {
   if (keys.gemini || env.GEMINI_API_KEY) {
-    return { provider: 'gemini', model: 'gemini-3.8-flash', apiKey: keys.gemini || env.GEMINI_API_KEY };
+    return { provider: 'gemini', model: 'gemini-2.5-flash', apiKey: keys.gemini || env.GEMINI_API_KEY };
   }
   if (keys.anthropic || env.ANTHROPIC_API_KEY) {
     return { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022', apiKey: keys.anthropic || env.ANTHROPIC_API_KEY };
@@ -90,6 +90,10 @@ export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<strin
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Breezy-Client',
     'Access-Control-Max-Age': '86400',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   };
 }
 
@@ -141,7 +145,7 @@ export async function handleBackendRequest(
       backend: backendName,
       version: '2.5.0-universal',
       serverGeminiConfigured: hasServerGemini,
-      defaultModel: hasServerGemini ? 'gemini-3.8-flash' : '',
+      defaultModel: hasServerGemini ? 'gemini-2.5-flash' : '',
       providers: configuredProviders,
       supportedProviders: ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'],
       timestamp: Date.now(),
@@ -182,6 +186,18 @@ export async function handleBackendRequest(
         return { safe: false, error: 'Access to cloud metadata endpoints is prohibited.' };
       }
 
+      // Disallow IPv6 private/local ranges (fc00::/7, fd00::/8, fe80::/10, ff00::/8)
+      const cleanHost = hostname.replace(/^\[|\]$/g, '');
+      if (
+        cleanHost.startsWith('fc') ||
+        cleanHost.startsWith('fd') ||
+        cleanHost.startsWith('fe80') ||
+        cleanHost.startsWith('ff') ||
+        cleanHost.includes('::')
+      ) {
+        return { safe: false, error: 'IPv6 private and loopback addresses are prohibited.' };
+      }
+
       // Disallow private IPv4 subnets (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 100.64.0.0/10)
       const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
       const match = hostname.match(ipv4Regex);
@@ -199,6 +215,9 @@ export async function handleBackendRequest(
         }
         if (o1 === 169 && o2 === 254) {
           return { safe: false, error: 'Link-local addresses are prohibited.' };
+        }
+        if (o1 === 100 && o2 >= 64 && o2 <= 127) {
+          return { safe: false, error: 'Shared CGNAT private address range is prohibited.' };
         }
       }
 
@@ -318,7 +337,7 @@ export async function handleBackendRequest(
         try {
           await callAgentWithStream({
             provider: 'gemini',
-            model: 'gemini-3.8-flash',
+            model: 'gemini-2.5-flash',
             apiKey: trimmedKey,
             systemInstruction: 'Respond with OK in one word.',
             userPrompt: 'Ping',
@@ -328,7 +347,7 @@ export async function handleBackendRequest(
         } catch {
           await callAgentWithStream({
             provider: 'gemini',
-            model: 'gemini-3.1-flash-lite',
+            model: 'gemini-2.5-flash-lite',
             apiKey: trimmedKey,
             systemInstruction: 'Respond with OK in one word.',
             userPrompt: 'Ping',
@@ -518,7 +537,7 @@ export async function handleBackendRequest(
   if (path === '/api/breezy/chat' && req.method === 'POST') {
     try {
       const body = await req.json().catch(() => ({}));
-      const { prompt, history = [], provider = 'gemini', model = 'gemini-3.8-flash', apiKey } = body;
+      const { prompt, history = [], provider = 'gemini', model = 'gemini-2.5-flash', apiKey } = body;
       if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
         return createJsonResponse({ error: 'Prompt is required' }, 400, req, env);
       }
@@ -538,7 +557,7 @@ export async function handleBackendRequest(
       let fullAnswer = '';
       await callAgentWithStream({
         provider: (['groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
-        model: model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-3.8-flash'),
+        model: model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-2.5-flash'),
         apiKey: apiKey?.trim() || undefined,
         systemInstruction,
         userPrompt: formattedPrompt,
@@ -704,7 +723,7 @@ Analyze this deliberation and output the JSON object.`;
               sendEvent('notice', {
                 message: `No API key provided for ${prov.toUpperCase()}. Falling back to Gemini for ${roleName} stage.`
               });
-              return { provider: 'gemini', model: 'gemini-3.8-flash' };
+              return { provider: 'gemini', model: 'gemini-2.5-flash' };
             } else {
               const alt = getExtractionConfig(keys, env);
               if (alt) {
@@ -718,10 +737,10 @@ Analyze this deliberation and output the JSON object.`;
           return chosen;
         };
 
-        const architectConfig = resolveSeatConfig(seats.architect, 'Analyst', 'gemini', 'gemini-3.8-flash');
-        const skepticConfig = resolveSeatConfig(seats.skeptic, 'Critic', keys.groq ? 'groq' : 'gemini', keys.groq ? 'llama-3.3-70b-versatile' : 'gemini-3.8-flash');
-        const verifierConfig = resolveSeatConfig(seats.verifier, 'Verifier', keys.sambanova ? 'sambanova' : 'gemini', keys.sambanova ? 'Qwen2.5-72B-Instruct' : 'gemini-3.8-flash');
-        const arbiterConfig = resolveSeatConfig(seats.arbiter, 'Synthesizer', 'gemini', 'gemini-3.8-flash');
+        const architectConfig = resolveSeatConfig(seats.architect, 'Analyst', 'gemini', 'gemini-2.5-flash');
+        const skepticConfig = resolveSeatConfig(seats.skeptic, 'Critic', keys.groq ? 'groq' : 'gemini', keys.groq ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash');
+        const verifierConfig = resolveSeatConfig(seats.verifier, 'Verifier', keys.sambanova ? 'sambanova' : 'gemini', keys.sambanova ? 'Qwen2.5-72B-Instruct' : 'gemini-2.5-flash');
+        const arbiterConfig = resolveSeatConfig(seats.arbiter, 'Synthesizer', 'gemini', 'gemini-2.5-flash');
 
         const emitStatus = (role: string, agentName: string, taskDescription: string) => {
           sendEvent('status', {

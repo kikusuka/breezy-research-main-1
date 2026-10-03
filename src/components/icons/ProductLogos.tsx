@@ -20,15 +20,3 @@ export const SynthexisLogoIcon: React.FC<{ className?: string }> = ({ className 
   </svg>
 );
 
-export const SynapLogoIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="28" fill="#181524" />
-    <line x1="32" y1="46" x2="68" y2="46" stroke="#9d85f2" strokeWidth="7" strokeLinecap="round" />
-    <line x1="32" y1="46" x2="50" y2="76" stroke="#9d85f2" strokeWidth="7" strokeLinecap="round" />
-    <line x1="68" y1="46" x2="50" y2="76" stroke="#9d85f2" strokeWidth="7" strokeLinecap="round" />
-    <circle cx="32" cy="46" r="10" fill="#9d85f2" />
-    <circle cx="68" cy="46" r="10" fill="#9d85f2" />
-    <circle cx="50" cy="76" r="10" fill="#ccbdff" stroke="#9d85f2" strokeWidth="4" />
-    <circle cx="50" cy="76" r="4" fill="#ffffff" />
-  </svg>
-);

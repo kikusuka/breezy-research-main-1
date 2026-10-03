@@ -17,8 +17,8 @@ describe('providerConfigService', () => {
   it('correctly applies fast preset', () => {
     const updated = providerConfigService.applyPreset('fast');
     expect(updated.preset).toBe('fast');
-    expect(updated.roles.architect.model).toBe('gemini-3.8-flash');
-    expect(updated.roles.skeptic.model).toBe('gemini-3.8-flash');
+    expect(updated.roles.architect.model).toBe('gemini-2.5-flash');
+    expect(updated.roles.skeptic.model).toBe('gemini-2.5-flash');
   });
 
   it('correctly applies deep preset', () => {

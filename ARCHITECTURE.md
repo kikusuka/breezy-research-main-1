@@ -25,16 +25,16 @@ Breezy Playground is designed around five core principles:
                                │   │      Breezy App Shell (Vite)    │   │
                                │   └───────────────┬─────────────────┘   │
                                │                   │                     │
-                ┌──────────────┼───────────────────┼─────────────────────┼──────────────┐
-                │              │                   │                     │              │
-                ▼              ▼                   ▼                     ▼              ▼
-        ┌──────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-        │    Breezy    │ │   Synthexis   │ │     Build     │ │     Synap     │ │   Settings    │
-        │(Conversations│ │  (Deep Multi- │ │  (Prism IDE,  │ │ (Study Notes, │ │   (BYOK &     │
-        │   & Canvas)  │ │ Pass Research)│ │Runner Preview)│ │Recall Decks)  │ │ Integrations) │
-        └──────┬───────┘ └───────┬───────┘ └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
-               │                 │                 │                 │                 │
-               └─────────────────┴────────┬────────┴─────────────────┴─────────────────┘
+                ┌──────────────┼───────────────────┼─────────────────────┐
+                │              │                   │                     │
+                ▼              ▼                   ▼                     ▼
+        ┌──────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+        │    Breezy    │ │   Synthexis   │ │     Build     │ │   Settings    │
+        │(Conversations│ │  (Deep Multi- │ │  (Prism IDE,  │ │   (BYOK &     │
+        │   & Canvas)  │ │ Pass Research)│ │Runner Preview)│ │ Integrations) │
+        └──────┬───────┘ └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
+               │                 │                 │                 │
+               └─────────────────┴────────┬────────┴─────────────────┘
                                           │
                                           ▼
                       ┌───────────────────────────────────────┐
@@ -76,11 +76,6 @@ Breezy Playground is designed around five core principles:
 * **Execution Preview (Simulation)**: Explicitly labeled job lifecycle simulator for testing compute workflows without remote GPU spinning.
 * **ANSI Terminal**: Terminal emulator supporting ANSI color codes, text filtering, clearing (`Cmd+K`), and navigation shortcuts.
 * **GitHub Integration**: Browse repositories and commit file changes using personal access tokens.
-
-### 4. Synap (Knowledge & Study Workspace)
-* **Source-Grounded Notebooks**: Ingest reference materials and lecture documents.
-* **Diagnostic Mastery**: Flags knowledge weak-spots based on review performance.
-* **Spaced Repetition**: Flashcards and quizzes linked directly to study notes.
 
 ---
 
