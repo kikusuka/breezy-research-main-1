@@ -111,6 +111,7 @@ export interface DebateSession {
   tone?: DebateTone;
   searchEngine?: SearchEngineProvider;
   enableSearchGrounding?: boolean;
+  researchMethod?: 'adaptive' | 'systematic' | 'evidence-map' | 'comparative';
   createdAt: number;
   updatedAt?: number;
   status: 'idle' | 'running' | 'completed' | 'error';
