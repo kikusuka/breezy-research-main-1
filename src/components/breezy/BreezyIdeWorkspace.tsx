@@ -479,61 +479,6 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Terminal actions simulator
-  const handleTerminalCommand = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cmd = terminalInput.trim();
-    if (!cmd) return;
-
-    let output: string[] = [`$ ${cmd}`];
-    const args = cmd.split(' ');
-    const primary = args[0].toLowerCase();
-
-    if (primary === 'help') {
-      output.push(
-        '\u001b[1mAvailable Breezy Sandbox Commands:\u001b[0m',
-        '  \u001b[36mnpm install <pkg>\u001b[0m   - [Preview] Simulate installing npm packages into sandbox',
-        '  \u001b[36mpip install <pkg>\u001b[0m   - [Preview] Simulate installing python libraries into sandbox',
-        '  \u001b[36mlist packages\u001b[0m       - List active packages currently in sandbox',
-        '  \u001b[36mrun\u001b[0m                 - Render current code in Live Preview runner',
-        '  \u001b[36mgit status\u001b[0m          - Inspect active changes for repository',
-        '  \u001b[36mclear\u001b[0m               - Clear terminal history output (or Cmd+K)'
-      );
-    } else if (primary === 'clear') {
-      handleClearLogs();
-      setTerminalInput('');
-      return;
-    } else if (primary === 'run') {
-      setActiveWorkspaceTab('preview');
-      output.push(
-        `\u001b[32m[preview runner]\u001b[0m Rendering ${selectedFilePath || 'scratchpad'} in live sandboxed preview...`,
-        `\u001b[36m[environment]\u001b[0m Active packages: ${installedPackages.join(', ')}`,
-        `\u001b[1m\u001b[32m[preview]\u001b[0m Live sandboxed preview updated.`
-      );
-    } else if (primary === 'npm' && args[1]?.toLowerCase() === 'install') {
-      const pkgName = args.slice(2).join(' ') || 'pkg-temp';
-      setInstalledPackages((prev) => [...prev, pkgName]);
-      output.push(
-        `\u001b[36m[npm registry]\u001b[0m Resolving package '${pkgName}'...`,
-        `\u001b[33m[preview]\u001b[0m Package installation simulated. Added '${pkgName}' to temporary sandbox.`
-      );
-    } else if (primary === 'pip' && args[1]?.toLowerCase() === 'install') {
-      const pkgName = args.slice(2).join(' ') || 'pkg-temp';
-      setInstalledPackages((prev) => [...prev, pkgName]);
-      output.push(
-        `\u001b[36m[pip registry]\u001b[0m Resolving library '${pkgName}'...`,
-        `\u001b[33m[preview]\u001b[0m Package installation simulated. Added '${pkgName}' to temporary sandbox.`
-      );
-    } else if (primary === 'list' && args[1]?.toLowerCase() === 'packages') {
-      output.push(`\u001b[1mCurrently Installed Packages (Temporary Sandbox):\u001b[0m`, ...installedPackages.map((p) => `  - \u001b[36m${p}\u001b[0m`));
-    } else {
-      output.push(`\u001b[31msh: command not found: ${primary}. Type "help" for available commands.\u001b[0m`);
-    }
-
-    setTerminalHistory((prev) => [...prev, ...output, '']);
-    setTerminalInput('');
-  };
-
   return (
     <div className="flex-1 flex flex-col w-full h-[calc(100vh-3.5rem)] bg-[#090d16] text-slate-100 font-sans antialiased overflow-hidden">
       {/* Toast Notification */}
