@@ -198,12 +198,12 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
 
   // Terminal & Installed Packages State
   const [terminalHistory, setTerminalHistory] = useState<string[]>([
-    '\u001b[36mBreezy Embedded Sandbox Environment [v3.9.0-ansi-prism]\u001b[0m',
+    '\u001b[36mBreezy Embedded Sandbox Environment [ansi-prism]\u001b[0m',
     '\u001b[90mShortcuts: Cmd+K (Clear logs) | Cmd+Shift+Down (Jump to bottom)\u001b[0m',
     ''
   ]);
   const [terminalInput, setTerminalInput] = useState<string>('');
-  const [installedPackages, setInstalledPackages] = useState<string[]>(['lodash', 'typescript', '@google/genai', 'tailwindcss']);
+  const [installedPackages, setInstalledPackages] = useState<string[]>([]);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
   // Live Preview Console Logs Captured from Iframe
@@ -402,7 +402,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   }, [terminalHistory, previewLogs]);
 
   const handleRunBackgroundCloudJob = (runtimeTarget: 'colab' | 'google_cloud') => {
-    showToast(`Dispatching ${selectedFilePath} using Google Account Session (${runtimeTarget.toUpperCase()})...`);
+    showToast(`Starting execution preview for ${selectedFilePath} (${runtimeTarget.toUpperCase()})...`);
     cloudExecutionService.executeInBackground(selectedFilePath, editorContent, {
       runtime: runtimeTarget,
       gpuAccelerator: 'T4',
