@@ -191,7 +191,7 @@ export function generatePlainTextTranscript(debate: ExportableDebate): string {
 
   if (debate.metrics) {
     txt += `\nANALYSIS METRICS:\n`;
-    txt += `  - Alignment Score: ${debate.metrics.synthexisRate ?? 90}%\n`;
+    txt += `  - Alignment Score: ${debate.metrics.synthexisRate !== null && debate.metrics.synthexisRate !== undefined ? `${debate.metrics.synthexisRate}%` : 'N/A'}\n`;
     txt += `  - Scrutiny Level: ${debate.metrics.contentionLevel ?? 'Moderate'}\n`;
     if (debate.metrics.resolvedPointsCount) {
       txt += `  - Points Resolved: ${debate.metrics.resolvedPointsCount}\n`;
