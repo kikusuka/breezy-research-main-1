@@ -496,8 +496,8 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
         <div className="flex items-center gap-3 min-w-0">
           <span className="material-symbols-outlined text-slate-400 text-[18px]">code</span>
           <div className="min-w-0">
-            <div className="text-xs font-medium text-slate-200 truncate">${selectedRepo || 'GitHub project'}</div>
-            <div className="text-[10px] text-slate-500 truncate">${selectedFilePath || 'Select a file to begin'}</div>
+            <div className="text-xs font-medium text-slate-200 truncate">{selectedRepo || 'GitHub project'}</div>
+            <div className="text-[10px] text-slate-500 truncate">{selectedFilePath || 'Select a file to begin'}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
