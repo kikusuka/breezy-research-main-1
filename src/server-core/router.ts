@@ -881,7 +881,7 @@ Structure your response in clean Markdown with clear headings.`;
               durationMs: totalDurationMs,
               synthexisRate: null,
               contentionLevel: 'None (Solo Inquiry)',
-              resolvedPointsCount: 1,
+              resolvedPointsCount: 0,
             },
           });
           await writer.close();
