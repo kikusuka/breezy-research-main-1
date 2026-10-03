@@ -150,7 +150,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           {/* Brand & Context */}
           <div className="space-y-4">
             <span className="font-display text-5xl sm:text-6xl lg:text-7xl text-stone-100 tracking-tight">
-              Synthexis
+              Breezy Research
             </span>
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center justify-center gap-3 text-[11px] font-mono uppercase tracking-[0.2em] text-stone-500">
