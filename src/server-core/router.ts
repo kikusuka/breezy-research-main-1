@@ -770,6 +770,71 @@ Analyze this deliberation and output the JSON object.`;
           });
         };
 
+        // PLAN: turn the question into an explicit scope before retrieval.
+        // This is the main difference between "chat with search" and a research workflow.
+        let researchPlan: string[] = [];
+        let researchPlanContext = '';
+        try {
+          await sendEvent('status', { message: 'Planning the research scope and evidence strategy...' });
+          const plannerPrompt = `USER QUESTION:
+${prompt}
+
+RESEARCH METHOD:
+${researchMethod}
+
+Create a compact research plan before evidence retrieval. Return ONLY valid JSON:
+{
+  "scope": "one sentence defining what this inquiry covers and what it does not",
+  "subquestions": ["2-5 concrete subquestions"],
+  "searchQueries": ["2-4 high-value search queries"],
+  "evidenceStandard": "one sentence describing what counts as strong evidence"
+}`;
+
+          const plannerRaw = await callAgentWithStream({
+            provider: architectConfig.provider,
+            model: architectConfig.model,
+            apiKey: keys[architectConfig.provider],
+            systemInstruction: 'You are the research planner. Define scope, subquestions, retrieval queries, and an evidence standard. Do not answer the question yet.',
+            userPrompt: plannerPrompt,
+            temperature: 0.2,
+            enableSearchGrounding: false,
+            onChunk: () => {},
+            env,
+            signal: req.signal,
+          });
+
+          const cleanedPlan = plannerRaw.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim();
+          const parsedPlan = JSON.parse(cleanedPlan);
+          const scope = typeof parsedPlan.scope === 'string' ? parsedPlan.scope.trim() : '';
+          const subquestions = Array.isArray(parsedPlan.subquestions) ? parsedPlan.subquestions.filter((q: any) => typeof q === 'string' && q.trim()).map((q: string) => q.trim()) : [];
+          const searchQueries = Array.isArray(parsedPlan.searchQueries) ? parsedPlan.searchQueries.filter((q: any) => typeof q === 'string' && q.trim()).map((q: string) => q.trim()) : [];
+          const evidenceStandard = typeof parsedPlan.evidenceStandard === 'string' ? parsedPlan.evidenceStandard.trim() : '';
+
+          researchPlan = [
+            scope ? 'Scope: ' + scope : '',
+            ...subquestions.map((q: string, i: number) => 'Subquestion ' + (i + 1) + ': ' + q),
+            searchQueries.length ? 'Retrieval queries: ' + searchQueries.join(' | ') : '',
+            evidenceStandard ? 'Evidence standard: ' + evidenceStandard : '',
+          ].filter(Boolean);
+
+          researchPlanContext = researchPlan.length
+            ? '\n\n--- RESEARCH PLAN ---\n' + researchPlan.join('\n') + '\n--- END RESEARCH PLAN ---'
+            : '';
+
+          await sendEvent('research_plan', {
+            method: researchMethod,
+            plan: researchPlan,
+            searchQueries,
+            scope,
+            evidenceStandard,
+          });
+        } catch (planError: any) {
+          console.warn('Research planning stage failed; continuing with method guidance:', planError);
+          researchPlan = [`Method: ${researchMethod}`, 'Planner unavailable; continue with explicit evidence/uncertainty checks.'];
+          researchPlanContext = '\n\n--- RESEARCH PLAN ---\n' + researchPlan.join('\n') + '\n--- END RESEARCH PLAN ---';
+          await sendEvent('notice', { message: 'Research planner unavailable. Continuing with the selected method.' });
+        }
+
         let groundingContext = '';
         let discoveredSources: any[] = [];
         if (enableSearchGrounding) {
@@ -825,7 +890,7 @@ Ground your technical architecture, critique, and trade-off claims in the above 
           }
         }
 
-        const groundedPrompt = `${prompt}${groundingContext}${methodInstruction}`;
+        const groundedPrompt = `${prompt}${researchPlanContext}${groundingContext}${methodInstruction}`;
 
         if (effectiveProtocol === 'solo') {
           await sendEvent('round_start', {
@@ -877,6 +942,7 @@ Structure your response in clean Markdown with clear headings.`;
             proposalContent: soloContent,
             critiqueContent: '',
             discoveredSources,
+            researchPlan,
             durationMs: totalDurationMs,
             isSolo: true,
             apiKey: keys.gemini || env.GEMINI_API_KEY,
