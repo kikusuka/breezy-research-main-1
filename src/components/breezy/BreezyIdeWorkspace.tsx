@@ -9,6 +9,8 @@ import 'prismjs/themes/prism-tomorrow.css';
 
 import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
 import { puterService } from '../../services/puterService';
+import { apiClient } from '../../services/apiClient';
+import { providerConfigService } from '../../services/providerConfigService';
 
 interface BreezyIdeWorkspaceProps {
   onOpenSettings?: () => void;
@@ -123,6 +125,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   const [agentBusy, setAgentBusy] = useState(false);
   const [puterSignedIn, setPuterSignedIn] = useState(false);
   const [puterModel, setPuterModel] = useState('gpt-5-nano');
+  const [agentProvider, setAgentProvider] = useState<'puter' | 'byok'>(() => (localStorage.getItem('breezy_ide_agent_provider') as 'puter' | 'byok') || 'puter');
 
   // Pyodide local WASM states
   const [pyodideInstance, setPyodideInstance] = useState<any>(null);
@@ -313,13 +316,30 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     setAgentMessages((prev) => [...prev, { role: 'user', content: prompt }]);
     setAgentBusy(true);
     try {
-      const signedIn = await puterService.isSignedIn();
-      if (!signedIn) await puterService.signIn();
-      setPuterSignedIn(true);
-      const answer = await puterService.chat(prompt + '\n\nUse this live IDE context when relevant:\n' + context, {
-        model: puterModel.trim() || 'gpt-5-nano',
-        system: 'You are the Breezy IDE Agent. Help the developer understand, modify, debug, and plan code. Be concrete. Never claim an edit was applied unless Breezy actually changed the editor.',
-      });
+      let answer = '';
+      const agentPrompt = prompt + '\n\nUse this live IDE context when relevant:\n' + context;
+      if (agentProvider === 'puter') {
+        const signedIn = await puterService.isSignedIn();
+        if (!signedIn) await puterService.signIn();
+        setPuterSignedIn(true);
+        answer = await puterService.chat(agentPrompt, {
+          model: puterModel.trim() || 'gpt-5-nano',
+          system: 'You are the Breezy IDE Agent. Help the developer understand, modify, debug, and plan code. Be concrete. Never claim an edit was applied unless Breezy actually changed the editor.',
+        });
+      } else {
+        const config = providerConfigService.getConfig();
+        const active = providerConfigService.getActiveRoutableModel();
+        if (!active) throw new Error('No BYOK provider is configured. Add a provider key in Models & Synthexis, or switch the IDE Agent to Puter.');
+        const key = providerConfigService.getKey(active.provider);
+        const result = await apiClient.chatBreezy({
+          prompt: agentPrompt,
+          provider: active.provider,
+          model: active.model,
+          apiKey: key,
+        });
+        answer = result.text;
+        setPuterSignedIn(false);
+      }
       setAgentMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
     } catch (err: any) {
       setPuterSignedIn(false);
@@ -849,8 +869,16 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
               <button type="button" onClick={() => setShowAgentPanel(false)} className="p-1 text-slate-500 hover:text-slate-200 cursor-pointer" aria-label="Close agent"><span className="material-symbols-outlined text-[17px]">close</span></button>
             </div>
             <div className="p-3 border-b border-slate-800/80 space-y-2">
-              <div className="flex items-center justify-between gap-2"><span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono">Agent model</span><span className={puterSignedIn ? 'text-[9px] font-mono text-emerald-400' : 'text-[9px] font-mono text-slate-500'}>{puterSignedIn ? 'Puter connected' : 'Puter sign-in on first use'}</span></div>
-              <input value={puterModel} onChange={(e) => setPuterModel(e.target.value)} className="w-full bg-[#050811] border border-slate-700 rounded-md px-2.5 py-2 text-[11px] text-slate-200 outline-none focus:border-sky-500/50" placeholder="Puter model ID, e.g. gpt-5-nano" />
+              <div className="flex items-center justify-between gap-2"><span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono">Agent access</span><span className="text-[9px] font-mono text-slate-500">{agentProvider === 'puter' ? (puterSignedIn ? 'Puter connected' : 'Puter sign-in on first use') : 'Your BYOK provider'}</span></div>
+              <div className="grid grid-cols-2 gap-1 bg-[#050811] border border-slate-800 rounded-md p-1">
+                <button type="button" onClick={() => { setAgentProvider('puter'); localStorage.setItem('breezy_ide_agent_provider','puter'); }} className={agentProvider === 'puter' ? 'px-2 py-1.5 rounded bg-slate-800 text-slate-100 text-[10px] font-medium' : 'px-2 py-1.5 rounded text-slate-500 hover:text-slate-200 text-[10px]'}>Puter.js</button>
+                <button type="button" onClick={() => { setAgentProvider('byok'); localStorage.setItem('breezy_ide_agent_provider','byok'); }} className={agentProvider === 'byok' ? 'px-2 py-1.5 rounded bg-slate-800 text-slate-100 text-[10px] font-medium' : 'px-2 py-1.5 rounded text-slate-500 hover:text-slate-200 text-[10px]'}>BYOK</button>
+              </div>
+              {agentProvider === 'puter' ? (
+                <input value={puterModel} onChange={(e) => setPuterModel(e.target.value)} className="w-full bg-[#050811] border border-slate-700 rounded-md px-2.5 py-2 text-[11px] text-slate-200 outline-none focus:border-sky-500/50" placeholder="Puter model ID, e.g. gpt-5-nano" />
+              ) : (
+                <div className="text-[10px] text-slate-500 border border-slate-800 rounded-md px-2.5 py-2">Uses the active provider/model configured in Models & Synthexis.</div>
+              )
               <div className="flex gap-1.5">
                 <button type="button" onClick={() => handleAgentSend('Explain the current file and point out the three most important things I should understand.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Explain</button>
                 <button type="button" onClick={() => handleAgentSend('Review the current file for bugs, dead code, and risky assumptions. Give concrete fixes.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Review</button>
