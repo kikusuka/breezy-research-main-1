@@ -878,7 +878,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
                 <input value={puterModel} onChange={(e) => setPuterModel(e.target.value)} className="w-full bg-[#050811] border border-slate-700 rounded-md px-2.5 py-2 text-[11px] text-slate-200 outline-none focus:border-sky-500/50" placeholder="Puter model ID, e.g. gpt-5-nano" />
               ) : (
                 <div className="text-[10px] text-slate-500 border border-slate-800 rounded-md px-2.5 py-2">Uses the active provider/model configured in Models & Synthexis.</div>
-              )
+              )}
               <div className="flex gap-1.5">
                 <button type="button" onClick={() => handleAgentSend('Explain the current file and point out the three most important things I should understand.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Explain</button>
                 <button type="button" onClick={() => handleAgentSend('Review the current file for bugs, dead code, and risky assumptions. Give concrete fixes.')} className="px-2 py-1.5 rounded-md border border-slate-700 text-[9px] text-slate-400 hover:text-slate-100 cursor-pointer">Review</button>
