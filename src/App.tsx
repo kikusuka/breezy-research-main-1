@@ -275,6 +275,9 @@ export default function App() {
     const selectedRound = config.selectedRound ?? 2;
 
     const newSession = createNewSession(promptText, protocol as any, [], tone);
+    newSession.searchEngine = searchEngine;
+    newSession.enableSearchGrounding = true;
+    newSession.researchMethod = config.researchMethod || 'adaptive';
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
 
