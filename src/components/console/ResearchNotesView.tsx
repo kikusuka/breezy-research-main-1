@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DebateSession } from '../../types';
 import { providerConfigService } from '../../services/providerConfigService';
+import { apiClient } from '../../services/apiClient';
 
 interface ResearchNotesViewProps {
   onSelectNotePrompt: (prompt: string) => void;
@@ -13,16 +14,16 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   React.useEffect(() => {
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleStatus);
-    window.addEventListener('offline', handleStatus);
-    return () => {
-      window.removeEventListener('online', handleStatus);
-      window.removeEventListener('offline', handleStatus);
-    };
+    let cancelled = false;
+    apiClient.checkHealth(true).then((ok) => {
+      if (!cancelled) setBackendStatus(ok ? 'online' : 'offline');
+    }).catch(() => {
+      if (!cancelled) setBackendStatus('offline');
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const showToast = (msg: string) => {
@@ -295,14 +296,14 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
         <aside className="xl:col-span-3 flex flex-col gap-4">
           <div className="bg-stone-900/40 p-4 rounded-xl flex flex-col gap-3 border border-stone-800/40 font-mono backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-stone-800/40 pb-2">
-              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">Network_Link</span>
+              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">Backend_Connection</span>
               <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${isOnline ? 'text-stone-200 bg-stone-800 border-stone-700' : 'text-stone-500 bg-stone-950 border-stone-900'}`}>
                 {isOnline ? 'Verified' : 'Offline'}
               </span>
             </div>
             {(() => {
               const roles = providerConfigService.getConfig().roles;
-              return (
+              const seatLabel = (role: typeof roles.architect) => {\n                if (!role?.provider || !role?.model) return 'Not configured';\n                if (!providerConfigService.isProviderConfigured(role.provider)) return 'Key not set';\n                return role.model;\n              };\n              return (
                 <div className="flex flex-col gap-2.5 text-[10px] tracking-tight">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-stone-500 uppercase">
@@ -310,7 +311,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                       <span>Node_Alpha</span>
                     </div>
                     <span className="text-stone-300 truncate max-w-[120px]">
-                      {roles.architect?.model || 'Gemini_Flash'}
+                      {seatLabel(roles.architect)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -319,7 +320,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                       <span>Node_Beta</span>
                     </div>
                     <span className="text-stone-300 truncate max-w-[120px]">
-                      {roles.skeptic?.model || 'Gemini_Flash'}
+                      {seatLabel(roles.skeptic)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -328,7 +329,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                       <span>Node_Gamma</span>
                     </div>
                     <span className="text-stone-300 truncate max-w-[120px]">
-                      {roles.arbiter?.model || 'Gemini_Flash'}
+                      {seatLabel(roles.arbiter)}
                     </span>
                   </div>
                 </div>
@@ -339,7 +340,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           <div className="bg-stone-900/40 p-4 rounded-xl flex flex-col gap-2.5 border border-stone-800/40 font-mono text-[10px] backdrop-blur-sm">
             <span className="font-bold text-stone-200 uppercase tracking-widest block mb-1 underline underline-offset-4 decoration-stone-800">Enclave_Assurance</span>
             <p className="text-stone-500 leading-relaxed uppercase tracking-tighter">
-              Session metadata isolated strictly inside local storage enclaves. No external residency detected.
+              Research sessions are stored in this browser. If cloud sync is enabled, copies may also be stored in your connected cloud account.
             </p>
           </div>
         </aside>
