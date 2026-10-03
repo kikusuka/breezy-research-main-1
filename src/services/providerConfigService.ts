@@ -1,3 +1,5 @@
+import { SearchEngineProvider } from '../types';
+
 /**
  * Canonical Provider Configuration Service
  * Unified configuration layer for Breezy and Synthexis research workspaces.
