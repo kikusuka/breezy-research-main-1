@@ -22,10 +22,10 @@ export const userProfileService = {
       if (raw) {
         const parsed = JSON.parse(raw);
         return {
-          displayName: parsed.displayName || 'Guest Researcher',
-          email: parsed.email || 'researcher@workspace.local',
-          roleTitle: parsed.roleTitle || 'Research Systems Engineer',
-          organization: parsed.organization || 'Breezy Research Workspace',
+          displayName: parsed.displayName || '',
+          email: parsed.email || '',
+          roleTitle: parsed.roleTitle || '',
+          organization: parsed.organization || '',
           photoURL: parsed.photoURL || undefined,
           authorizationType: parsed.authorizationType || 'guest',
           autoSaveToDrive: Boolean(parsed.autoSaveToDrive),
@@ -34,10 +34,10 @@ export const userProfileService = {
     } catch {}
 
     return {
-      displayName: 'Guest Researcher',
-      email: 'researcher@workspace.local',
-      roleTitle: 'Research Systems Engineer',
-      organization: 'Breezy Research Workspace',
+      displayName: '',
+      email: '',
+      roleTitle: '',
+      organization: '',
       authorizationType: 'guest',
       autoSaveToDrive: false,
     };
