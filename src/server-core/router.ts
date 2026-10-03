@@ -653,6 +653,7 @@ Analyze this deliberation and output the JSON object.`;
       agreementThreshold = 78,
       autoResolve = true,
       selectedRound = 2,
+      researchMethod = 'adaptive',
     } = body;
 
     const effectiveProtocol = (selectedRound === 1) ? 'solo' : (selectedRound === 4) ? 'quad' : (selectedRound === 2 && (protocol === 'quad' || protocol === 'deep')) ? 'trio' : protocol;
@@ -678,6 +679,16 @@ Analyze this deliberation and output the JSON object.`;
         await sendEvent('status', { message: 'Initializing multi-model analysis...' });
 
         let toneInstruction = '';
+        let methodInstruction = '';
+        if (researchMethod === 'systematic') {
+          methodInstruction = `\nRESEARCH METHOD: SYSTEMATIC EVIDENCE REVIEW. First decompose the question into explicit subquestions and inclusion boundaries. Prefer primary/authoritative sources, distinguish evidence from inference, and identify what remains unverified. Keep the reasoning traceable from question -> evidence -> claim -> conclusion.`;
+        } else if (researchMethod === 'evidence-map') {
+          methodInstruction = `\nRESEARCH METHOD: EVIDENCE MAP. Organize the investigation around themes, source types, supported claims, contradictions, and evidence gaps. Do not force a single conclusion where the evidence is incomplete.`;
+        } else if (researchMethod === 'comparative') {
+          methodInstruction = `\nRESEARCH METHOD: COMPARATIVE ANALYSIS. Establish explicit comparison criteria before evaluating alternatives. Keep facts, assumptions, trade-offs, and unresolved uncertainties separate.`;
+        } else {
+          methodInstruction = `\nRESEARCH METHOD: ADAPTIVE. Choose the lightest rigorous workflow that fits the question; deepen the investigation when uncertainty, conflicting evidence, or multiple subquestions require it.`;
+        }
         let skepticTemp = 0.75;
         let arbiterTemp = 0.5;
 
@@ -814,7 +825,7 @@ Ground your technical architecture, critique, and trade-off claims in the above 
           }
         }
 
-        const groundedPrompt = `${prompt}${groundingContext}`;
+        const groundedPrompt = `${prompt}${groundingContext}${methodInstruction}`;
 
         if (effectiveProtocol === 'solo') {
           await sendEvent('round_start', {
@@ -845,7 +856,7 @@ Structure your response in clean Markdown with clear headings.`;
             systemInstruction: soloSystemPrompt,
             userPrompt: groundedPrompt,
             temperature: 0.7,
-            enableSearchGrounding: searchEngine === 'google',
+            enableSearchGrounding: enableSearchGrounding,
             onChunk: (chunk) => {
               sendEvent('token', { round: 1, token: chunk });
             },
