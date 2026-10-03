@@ -108,7 +108,6 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     '\u001b[90mShortcuts: Cmd+K (Clear logs) | Cmd+Shift+Down (Jump to bottom)\u001b[0m',
     ''
   ]);
-  const [terminalInput, setTerminalInput] = useState<string>('');
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
   // Live Preview Console Logs Captured from Iframe
@@ -609,7 +608,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
 
           <div className="flex-1 overflow-y-auto p-2">
             <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold font-mono block px-2 mb-2">
-              {selectedRepo ? 'Repository Files' : 'Available Templates'}
+              {selectedRepo ? 'Repository Files' : 'No repository selected'}
             </span>
             {!selectedRepo ? (
               <div className="p-4 text-sm text-slate-400 leading-relaxed">
