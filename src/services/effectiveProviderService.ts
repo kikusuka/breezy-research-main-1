@@ -170,9 +170,7 @@ class EffectiveProviderService {
 
     if (currentProvider && this.isRoutable(currentProvider)) {
       const models = AVAILABLE_MODELS[currentProvider];
-      const model = config.defaultModel && models?.some((m) => m.id === config.defaultModel)
-        ? config.defaultModel
-        : models?.[0]?.id || 'gemini-2.5-flash';
+      const model = config.defaultModel || models?.[0]?.id || '';
       const info = this.getProviderInfo(currentProvider);
       return { provider: currentProvider, model, source: info.source as 'byok' | 'server' };
     }
