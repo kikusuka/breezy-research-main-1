@@ -844,7 +844,7 @@ Ground your technical architecture, critique, and trade-off claims in the above 
 Your goal is to provide a comprehensive, clear, and logically sound response to the user's technical inquiry.
 Directives:
 1. FALSE PREMISE & ASSUMPTION DETECTION: If you detect any false premise or incorrect assumption, proactively address this directly at the very beginning under "Premise Correction".
-${toneInstruction}
+${toneInstruction}${methodOutputInstruction}
 Structure your response in clean Markdown with clear headings.`;
 
           let soloContent = '';
