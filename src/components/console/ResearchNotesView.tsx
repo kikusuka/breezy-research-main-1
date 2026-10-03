@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DebateSession } from '../../types';
 import { providerConfigService } from '../../services/providerConfigService';
 import { apiClient } from '../../services/apiClient';
+import { googleDocsService } from '../../services/googleDocsService';
 
 interface ResearchNotesViewProps {
   onSelectNotePrompt: (prompt: string) => void;
@@ -15,6 +16,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [savingDocId, setSavingDocId] = useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -40,6 +42,20 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           : 'Multi-Model Research';
     navigator.clipboard.writeText(`Breezy Research Archive: "${title}" (${label})`);
     showToast('Citation reference copied to clipboard');
+  };
+
+  const saveToGoogleDocs = async (session: DebateSession) => {
+    if (!session?.finalOutput) return;
+    setSavingDocId(session.id);
+    try {
+      const url = await googleDocsService.saveResearchSession(session);
+      showToast('Saved to your single Breezy Research Google Doc.');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      showToast(err?.message || 'Google Docs save failed.');
+    } finally {
+      setSavingDocId(null);
+    }
   };
 
   // Only display completed sessions as formal notes/archives
@@ -92,13 +108,25 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           <button
             type="button"
             onClick={() => {
-              onSync?.();
-              showToast('Vault re-indexed with browser storage');
+              const url = googleDocsService.getArchiveUrl();
+              if (url) window.open(url, '_blank', 'noopener,noreferrer');
+              else showToast('Save a research result first to create the Google Doc.');
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 hover:bg-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all border border-stone-800/60 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">cloud_sync</span>
-            <span>Sync_Reindex</span>
+            <span className="material-symbols-outlined text-[16px]">description</span>
+            <span>Open_Google_Doc</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onSync?.();
+              showToast('Research archive refreshed');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 hover:bg-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all border border-stone-800/60 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">sync</span>
+            <span>Refresh</span>
           </button>
           <button
             type="button"
@@ -266,14 +294,26 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                         <span className="material-symbols-outlined text-[14px]">format_quote</span>
                         <span className="font-mono text-[9px] uppercase tracking-widest">Cite_Reference</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => onSelectNotePrompt(note.prompt)}
-                        className="flex items-center gap-1 text-[10px] text-stone-100 hover:underline underline-offset-4 transition-all font-bold uppercase tracking-widest cursor-pointer"
-                      >
-                        <span>Inspect</span>
-                        <span className="material-symbols-outlined text-[14px]">east</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => saveToGoogleDocs(note)}
+                          disabled={savingDocId === note.id}
+                          className="flex items-center gap-1 text-[9px] text-stone-500 hover:text-stone-200 transition-colors cursor-pointer disabled:opacity-50"
+                          title="Append this research to the single Breezy Research Google Doc"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">{savingDocId === note.id ? 'sync' : 'description'}</span>
+                          <span>{savingDocId === note.id ? 'Saving' : 'Google Doc'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelectNotePrompt(note.prompt)}
+                          className="flex items-center gap-1 text-[10px] text-stone-100 hover:underline underline-offset-4 transition-all font-bold uppercase tracking-widest cursor-pointer"
+                        >
+                          <span>Inspect</span>
+                          <span className="material-symbols-outlined text-[14px]">east</span>
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
