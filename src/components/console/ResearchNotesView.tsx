@@ -76,7 +76,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[9px] uppercase text-stone-100 bg-stone-800 px-2.5 py-0.5 rounded font-bold tracking-widest">
-              SYNTHEXIS_ARCHIVE
+              RESEARCH_ARCHIVE
             </span>
             <span className="font-mono text-[10px] text-stone-500 font-medium uppercase tracking-tight">Index: Local_Enclave</span>
           </div>
@@ -115,7 +115,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total_Streams', value: completedSessions.length, icon: 'library_books' },
-          { label: 'Multi_Synthexis', value: completedSessions.filter((s) => s.protocol !== 'solo').length, icon: 'account_tree' },
+          { label: 'Multi_Analyses', value: completedSessions.filter((s) => s.protocol !== 'solo').length, icon: 'account_tree' },
           { label: 'Solo_Analyses', value: completedSessions.filter((s) => s.protocol === 'solo').length, icon: 'bolt' },
           { label: 'Source_Network', value: completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0), icon: 'verified_user', color: 'text-stone-400' },
         ].map((stat, idx) => (
@@ -162,7 +162,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                 ? 'Archives_All'
                 : cat === 'solo'
                 ? 'Fast_Solo'
-                : 'Deep_Synthexis'}
+                : 'Deep_Research'}
             </button>
           ))}
         </div>
