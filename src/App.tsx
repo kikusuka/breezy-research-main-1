@@ -19,7 +19,7 @@ import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace
 import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
 import { authService } from './services/authService';
 import { userProfileService } from './services/userProfileService';
-import { googleDriveService } from './services/googleDriveService';
+import { googleDocsService } from './services/googleDocsService';
 
 import {
   DebateSession,
@@ -172,7 +172,7 @@ export default function App() {
     }
   }, [activeSessionId]);
 
-  // Global Auto-save to Drive logic for Synthexis Research
+  // Compact Google Docs archive for Synthexis Research. One document is reused rather than creating a file per session.
   useEffect(() => {
     const profile = userProfileService.getProfile();
     if (!profile.autoSaveToDrive || !currentSession || isDeliberating) return;
@@ -182,9 +182,8 @@ export default function App() {
 
     const timeout = setTimeout(async () => {
       try {
-        await googleDriveService.initialize(token);
-        await googleDriveService.saveResearch(currentSession);
-        console.log('Synthexis background auto-save complete.');
+        await googleDocsService.saveResearchSession(currentSession);
+        console.log('Synthexis Google Docs archive sync complete.');
       } catch (e) {
         console.warn('Synthexis auto-save failed:', e);
       }
@@ -365,6 +364,12 @@ export default function App() {
                   return { ...s, steps: updatedSteps };
                 });
               });
+            } else if (data.type === 'research_plan') {
+              const plan = Array.isArray(data.plan) ? data.plan : [];
+              setResearchEvents((prev) => [
+                ...prev,
+                plan.length ? 'Research plan established: ' + plan.slice(0, 3).join(' · ') : 'Research plan established.',
+              ]);
             } else if (data.type === 'complete') {
               setResearchEvents((prev) => [...prev, "Research complete."]);
               setSessions((prev) => {
