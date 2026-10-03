@@ -344,10 +344,10 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
             {/* Direct human language explanation & topics block */}
             <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8 font-sans">
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-                How Synthexis Works
+                How Breezy Research Works
               </span>
               <p className="text-xs text-stone-400 leading-relaxed mb-8">
-                Synthexis translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical jargon — just verified technical synthexis.
+                Breezy Research translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical jargon — just verified technical synthesis.
               </p>
 
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
@@ -604,7 +604,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 {isTrailExpanded && (
                   <div className="p-4 border-t border-white/5 flex flex-col gap-4 bg-black/10">
                     {session.steps.map((step, idx) => {
-                      const humanRole = step.role === 'architect' ? 'Baseline hypothesis' : step.role === 'skeptic' ? 'Scrutiny objections' : 'Harmonized synthexis';
+                      const humanRole = step.role === 'architect' ? 'Baseline hypothesis' : step.role === 'skeptic' ? 'Scrutiny objections' : 'Harmonized synthesis';
                       return (
                         <div key={idx} className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#141820] border border-white/5">
                           <div className="flex items-center justify-between pb-2 border-b border-white/5">
