@@ -64,6 +64,8 @@ export interface CanonicalWorkspaceConfig {
   agreementThreshold?: number;
   autoResolve?: boolean;
   selectedRound?: number;
+  searchEngine?: SearchEngineProvider;
+  researchMethod?: 'adaptive' | 'systematic' | 'evidence-map' | 'comparative';
 }
 
 const CANONICAL_STORAGE_KEY = 'breezy_canonical_provider_config';
@@ -135,6 +137,8 @@ export const providerConfigService = {
           agreementThreshold: typeof parsed.agreementThreshold === 'number' ? parsed.agreementThreshold : 78,
           autoResolve: typeof parsed.autoResolve === 'boolean' ? parsed.autoResolve : true,
           selectedRound: typeof parsed.selectedRound === 'number' ? parsed.selectedRound : 2,
+          searchEngine: parsed.searchEngine || 'duckduckgo',
+          researchMethod: parsed.researchMethod || 'adaptive',
         };
       }
 
@@ -157,6 +161,8 @@ export const providerConfigService = {
         agreementThreshold: 78,
         autoResolve: true,
         selectedRound: 2,
+        searchEngine: 'duckduckgo',
+        researchMethod: 'adaptive',
       };
 
       this.saveConfig(initialConfig);
@@ -172,6 +178,8 @@ export const providerConfigService = {
         agreementThreshold: 78,
         autoResolve: true,
         selectedRound: 2,
+        searchEngine: 'duckduckgo',
+        researchMethod: 'adaptive',
       };
     }
   },
