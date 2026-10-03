@@ -114,24 +114,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     }
   };
 
-  // Sample real engineering topics with clean descriptions (No AI hype language)
-  const realScenarios = [
-    {
-      title: 'PostgreSQL + pgvector vs. Standalone Pinecone',
-      description: 'Evaluating architectural performance trade-offs, vacuuming locks, and indexing overhead when storing 10M+ embeddings.',
-      prompt: 'At 10M+ 1536-dimension embeddings, when does PostgreSQL pgvector degrade, and when is a dedicated vector index like Pinecone genuinely worth it?',
-    },
-    {
-      title: 'Kafka Streams vs. DuckDB for Ledger Ingestion',
-      description: 'Comparing write-ahead transactional logs with analytical micro-batching for continuous financial ledger consistency.',
-      prompt: 'Is DuckDB micro-batching suitable for a high-frequency financial transaction ledger, or is Kafka mandatory for continuous consistency?',
-    },
-    {
-      title: 'Modular Go Monolith vs. Kubernetes Microservices',
-      description: 'Understanding team size and request load inflection points where splitting a single codebase adds positive value.',
-      prompt: 'Under what concrete load and team size thresholds does a modular Go monolith break down and justify migrating to Kubernetes microservices?',
-    },
+  const researchWorkflows = [
+    { title: 'Investigate', description: 'Adaptive research for open-ended technical questions.', depth: 'standard' as const },
+    { title: 'Systematic review', description: 'Break the question into explicit evidence and claim boundaries.', depth: 'deep' as const },
+    { title: 'Compare options', description: 'Define criteria before testing competing approaches.', depth: 'deep' as const },
   ];
+
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-stone-950 text-stone-200 selection:bg-stone-100 selection:text-stone-950">
@@ -149,7 +137,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         <div className="w-full max-w-2xl text-center space-y-12">
           {/* Brand & Context */}
           <div className="space-y-4">
-            <span className="font-display text-5xl sm:text-6xl lg:text-7xl text-stone-100 tracking-tight">
+            <span className="font-sans text-4xl sm:text-5xl lg:text-6xl font-semibold text-stone-100 tracking-tight">
               Breezy Research
             </span>
             <div className="flex flex-col items-center gap-2">
@@ -184,17 +172,17 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
           {/* Inquiry Input Area */}
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-b from-stone-800 to-stone-900 rounded-[2rem] opacity-20 group-focus-within:opacity-40 transition-opacity blur-sm"></div>
-            <div className="relative bg-stone-900/40 border border-stone-800/60 rounded-[2rem] p-6 shadow-2xl backdrop-blur-xl focus-within:border-stone-600 transition-all">
+            <div className="absolute -inset-px bg-stone-900 rounded-lg opacity-30 group-focus-within:opacity-60 transition-opacity"></div>
+            <div className="relative bg-stone-900/30 border border-stone-800/60 rounded-lg p-5 focus-within:border-stone-600 transition-all">
               <div className="flex flex-col gap-4">
                 <textarea
                   ref={textareaRef}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Execute research protocol or technical inquiry..."
+                  placeholder="What do you want to understand?"
                   rows={2}
-                  className="w-full bg-transparent text-stone-100 placeholder-stone-700 text-lg sm:text-xl font-serif italic resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
+                  className="w-full bg-transparent text-stone-100 placeholder-stone-700 text-lg sm:text-xl font-sans resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
                 />
 
                 <div className="flex items-center justify-between pt-4 border-t border-stone-800/40">
@@ -244,7 +232,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                         : 'bg-stone-900 text-stone-700 cursor-not-allowed border border-stone-800/40'
                     }`}
                   >
-                    <span>Execute</span>
+                    <span>Research</span>
                     <span className="material-symbols-outlined text-[14px]">east</span>
                   </button>
                 </div>
@@ -260,7 +248,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Actions / Shortcuts */}
+          {/* Quick Actions */}
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-[10px] font-mono uppercase tracking-[0.15em] text-stone-600">
             <button onClick={() => onOpenNotes()} className="hover:text-stone-300 transition-colors flex items-center gap-2">
               <span className="material-symbols-outlined text-[14px]">auto_stories</span>
@@ -268,7 +256,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </button>
             <button onClick={() => onOpenModels()} className="hover:text-stone-300 transition-colors flex items-center gap-2">
               <span className="material-symbols-outlined text-[14px]">hub</span>
-              Infrastructure Topology
+              Model & research controls
             </button>
             <span className="flex items-center gap-2 select-none">
               <span className="material-symbols-outlined text-[14px]">keyboard_command_key</span>
@@ -280,7 +268,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         {/* Feature Grid: Museum Catalog Style */}
         <div className="w-full max-w-4xl mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 md:col-span-3 pb-4 border-b border-stone-800/60 flex items-center justify-between">
-            <span className="font-display text-xl text-stone-400 tracking-tight italic">Recommended Inquiries</span>
+            <span className="text-sm font-semibold text-stone-400">Recommended Inquiries</span>
             <span className="font-mono text-[9px] uppercase tracking-widest text-stone-600">Technical Index</span>
           </div>
           
