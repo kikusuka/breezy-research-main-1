@@ -147,23 +147,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
   const isInitialPrompt = !session || (!session.finalOutput && !isDeliberating && (!session.steps || session.steps.length === 0));
 
-  // Real, natural technical topics
-  const realScenarios = [
-    {
-      title: 'PostgreSQL + pgvector vs. Dedicated Pinecone Index',
-      description: 'Evaluating vacuum constraints, scale degradation past 10M vectors, and latency vectors.',
-      prompt: 'At 10M+ 1536-dimension embeddings, when does PostgreSQL pgvector degrade, and when is a dedicated vector index like Pinecone genuinely worth it?',
-    },
-    {
-      title: 'Kafka Streams vs. DuckDB for Transaction Ledger Ingestion',
-      description: 'Micro-batch transactional writes compared to event-based streaming consistency architectures.',
-      prompt: 'Is DuckDB micro-batching suitable for a high-frequency financial transaction ledger, or is Kafka mandatory for continuous consistency?',
-    },
-    {
-      title: 'Modular Go Monolith vs. Kubernetes Microservices Migrations',
-      description: 'Identifying structural load inflection points and organizational scale boundaries for service splits.',
-      prompt: 'Under what concrete load and team size thresholds does a modular Go monolith break down and justify migrating to Kubernetes microservices?',
-    },
+  const researchWorkflows = [
+    { label: 'Investigate', description: 'Open-ended question with adaptive web grounding.', method: 'adaptive' as const, depth: 'standard' as const },
+    { label: 'Systematic review', description: 'Explicit subquestions, evidence boundaries, and traceable claims.', method: 'systematic' as const, depth: 'deep' as const },
+    { label: 'Compare', description: 'Set criteria first, then test competing approaches.', method: 'comparative' as const, depth: 'deep' as const },
+    { label: 'Evidence map', description: 'Map themes, contradictions, and what the evidence does not answer.', method: 'evidence-map' as const, depth: 'deep' as const },
   ];
 
   // Natural language research state tracker
@@ -341,41 +329,25 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               </button>
             </div>
 
-            {/* Direct human language explanation & topics block */}
             <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8 font-sans">
-              <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-                How Breezy Research Works
-              </span>
-              <p className="text-xs text-stone-400 leading-relaxed mb-8">
-                Breezy Research translates technical questions into distinct research angles, where a second model reviews the Analyst and Critic output for unsupported claims and math errors, and harmonizes findings into a unified, sourced response. No theatrical jargon — just verified technical synthesis.
-              </p>
-
-              <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">
-                Explore Scenarios
-              </span>
-              <div className="flex flex-col gap-3">
-                {realScenarios.map((item, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => onStartDebate(item.prompt, 'standard')}
-                    className="p-4 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-left transition-colors group"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-xs font-semibold text-stone-300 group-hover:text-stone-100 transition-colors">
-                        {item.title}
-                      </span>
-                      <span className="text-[10px] text-stone-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                        Inquire <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
-                      </span>
-                    </div>
-                    <p className="text-xs text-stone-400 leading-relaxed">
-                      {item.description}
-                    </p>
+              <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">Choose a workflow</span>
+              <p className="text-xs text-stone-500 leading-relaxed mb-6">You can change this later. The workflow controls how Synthexis structures the investigation; your model routing stays yours.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {researchWorkflows.map((item) => (
+                  <button key={item.method} type="button" onClick={() => {
+                    setResearchDepth(item.depth);
+                    const next = providerConfigService.getConfig();
+                    next.researchMethod = item.method;
+                    next.preset = 'custom';
+                    providerConfigService.saveConfig(next);
+                    textareaRef.current?.focus();
+                  }} className="p-3 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/[0.025] text-left transition-colors group">
+                    <span className="text-xs font-medium text-stone-300 group-hover:text-stone-100">{item.label}</span>
+                    <span className="block text-[11px] text-stone-500 leading-relaxed mt-1">{item.description}</span>
                   </button>
                 ))}
               </div>
-            </div>
+            </div>            </div>
           </div>
         ) : (
           /* Active Research Article & Conversation Thread */
