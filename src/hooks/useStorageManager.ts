@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { driveService } from '../services/googleDriveService';
+import { STORAGE_SESSIONS_KEY } from '../services/sessionStorage';
 
 export interface StorageStats {
   usedBytes: number;
@@ -10,7 +11,7 @@ export interface StorageStats {
   isCritical: boolean;
 }
 
-const DEFAULT_LIMIT_MB = 100; // Safe default: 100MB
+const DEFAULT_LIMIT_MB = 100; // Workspace soft limit, not browser/Drive provider quota
 const WARNING_THRESHOLD = 0.80; // 80%
 const CRITICAL_THRESHOLD = 0.95; // 95%
 
@@ -101,12 +102,12 @@ export function useStorageManager(userId: string | null, isDriveConnected: boole
   const deleteSessions = async (sessionIds: string[]) => {
     if (!isDriveConnected) {
       try {
-        const raw = localStorage.getItem('breezy_research_sessions_v1') || localStorage.getItem('synthexis_debate_sessions_v1');
+        const raw = localStorage.getItem(STORAGE_SESSIONS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
             const next = parsed.filter((s: any) => !sessionIds.includes(s.id));
-            localStorage.setItem('breezy_research_sessions_v1', JSON.stringify(next));
+            localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(next));
           }
         }
         await calculateUsage();
