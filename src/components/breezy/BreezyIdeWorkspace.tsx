@@ -90,7 +90,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
   });
   const [fileSha, setFileSha] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [commitMessage, setCommitMessage] = useState<string>('Refactor codebase via Breezy IDE');
+  const [commitMessage, setCommitMessage] = useState<string>('Update file via Breezy Research');
 
   // Active Center Workspace View Mode: 'files' | 'code' | 'preview' | 'terminal'
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'files' | 'code' | 'preview' | 'terminal'>('files');
@@ -375,7 +375,9 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
       showToast('Enter a file path, for example src/example.ts');
       return;
     }
-    setSelectedFilePath(currentDirectory ? `${currentDirectory}/${cleanPath}` : cleanPath);
+    const fullPath = currentDirectory ? `${currentDirectory}/${cleanPath}` : cleanPath;
+    setSelectedFilePath(fullPath);
+    setCommitMessage(`Create ${fullPath}`);
     setEditorContent('');
     setFileSha('');
     setShowNewFile(false);
@@ -820,7 +822,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
           <div className="w-full max-w-md bg-[#11161d] border border-slate-700 rounded-lg shadow-lg p-5">
             <h2 className="text-sm font-semibold text-slate-100">Create a file</h2>
             <p className="text-xs text-slate-500 mt-1">The file will be created in the connected repository when you commit it.</p>
-            <input autoFocus value={newFilePath} onChange={(e) => setNewFilePath(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateFile()} placeholder="src/example.ts" className="w-full mt-4 bg-[#0b0f14] border border-slate-700 rounded-md px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-slate-500" />
+            <input autoFocus value={newFilePath} onChange={(e) => setNewFilePath(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateFile()} placeholder={currentDirectory ? "example.ts" : "src/example.ts"} className="w-full mt-4 bg-[#0b0f14] border border-slate-700 rounded-md px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-slate-500" />
             <div className="flex justify-end gap-2 mt-4">
               <button type="button" onClick={() => setShowNewFile(false)} className="px-3 py-2 text-xs text-slate-400 hover:text-white cursor-pointer">Cancel</button>
               <button type="button" onClick={handleCreateFile} className="px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-950 rounded-md hover:bg-white cursor-pointer">Create</button>
