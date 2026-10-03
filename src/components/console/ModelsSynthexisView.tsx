@@ -95,16 +95,16 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
         <div className="flex flex-col gap-2 max-w-2xl">
           <div className="flex items-center gap-3">
             <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500 font-bold">
-              Infrastructure
+              MODEL CONTROL
             </span>
             <span aria-hidden="true" className="text-stone-700">·</span>
-            <span className="font-mono text-[10px] text-stone-600 uppercase tracking-widest font-bold font-mono">Standard Configuration</span>
+            <span className="font-mono text-[10px] text-stone-600 uppercase tracking-widest font-bold font-mono">USER-DEFINED STACK</span>
           </div>
           <h1 className="text-3xl font-serif italic font-medium text-stone-100 tracking-tight">
-            Research Topology
+            Model & Research Control
           </h1>
-          <p className="text-[12px] text-stone-500 leading-relaxed font-serif italic max-w-xl">
-            A directory of active compute nodes assigned to hypothesis formation, adversarial critique, and verification.
+          <p className="text-[12px] text-stone-500 leading-relaxed font-sans max-w-xl">
+            Choose exactly how Breezy researches: which models do what, where evidence comes from, and how much structure the investigation uses.
           </p>
         </div>
 
@@ -126,9 +126,54 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-100 text-stone-950 text-[11px] font-bold uppercase tracking-widest hover:bg-white transition-all cursor-pointer shadow-lg"
           >
             <span className="material-symbols-outlined text-[16px]">tune</span>
-            <span>Adjust Routing</span>
+            <span>Customize stack</span>
           </button>
         </div>
+      </div>
+
+      <div className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto w-full">
+        <section className="border border-stone-800/60 bg-stone-900/10 rounded-lg p-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-sm font-semibold text-stone-100">Research controls</h2>
+              <p className="text-xs text-stone-500 mt-1 max-w-2xl">This is the part that makes Breezy yours. Presets are starting points; Custom lets you decide the research method and search layer.</p>
+            </div>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">No provider = no model</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-stone-500 font-mono">Research method</span>
+              <select value={config.researchMethod || 'adaptive'} onChange={(e) => {
+                const next = providerConfigService.getConfig();
+                next.researchMethod = e.target.value as any;
+                next.preset = 'custom';
+                providerConfigService.saveConfig(next);
+                setConfig(next);
+              }} className="bg-stone-950 border border-stone-800 rounded-md px-3 py-2.5 text-xs text-stone-200 outline-none">
+                <option value="adaptive">Adaptive — choose depth from the question</option>
+                <option value="systematic">Systematic — explicit question → evidence → claims</option>
+                <option value="evidence-map">Evidence map — themes, gaps & contradictions</option>
+                <option value="comparative">Comparative — criteria before alternatives</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-stone-500 font-mono">Search layer</span>
+              <select value={config.searchEngine || 'duckduckgo'} onChange={(e) => {
+                const next = providerConfigService.getConfig();
+                next.searchEngine = e.target.value as any;
+                next.preset = 'custom';
+                providerConfigService.saveConfig(next);
+                setConfig(next);
+              }} className="bg-stone-950 border border-stone-800 rounded-md px-3 py-2.5 text-xs text-stone-200 outline-none">
+                <option value="duckduckgo">DuckDuckGo — no key required</option>
+                <option value="tavily">Tavily — connected API key</option>
+                <option value="serper">Serper — connected API key</option>
+                <option value="brave">Brave Search — connected API key</option>
+                <option value="searxng">SearXNG — self-hosted</option>
+              </select>
+            </label>
+          </div>
+        </section>
       </div>
 
       <div className="p-4 sm:p-8 flex flex-col gap-10 max-w-7xl mx-auto w-full">
@@ -137,7 +182,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           <div className="flex items-center justify-between pb-2 border-b border-stone-800/20">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-stone-500 text-[20px]">hub</span>
-              <h2 className="font-serif italic text-lg text-stone-100">
+              <h2 className="font-sans text-sm text-stone-100">
                 Compute Allocations
               </h2>
             </div>
@@ -159,11 +204,11 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               const isConfigured = Boolean(seat.provider && seat.model && hasProviderKey);
               const testInfo = testResults[seat.provider];
               return (
-                <div key={item.roleKey} className="p-6 rounded-xl bg-stone-900/10 border border-stone-800/40 flex flex-col gap-6 hover:border-stone-700/60 transition-all">
+                <div key={item.roleKey} className="p-6 rounded-xl bg-stone-900/10 border border-stone-800/40 flex flex-col gap-5 hover:border-stone-700/60 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex flex-col gap-1">
                       <span className="font-mono text-[9px] text-stone-500 uppercase tracking-[0.2em] font-bold">{item.sub}</span>
-                      <h3 className="font-serif italic text-xl text-stone-200">{item.title}</h3>
+                      <h3 className="font-sans text-lg text-stone-200">{item.title}</h3>
                     </div>
                     <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-950 border border-stone-800">
                       <span className={`w-1.5 h-1.5 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-stone-600'}`} />
