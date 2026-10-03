@@ -250,6 +250,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                           <option value="">No model</option>
                           {(AVAILABLE_MODELS[seat.provider] || []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select>
+                        <input value={seat.model || ''} disabled={!seat.provider} onChange={(e) => updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], seat.provider, e.target.value)} placeholder="Custom model ID" className="bg-stone-950 border border-stone-800 rounded-md px-2 py-1.5 text-[10px] text-stone-400 outline-none disabled:opacity-40" aria-label="Custom model ID" />
                       </label>
                     </div>
                     <div className="flex items-center justify-between">
