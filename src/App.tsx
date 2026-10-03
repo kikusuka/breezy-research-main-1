@@ -180,9 +180,13 @@ export default function App() {
     const token = authService.getAccessToken();
     if (!token) return;
 
+    const savedKey = 'breezy_google_doc_saved_' + currentSession.id;
+    if (localStorage.getItem(savedKey) === '1') return;
+
     const timeout = setTimeout(async () => {
       try {
         await googleDocsService.saveResearchSession(currentSession);
+        localStorage.setItem(savedKey, '1');
         console.log('Synthexis Google Docs archive sync complete.');
       } catch (e) {
         console.warn('Synthexis auto-save failed:', e);
