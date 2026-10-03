@@ -1117,6 +1117,15 @@ Perform rigorous empirical and constraint verification on these analyses.`;
 
         emitStatus('arbiter', 'Synthesizer', 'Synthesizing final executive resolution');
 
+        const methodOutputInstruction =
+          researchMethod === 'systematic'
+            ? '\\nOUTPUT SHAPE: Research question; evidence reviewed; supported findings; limitations/gaps; conclusion.'
+            : researchMethod === 'evidence-map'
+              ? '\\nOUTPUT SHAPE: Major themes; evidence for each theme; contradictions; evidence gaps; what cannot be concluded.'
+              : researchMethod === 'comparative'
+                ? '\\nOUTPUT SHAPE: Decision criteria; option-by-option findings; trade-offs; uncertainty; conditional conclusion.'
+                : '\\nOUTPUT SHAPE: Answer first; key evidence; important caveats; practical conclusion.';
+        
         const arbiterSystemPrompt = `You are the **Lead Synthesizer** in a multi-model dialectical review pipeline.
 Your objective is to produce the final, definitive synthesized response for the user inquiry.
 Directives:
