@@ -99,8 +99,8 @@ export const gitHubService = {
     repoFullName: string,
     path: string,
     content: string,
-    sha: string,
-    message: string = 'Update file via Synthexis IDE Workspace'
+    sha: string = '',
+    message: string = 'Update file via Breezy Research'
   ): Promise<any> {
     try {
       const url = `https://api.github.com/repos/${repoFullName}/contents/${path}`;
@@ -115,7 +115,7 @@ export const gitHubService = {
         body: JSON.stringify({
           message,
           content: base64Content,
-          sha
+          ...(sha ? { sha } : {})
         })
       });
       if (!response.ok) {
