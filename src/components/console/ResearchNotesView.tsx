@@ -303,11 +303,15 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
             </div>
             {(() => {
               const roles = providerConfigService.getConfig().roles;
-              const seatLabel = (role: typeof roles.architect) => {\n                if (!role?.provider || !role?.model) return 'Not configured';\n                if (!providerConfigService.isProviderConfigured(role.provider)) return 'Key not set';\n                return role.model;\n              };\n              return (
+              const seatLabel = (role: typeof roles.architect) => {
+                if (!role?.provider || !role?.model) return 'Not configured';
+                if (!providerConfigService.isProviderConfigured(role.provider)) return 'Key not set';
+                return role.model;
+              };\n              return (
                 <div className="flex flex-col gap-2.5 text-[10px] tracking-tight">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-stone-500 uppercase">
-                      <span className={`w-1 h-1 rounded-full ${isOnline ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
+                      <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
                       <span>Node_Alpha</span>
                     </div>
                     <span className="text-stone-300 truncate max-w-[120px]">
@@ -316,7 +320,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-stone-500 uppercase">
-                      <span className={`w-1 h-1 rounded-full ${isOnline ? 'bg-stone-400' : 'bg-stone-700'}`}></span>
+                      <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
                       <span>Node_Beta</span>
                     </div>
                     <span className="text-stone-300 truncate max-w-[120px]">
@@ -325,7 +329,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-stone-500 uppercase">
-                      <span className={`w-1 h-1 rounded-full ${isOnline ? 'bg-stone-600' : 'bg-stone-700'}`}></span>
+                      <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
                       <span>Node_Gamma</span>
                     </div>
                     <span className="text-stone-300 truncate max-w-[120px]">
