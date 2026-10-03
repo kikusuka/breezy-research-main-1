@@ -853,3 +853,4 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
       )}
     </div>
   );
+};
