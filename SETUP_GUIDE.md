@@ -58,9 +58,9 @@ To browse and commit code in the **Build (IDE)** workspace:
 2. In the Build workspace, click **Connect GitHub** and provide the token.
 3. The token is stored locally in your browser (`breezy_github_token`) and used exclusively for direct GitHub REST API calls.
 
-### D. Execution Previews
-* The Build workspace includes an **Execution Preview** runner and **ANSI Terminal Sandbox**.
-* Terminal commands such as `npm install <pkg>` or `pip install <pkg>` operate as simulated sandbox previews.
+### D. Local code execution and preview
+* The Build workspace previews HTML/JS in a sandboxed browser frame and can run Python locally through WebAssembly.
+* It does not provide a fake cloud terminal or pretend to install packages remotely.
 * The **Live Preview** tab renders sandboxed HTML/JS apps in real time with an active console interceptor.
 
 ---
