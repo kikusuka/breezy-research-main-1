@@ -175,7 +175,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 return (
                   <div className="mt-1 inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] uppercase tracking-widest font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>Provider Connected</span>
+                    <span>Provider Key Configured</span>
                   </div>
                 );
               })()}
@@ -320,7 +320,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             <div className="space-y-4 text-right sm:text-left">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">Evidence & Verification</span>
               <p className="text-sm text-stone-400 leading-relaxed font-serif italic text-right">
-                Every claim is cross-referenced with real-time documentation and public specifications. No forced agreement between sources or models.
+                Claims can be cross-referenced against retrieved sources when evidence search is enabled. Sources are kept separate so conflicting evidence can be surfaced.
               </p>
             </div>
           </div>
