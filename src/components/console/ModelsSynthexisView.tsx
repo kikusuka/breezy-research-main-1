@@ -185,6 +185,21 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             </label>
           </div>
         </section>
+
+        <section className="border border-stone-800/60 bg-stone-900/10 rounded-lg p-5 mt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-stone-100">AI access options</h2>
+              <p className="text-xs text-stone-500 mt-1 max-w-2xl">
+                BYOK keeps provider credentials under your control. Puter.js is an optional user-pays path for the Breezy IDE Agent, so IDE assistance does not require another provider key.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="px-2.5 py-1.5 rounded-md border border-stone-800 text-[10px] font-mono text-stone-400">BYOK · Synthexis</span>
+              <span className="px-2.5 py-1.5 rounded-md border border-stone-800 text-[10px] font-mono text-stone-400">Puter.js · IDE Agent</span>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div className="p-4 sm:p-8 flex flex-col gap-10 max-w-7xl mx-auto w-full">
