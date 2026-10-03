@@ -73,6 +73,17 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
     showToast('Verified active provider endpoints and key credentials.');
   };
 
+  const updateRole = (roleKey: keyof CanonicalWorkspaceConfig['roles'], provider: string, model: string) => {
+    const next = providerConfigService.getConfig();
+    next.roles = {
+      ...next.roles,
+      [roleKey]: { provider: provider as any, model },
+    };
+    next.preset = 'custom';
+    providerConfigService.saveConfig(next);
+    setConfig(next);
+  };
+
   const rolesMap = config.roles || {
     architect: { provider: '', model: '' },
     skeptic: { provider: '', model: '' },
@@ -220,14 +231,28 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                   
                   <p className="font-sans text-[13px] text-stone-500 leading-relaxed italic">{item.desc}</p>
                   
-                  <div className="pt-4 border-t border-stone-800/40 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Assigned Model</span>
-                      <span className="font-mono text-[11px] text-stone-300 font-bold tracking-tighter">
-                        {seat.model || '—'}
-                      </span>
+                  <div className="pt-4 border-t border-stone-800/40 flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest">Provider</span>
+                        <select value={seat.provider || ''} onChange={(e) => {
+                          const nextProvider = e.target.value;
+                          const firstModel = nextProvider ? (providerConfigService.AVAILABLE_MODELS?.[nextProvider]?.[0]?.id || '') : '';
+                          updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], nextProvider, firstModel);
+                        }} className="bg-stone-950 border border-stone-800 rounded-md px-2 py-2 text-[10px] text-stone-300 outline-none">
+                          <option value="">Unassigned</option>
+                          {Object.keys(providerConfigService.AVAILABLE_MODELS).map((p) => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest">Model</span>
+                        <select value={seat.model || ''} disabled={!seat.provider} onChange={(e) => updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], seat.provider, e.target.value)} className="bg-stone-950 border border-stone-800 rounded-md px-2 py-2 text-[10px] text-stone-300 outline-none disabled:opacity-40">
+                          <option value="">No model</option>
+                          {(providerConfigService.AVAILABLE_MODELS[seat.provider] || []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                      </label>
                     </div>
-                    <div className="flex flex-col items-end">
+                    <div className="flex items-center justify-between">
                       <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest mb-1">Status</span>
                       {!seat.provider || !seat.model ? (
                         <span className="font-mono text-[10px] text-stone-600 font-bold uppercase tracking-widest">
