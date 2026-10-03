@@ -538,7 +538,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
     <div className="flex-1 flex flex-col w-full h-[calc(100vh-3.5rem)] bg-[#090d16] text-slate-100 font-sans antialiased overflow-hidden">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-2xl bg-[#0d1322] text-slate-100 shadow-2xl flex items-center gap-3 border border-sky-500/30 animate-in fade-in slide-in-from-bottom-3">
+        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-lg bg-[#0d1322] text-slate-100 shadow-lg flex items-center gap-3 border border-sky-500/30 animate-in fade-in slide-in-from-bottom-3">
           <span className="material-symbols-outlined text-sky-400 text-[20px]">task_alt</span>
           <div className="flex flex-col">
             <span className="font-sans text-xs font-semibold">Breezy Live IDE</span>
@@ -597,7 +597,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
             <select
               value={selectedRepo}
               onChange={(e) => handleSelectRepo(e.target.value)}
-              className="w-full bg-[#111827] border border-slate-700/80 rounded-xl p-2 text-xs text-slate-200 outline-none focus:border-sky-400/50"
+              className="w-full bg-[#111827] border border-slate-700/80 rounded-md p-2 text-xs text-slate-200 outline-none focus:border-sky-400/50"
             >
               <option value="">-- Local Scratchpad / Templates --</option>
               {repos.map((r) => (
@@ -642,7 +642,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
               <button
                 type="button"
                 onClick={() => setActiveWorkspaceTab('files')}
-                className={`md:hidden px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1 cursor-pointer transition-all ${
+                className={`md:hidden px-2.5 py-1.5 rounded-md text-xs font-mono font-medium flex items-center gap-1 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'files'
                     ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -655,7 +655,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
               <button
                 type="button"
                 onClick={() => setActiveWorkspaceTab('code')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'code'
                     ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -669,7 +669,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
               <button
                 type="button"
                 onClick={() => selectedFilePath && setActiveWorkspaceTab('preview')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'preview'
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -678,13 +678,13 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
                 <span className="material-symbols-outlined text-[15px]">visibility</span>
                 <span className="hidden sm:inline">Live Preview</span>
                 <span className="sm:hidden">Preview</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5"></span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400  ml-0.5"></span>
               </button>
 
               <button
                 type="button"
                 onClick={() => selectedFilePath && setActiveWorkspaceTab('terminal')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-all ${
                   activeWorkspaceTab === 'terminal'
                     ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -699,7 +699,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
                 type="button"
                 onClick={handleRunCodeLocally}
                 disabled={isPyodideLoading || !selectedFilePath}
-                className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-sans text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md ml-3 shrink-0"
+                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-white text-slate-950 font-sans text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all shadow-md ml-3 shrink-0"
                 title="Run the selected file locally"
               >
                 {isPyodideLoading ? (
@@ -851,7 +851,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
       </div>
       {showNewFile && selectedRepo && (
         <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#11161d] border border-slate-700 rounded-lg shadow-2xl p-5">
+          <div className="w-full max-w-md bg-[#11161d] border border-slate-700 rounded-lg shadow-lg p-5">
             <h2 className="text-sm font-semibold text-slate-100">Create a file</h2>
             <p className="text-xs text-slate-500 mt-1">The file will be created in the connected repository when you commit it.</p>
             <input autoFocus value={newFilePath} onChange={(e) => setNewFilePath(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateFile()} placeholder="src/example.ts" className="w-full mt-4 bg-[#0b0f14] border border-slate-700 rounded-md px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-slate-500" />
@@ -865,7 +865,7 @@ export const BreezyIdeWorkspace: React.FC<BreezyIdeWorkspaceProps> = ({ onOpenSe
 
       {showOnboarding && isConnected && (
         <div className="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#11161d] border border-slate-700 rounded-lg shadow-2xl">
+          <div className="w-full max-w-lg bg-[#11161d] border border-slate-700 rounded-lg shadow-lg">
             <div className="p-6 border-b border-slate-800">
               <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">GitHub connected</p>
               <h2 className="text-xl font-semibold text-slate-100">Your code lives in GitHub. Breezy edits it there.</h2>
