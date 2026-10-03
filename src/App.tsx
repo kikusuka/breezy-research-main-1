@@ -141,11 +141,11 @@ export default function App() {
   const [sessions, setSessions] = useState<DebateSession[]>(() => {
     const profile = userProfileService.getProfile();
     if (profile.autoSaveToDrive) {
-      return loadSessions() || [createNewSession('First Inquiry', 'trio', [], 'balanced')];
+      return loadSessions() || [];
     }
-    return [createNewSession('First Inquiry', 'trio', [], 'balanced')];
+    return [];
   });
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => sessions[0]?.id || null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => loadActiveSessionId() || sessions[0]?.id || null);
   const [synthexisMode, setSynthexisMode] = useState(true);
 
   const handleToggleSynthexisMode = () => setSynthexisMode((prev) => !prev);
