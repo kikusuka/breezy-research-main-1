@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { providerConfigService, CanonicalWorkspaceConfig } from '../../services/providerConfigService';
+import { providerConfigService, CanonicalWorkspaceConfig, AVAILABLE_MODELS } from '../../services/providerConfigService';
 import { effectiveProviderService } from '../../services/effectiveProviderService';
 import { apiClient } from '../../services/apiClient';
 
@@ -237,18 +237,18 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                         <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest">Provider</span>
                         <select value={seat.provider || ''} onChange={(e) => {
                           const nextProvider = e.target.value;
-                          const firstModel = nextProvider ? (providerConfigService.AVAILABLE_MODELS?.[nextProvider]?.[0]?.id || '') : '';
+                          const firstModel = nextProvider ? (AVAILABLE_MODELS?.[nextProvider]?.[0]?.id || '') : '';
                           updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], nextProvider, firstModel);
                         }} className="bg-stone-950 border border-stone-800 rounded-md px-2 py-2 text-[10px] text-stone-300 outline-none">
                           <option value="">Unassigned</option>
-                          {Object.keys(providerConfigService.AVAILABLE_MODELS).map((p) => <option key={p} value={p}>{p}</option>)}
+                          {Object.keys(AVAILABLE_MODELS).map((p) => <option key={p} value={p}>{p}</option>)}
                         </select>
                       </label>
                       <label className="flex flex-col gap-1.5">
                         <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest">Model</span>
                         <select value={seat.model || ''} disabled={!seat.provider} onChange={(e) => updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], seat.provider, e.target.value)} className="bg-stone-950 border border-stone-800 rounded-md px-2 py-2 text-[10px] text-stone-300 outline-none disabled:opacity-40">
                           <option value="">No model</option>
-                          {(providerConfigService.AVAILABLE_MODELS[seat.provider] || []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                          {(AVAILABLE_MODELS[seat.provider] || []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select>
                       </label>
                     </div>
