@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { userProfileService, UserProfile } from '../../services/userProfileService';
 import { ProviderKeyConfig } from '../../types';
 
@@ -10,226 +10,123 @@ interface ProfileSettingsModalProps {
   onSaveKeys?: (newKeys: ProviderKeyConfig) => void;
 }
 
+const getInitials = (name: string) =>
+  name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'B';
+
 export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   isOpen,
   onClose,
   onSave,
 }) => {
   const [profile, setProfile] = useState<UserProfile>(() => userProfileService.getProfile());
-  const [displayName, setDisplayName] = useState(profile.displayName || 'Dr. Aris Vance');
-  const [roleTitle, setRoleTitle] = useState(profile.roleTitle || 'Lead Analyst');
-  const [organization, setOrganization] = useState(profile.organization || 'Macro-Risk Research Group');
-  const [email, setEmail] = useState(profile.email || 'aris.vance@breezy-intel.io');
+  const [displayName, setDisplayName] = useState('');
+  const [roleTitle, setRoleTitle] = useState('');
+  const [organization, setOrganization] = useState('');
+  const [email, setEmail] = useState('');
 
-  // Optical directives toggles
-  const [cyanGlow, setCyanGlow] = useState(true);
-  const [latexRendering, setLatexRendering] = useState(true);
-  const [citationPins, setCitationPins] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    const current = userProfileService.getProfile();
+    setProfile(current);
+    setDisplayName(current.displayName || '');
+    setRoleTitle(current.roleTitle || '');
+    setOrganization(current.organization || '');
+    setEmail(current.email || '');
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    userProfileService.saveProfile({
-      displayName,
-      roleTitle,
-      organization,
-      email,
+    const updated = userProfileService.saveProfile({
+      displayName: displayName.trim(),
+      roleTitle: roleTitle.trim(),
+      organization: organization.trim(),
+      email: email.trim(),
     });
-    if (onSave) onSave();
+    setProfile(updated);
+    onSave?.();
     onClose();
   };
 
-  const handleCopyHash = () => {
-    navigator.clipboard.writeText('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
-  };
+  const initials = getInitials(displayName || profile.displayName);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-space-md sm:p-space-lg bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-title"
+      onMouseDown={(event) => {
+        if (event.currentTarget === event.target) onClose();
+      }}
+    >
       <div
-        className="w-full max-w-4xl rounded-3xl bg-surface-container border border-outline-variant/40 shadow-2xl p-space-md sm:p-space-xl flex flex-col gap-space-lg max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl rounded-xl bg-surface-container-low border border-outline-variant/40 shadow-2xl overflow-hidden"
+        onClick={(event) => event.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
-          <div className="flex items-center gap-space-sm">
-            <span className="material-symbols-outlined text-primary text-headline-md">badge</span>
-            <div>
-              <h2 className="font-headline font-bold text-headline-lg text-on-surface">
-                Researcher Profile &amp; Attestation
-              </h2>
-              <p className="font-sans text-body-sm text-on-surface-variant">
-                Verified cryptographic identity, workstation authorization, and optical directives.
-              </p>
+        <div className="px-5 py-4 sm:px-6 border-b border-outline-variant/25 flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-primary font-mono text-code-sm uppercase tracking-wider">
+              <span className="material-symbols-outlined text-[18px]">person</span>
+              Profile
             </div>
+            <h2 id="profile-title" className="mt-1 font-headline font-semibold text-headline-lg text-on-surface">
+              Your Breezy profile
+            </h2>
+            <p className="mt-1 text-body-sm text-on-surface-variant">
+              Choose the identity information displayed in your workspace.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
-          >
-            <span className="material-symbols-outlined text-headline-sm">close</span>
+          <button type="button" onClick={onClose} className="p-2 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" aria-label="Close profile">
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        {/* Profile Card Banner */}
-        <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md shadow-sm">
-          <div className="flex items-center gap-space-md">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-surface-container-high border border-primary/30 flex items-center justify-center text-primary font-mono text-headline-md font-bold shadow-md">
-                AV
-              </div>
-              <div className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded bg-tertiary-container text-on-tertiary-container font-mono text-[9px] font-bold">
-                L9
-              </div>
+        <div className="p-5 sm:p-6 space-y-6">
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-container border border-outline-variant/25">
+            <div className="w-14 h-14 rounded-xl bg-surface-container-high border border-primary/20 flex items-center justify-center text-primary font-mono text-headline-md font-semibold">
+              {initials}
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-headline font-bold text-headline-sm text-on-surface">{displayName}</span>
-                <span className="font-mono text-code-sm text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-                  ID: 0x9D4F··88C2
-                </span>
+            <div className="min-w-0">
+              <div className="font-semibold text-on-surface truncate">
+                {displayName || 'Breezy user'}
               </div>
-              <span className="font-sans text-body-sm text-on-surface-variant">
-                {roleTitle} • {organization}
+              <div className="text-body-sm text-on-surface-variant truncate">
+                {roleTitle || 'No role set'}{organization ? ` · ${organization}` : ''}
+              </div>
+              <span className="inline-flex mt-1 rounded-full bg-surface-container-high px-2 py-1 font-mono text-label-sm text-outline">
+                {profile.authorizationType === 'guest' ? 'Local profile' : 'Connected account'}
               </span>
-              <div className="flex items-center gap-space-xs mt-1 font-mono text-code-sm text-tertiary">
-                <span className="material-symbols-outlined text-[15px]">verified_user</span>
-                <span>Key Custody Verified</span>
-                <span>·</span>
-                <span className="text-secondary">Zero-Log Enclave Tier 4</span>
-              </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              ['Display name', displayName, setDisplayName, 'Your name', 'text'],
+              ['Role or title', roleTitle, setRoleTitle, 'Optional', 'text'],
+              ['Organization', organization, setOrganization, 'Optional', 'text'],
+              ['Email', email, setEmail, 'Optional', 'email'],
+            ].map(([label, value, setter, placeholder, type]) => (
+              <label key={String(label)} className="flex flex-col gap-1.5">
+                <span className="text-label-md font-medium text-on-surface">{String(label)}</span>
+                <input
+                  type={String(type)}
+                  value={String(value)}
+                  onChange={(event) => (setter as React.Dispatch<React.SetStateAction<string>>)(event.target.value)}
+                  placeholder={String(placeholder)}
+                  className="w-full px-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant/30 text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                />
+              </label>
+            ))}
           </div>
         </div>
 
-        {/* Form Inputs for Profile Edit */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-          <div className="flex flex-col gap-1">
-            <label className="font-sans text-label-md text-on-surface font-medium">Display Name</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-sans text-label-md text-on-surface font-medium">Role &amp; Title</label>
-            <input
-              type="text"
-              value={roleTitle}
-              onChange={(e) => setRoleTitle(e.target.value)}
-              className="w-full px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-sans text-label-md text-on-surface font-medium">Organization / Laboratory</label>
-            <input
-              type="text"
-              value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
-              className="w-full px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-sans text-label-md text-on-surface font-medium">Contact Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
-            />
-          </div>
-        </div>
-
-        {/* Client-Side Keyring Fingerprint */}
-        <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-label-sm uppercase text-outline">
-              Primary Client Hash (SHA-512/256)
-            </span>
-            <span className="font-mono text-code-sm text-tertiary">ED25519-SK HOOKED</span>
-          </div>
-          <div className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container border border-outline-variant/20 font-mono text-code-sm text-on-surface">
-            <span className="truncate pr-2">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
-            <button
-              type="button"
-              onClick={handleCopyHash}
-              className="px-space-sm py-1 rounded bg-surface-container-high text-primary hover:text-white font-sans text-label-sm shrink-0 transition-colors"
-            >
-              {copiedKey ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-        </div>
-
-        {/* Workspace Optical Directives */}
-        <div className="flex flex-col gap-space-sm pt-space-xs">
-          <span className="font-mono text-label-sm uppercase tracking-wider text-outline">
-            Workspace Optical Directives
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
-            <div className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-sans text-label-md text-on-surface font-medium">Ambient Cyan Glow</span>
-                <span className="font-sans text-label-sm text-outline">Alleviates night fatigue</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={cyanGlow}
-                onChange={(e) => setCyanGlow(e.target.checked)}
-                className="accent-primary w-5 h-5 rounded cursor-pointer"
-              />
-            </div>
-
-            <div className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-sans text-label-md text-on-surface font-medium">LaTeX Inline Math</span>
-                <span className="font-sans text-label-sm text-outline">Formatted symbols</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={latexRendering}
-                onChange={(e) => setLatexRendering(e.target.checked)}
-                className="accent-primary w-5 h-5 rounded cursor-pointer"
-              />
-            </div>
-
-            <div className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-sans text-label-md text-on-surface font-medium">Freeze Citation Pins</span>
-                <span className="font-sans text-label-sm text-outline">Fixed DOI references</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={citationPins}
-                onChange={(e) => setCitationPins(e.target.checked)}
-                className="accent-primary w-5 h-5 rounded cursor-pointer"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-space-sm pt-space-md border-t border-outline-variant/20">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-space-lg py-2 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-outline hover:text-on-surface font-sans text-label-md transition-colors"
-          >
+        <div className="px-5 py-4 sm:px-6 border-t border-outline-variant/25 flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant/30 text-label-md transition-colors">
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-space-xl py-2 rounded-xl bg-primary text-on-primary font-headline font-semibold text-headline-sm hover:bg-secondary transition-all shadow-md"
-          >
-            Save Profile
+          <button type="button" onClick={handleSave} className="px-5 py-2 rounded-lg bg-primary text-on-primary font-semibold text-label-md hover:bg-secondary transition-colors">
+            Save profile
           </button>
         </div>
       </div>
