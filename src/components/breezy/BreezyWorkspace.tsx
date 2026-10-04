@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { providerConfigService, AVAILABLE_MODELS } from '../../services/providerConfigService';
 import { effectiveProviderService } from '../../services/effectiveProviderService';
-import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { googleDriveService } from '../../services/googleDriveService';
 import { authService } from '../../services/authService';
 import { userProfileService } from '../../services/userProfileService';
