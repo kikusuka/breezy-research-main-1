@@ -1,35 +1,43 @@
-# 🚀 Breezy Research - Multi-Backend Deployment Architecture
+# 🚀 Breezy Research — Deployment Architecture
 
-Breezy Research uses a resilient, cost-effective multi-backend deployment strategy with automatic, bounded client-side failover:
+Breezy should use a **single edge entry point** for normal traffic, with a Node fallback rather than splitting ordinary requests across providers.
 
 ```text
-                             BREEZY RESEARCH
-                                    │
-                         Static Frontend (Vite)
-                     (Cloudflare Pages / Vercel)
-                                    │
-                          ┌─────────┴─────────┐
-                          │                   │
-                     Cloudflare             Deno
-                      Worker               Deploy
-                     [PRIMARY]          [SECONDARY]
-                   100k req/day          1M req/mo
-                          │                   │
-                          └─────────┬─────────┘
-                                    │
-                                 Render
-                               [EMERGENCY]
+                         BREEZY / SYNTHEXIS
+                                │
+                     Cloudflare Pages / Assets
+                         Static React frontend
+                                │
+                                ▼
+                     Cloudflare Workers API
+                 Auth • rate limits • routing • SSE
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+              Provider APIs          Render Node API
+             Gemini / etc.        compatibility / fallback
+                    │                       │
+                    └───────────┬───────────┘
+                                │
+                         R2 / D1 / KV
+                    only where actually needed
 ```
 
----
+### Why this split
 
-## ⚡ Tier Limits & Free Tier Breakdown
+* **Cloudflare** handles the frequent, small, latency-sensitive work: API gatewaying, auth/session checks, rate limits, provider routing, search requests, and streaming.
+* **Render** is a compatibility/fallback service for Node-specific work or when the edge runtime is not a good fit. It should not be the primary path for tiny requests because Free services spin down after 15 minutes of inactivity and can take about a minute to wake.
+* **Cloudflare Workflows** is a future option for genuinely long-running asynchronous research jobs. Do not add it until Synthexis actually needs durable background execution.
+* **Deno Deploy** is optional rather than a promised free-tier backup. Its current platform and limits have changed, so the project should not document a fixed "1M requests/month free" assumption.
 
-* **Cloudflare Workers (Primary)**: 100,000 inbound requests/day on the free tier. Near-instant global edge invocation (<10ms).
-* **Deno Deploy (Secondary)**: 1,000,000 requests/month on the free tier. Operates as an immediate zero-configuration fallback.
-* **Render (Emergency Fallback)**: Free web services may sleep after 15 minutes of inactivity and take ~50s to spin up. Kept strictly as an emergency/legacy fallback.
+## Free-tier planning
 
----
+* **Cloudflare Workers:** 100,000 requests/day on Free, with 10 ms CPU per invocation. Waiting on external network I/O does not consume CPU time in the same way active JavaScript execution does.
+* **Cloudflare static assets:** static asset requests are free and unlimited on the Workers static-assets model.
+* **Cloudflare D1:** useful for structured metadata, but Free has daily read/write limits; do not put every token/stream event into D1.
+* **Cloudflare KV:** good for small cached/configuration values, but Free has 100,000 reads/day and 1,000 writes/day.
+* **Cloudflare R2:** use for larger artifacts/files. The current Free allowance is 10 GB-month storage, 1M Class A operations/month and 10M Class B operations/month, with no egress charge.
+* **Render Free:** 750 instance hours/workspace/month, but services spin down after 15 minutes idle and local filesystem data is ephemeral. Treat it as fallback/compatibility infrastructure, not the source of truth.
 
 ## 1. Deploy the Static Frontend
 
@@ -116,9 +124,14 @@ npm run dev
 
 ---
 
+Deno can still run the shared `deno/main.ts` handler as an additional deployment target, but it should be treated as optional. Do not hard-code a quota assumption into product behavior.
+
 ## 🔄 How Failover Operates
 
-1. **Primary First**: Requests always attempt the Cloudflare Worker first.
-2. **Safe Detection**: If the Worker returns `502`, `503`, `504`, or a network connection error *before* data transfer begins, the client automatically switches to the secondary Deno Deploy backend.
-3. **No Duplicate Charges**: If a request has already started streaming tokens, it is not blindly retried to avoid duplicate LLM invocations.
-4. **Transparent UI**: The UI subtly updates the backend chip in the TopBar and informs the user: *"Primary service unavailable. Connected to backup service."*
+1. **Primary:** Cloudflare Worker.
+2. **Fallback:** Render Node API when the Worker is unavailable or a request requires Node-specific behavior.
+3. **No blind retry:** if an AI request has already started streaming, do not automatically replay it on another backend; that can duplicate LLM calls.
+4. **Truthful UI:** expose which backend is actually serving the request when fallback occurs.
+5. **Future async path:** long-running research can move to Cloudflare Workflows once the product needs durable background jobs.
+
+The deployment layer should never decide which AI model to use. Provider/model routing belongs to Synthexis' model-control layer.
