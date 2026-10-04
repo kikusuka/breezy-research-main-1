@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">folder_special</span>
-                <span>Archives</span>
+                <span>History</span>
               </button>
 
               <button
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">hub</span>
-                <span>Topology</span>
+                <span>Models</span>
               </button>
 
               <button
@@ -176,10 +176,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ? 'bg-stone-800 text-stone-100 font-bold'
                     : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
                 }`}
-                title="Open the Synthexis guide"
+                title="Open the Breezy Research guide"
               >
                 <span className="material-symbols-outlined text-[18px]">menu_book</span>
-                <span>Guide</span>
+                <span>Docs</span>
               </button>
 
               {/* Direct Switch to Breezy Chat */}
@@ -206,7 +206,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Breezy Research Mode Toggle: Minimal */}
           <div className="mx-3 mt-4 mb-2 px-3 py-3 rounded-xl bg-stone-900/60 border border-stone-800/60 flex flex-col gap-2 shrink-0 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">Engine Mode</span>
+              <span className="font-mono text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">Research mode</span>
               <button
                 type="button"
                 onClick={onToggleSynthexisMode}
@@ -223,8 +223,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <p className="text-[10px] text-stone-600 leading-relaxed font-mono uppercase tracking-tighter">
               {synthexisMode 
-                ? 'Synthesis Active' 
-                : 'Direct Access'}
+                ? 'Multi-model research' 
+                : 'Single-model chat'}
             </p>
           </div>
 
