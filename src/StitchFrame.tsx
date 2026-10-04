@@ -27,10 +27,15 @@ function replaceLeafText(doc: Document, replacements: Array<[string,string]>) {
     if (el.children.length !== 0 || !el.textContent) return;
     let t = el.textContent;
     for (const [from, to] of replacements) {
-      if (t.includes(from)) t = t.replace(from, to);
+      if (t === from) t = to;
     }
     if (t !== el.textContent) el.textContent = t;
   });
+}
+
+function activeModelLabel() {
+  const active = providerConfigService.getActiveRoutableModel();
+  return active ? active.model : 'No model assigned';
 }
 
 function applyTruthfulResearchLabels(doc: Document) {
@@ -173,6 +178,15 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
         ['enclave.breezy.internal', 'No enclave configured'],
         ['SYNTHESIS COMMITTED', 'PREVIEW ONLY'],
         ['No credit card required • Dual-engine verifiable logs • Local Ollama bridge ready', 'Connect a model to run a live investigation'],
+        ['claude-3-7-sonnet', activeModelLabel()],
+        ['deepseek-r1:70b-q4_K_M', activeModelLabel()],
+        ['OpenAI GPT-4o', 'No model assigned'],
+        ['Mistral Large', 'No model assigned'],
+        ['VAULT_REF_ANTHROPIC', 'No vault reference'],
+        ['Local Daemon (:11434)', 'Local provider'],
+        ['CONNECTED', 'NOT VERIFIED'],
+        ['100% VALIDATED', 'NOT VERIFIED'],
+        ['CONFIDENCE: 99.4%', 'ILLUSTRATIVE PREVIEW'],
       ]);
       applyTruthfulResearchLabels(doc);
 
