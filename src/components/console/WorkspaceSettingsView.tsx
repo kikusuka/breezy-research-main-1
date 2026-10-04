@@ -16,7 +16,6 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthexis' | 'integrations' | 'team' | 'billing'>('integrations');
   const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
   const [autoResolve, setAutoResolve] = useState<boolean>(canonical.autoResolve ?? true);
-  const [agreementThreshold, setAgreementThreshold] = useState<number>(canonical.agreementThreshold ?? 78);
   const [webhookActive, setWebhookActive] = useState<boolean>(() => {
     const saved = localStorage.getItem('breezy_webhook_active');
     return saved !== null ? saved === 'true' : false;
@@ -216,7 +215,6 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
       ...currentConfig,
       preset,
       roles,
-      agreementThreshold,
       autoResolve,
       selectedRound,
     });
@@ -239,7 +237,6 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     const current = providerConfigService.getConfig();
     setPreset(current.preset || 'balanced');
     setRoles(current.roles);
-    setAgreementThreshold(current.agreementThreshold ?? 78);
     setAutoResolve(current.autoResolve ?? true);
     setSelectedRound(current.selectedRound ?? 2);
 
@@ -900,9 +897,9 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                 <div className="p-4 rounded-xl bg-white/[0.02] flex flex-col gap-4 border border-white/5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className="font-sans text-xs text-stone-300 font-medium">Auto-resolve Contradictions</span>
+                      <span className="font-sans text-xs text-stone-300 font-medium">Resolve disagreements</span>
                       <span className="font-sans text-[11px] text-stone-400">
-                        Automatically synthexis common ground when mutual agreement breaches synthexis threshold
+                        Try to reconcile supported claims, but keep unresolved disagreements visible instead of forcing consensus.
                       </span>
                     </div>
                     <button
@@ -923,23 +920,6 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     </button>
                   </div>
 
-                  <div className="flex flex-col gap-2 pt-1 border-t border-white/5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-xs text-stone-300 font-medium">Agreement Threshold</span>
-                      <span className="font-mono text-xs text-stone-400 font-semibold">{agreementThreshold}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="50"
-                      max="95"
-                      value={agreementThreshold}
-                      onChange={(e) => {
-                        setAgreementThreshold(Number(e.target.value));
-                        setIsDirty(true);
-                      }}
-                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-stone-100"
-                    />
-                  </div>
                 </div>
               </section>
             </div>
