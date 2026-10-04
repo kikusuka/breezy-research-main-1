@@ -1,106 +1,81 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface: #07111f;
-  --color-surface-dim: #07111f;
-  --color-surface-bright: #162338;
-  --color-surface-container-lowest: #07111f;
-  --color-surface-container-low: #0b1728;
-  --color-surface-container: #101f33;
-  --color-surface-container-high: #182942;
-  --color-surface-container-highest: #20334f;
-  --color-on-surface: #edf6ff;
-  --color-on-surface-variant: #9fb0c5;
-  --color-inverse-surface: #edf6ff;
-  --color-inverse-on-surface: #07111f;
-  --color-outline: #3a5574;
-  --color-outline-variant: #1a2c43;
-  --color-surface-tint: #7dd3fc;
-  --color-primary: #7dd3fc;
-  --color-on-primary: #07111f;
-  --color-primary-container: #0c4a6e;
-  --color-on-primary-container: #e0f2fe;
-  --color-inverse-primary: #38bdf8;
-  --color-secondary: #9fb0c5;
-  --color-on-secondary: #07111f;
-  --color-secondary-container: #10253d;
-  --color-on-secondary-container: #e6f6ff;
-  --color-tertiary: #67e8f9;
-  --color-on-tertiary: #07111f;
-  --color-tertiary-container: #164e63;
-  --color-on-tertiary-container: #f5f5f4;
-  --color-error: #ef4444;
-  --color-on-error: #fef2f2;
+  --color-surface: #081525;
+  --color-surface-dim: #081525;
+  --color-surface-bright: #183454;
+  --color-surface-container-lowest: #06111f;
+  --color-surface-container-low: #0a1a2d;
+  --color-surface-container: #0f2239;
+  --color-surface-container-high: #142b46;
+  --color-surface-container-highest: #1a3657;
+  --color-on-surface: #eef7ff;
+  --color-on-surface-variant: #a6b9cd;
+  --color-inverse-surface: #eef7ff;
+  --color-inverse-on-surface: #081525;
+  --color-outline: #3e6185;
+  --color-outline-variant: #203d5c;
+  --color-surface-tint: #66c7f4;
+  --color-primary: #66c7f4;
+  --color-on-primary: #06111f;
+  --color-primary-container: #0d4d73;
+  --color-on-primary-container: #dcf4ff;
+  --color-inverse-primary: #159bd5;
+  --color-secondary: #a6b9cd;
+  --color-on-secondary: #081525;
+  --color-secondary-container: #17314d;
+  --color-on-secondary-container: #e4f2ff;
+  --color-tertiary: #6bd9e8;
+  --color-on-tertiary: #06111f;
+  --color-tertiary-container: #155163;
+  --color-on-tertiary-container: #e2fbff;
+  --color-error: #f87171;
+  --color-on-error: #fff1f2;
   --color-error-container: #7f1d1d;
   --color-on-error-container: #fecaca;
-  --color-background: #07111f;
-  --color-on-background: #edf6ff;
-  --color-surface-variant: #0b1728;
-
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Instrument Serif', serif;
-  --font-serif: 'Lora', Georgia, serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-
-  --shadow-inner-glow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+  --color-background: #081525;
+  --color-on-background: #eef7ff;
+  --color-surface-variant: #0a1a2d;
+  --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: Inter, ui-sans-serif, sans-serif;
+  --font-serif: Inter, ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html { background: #081525; }
   body {
-    background-color: #07111f;
-    color: #edf6ff;
+    background: #081525;
+    color: #eef7ff;
     font-family: var(--font-sans);
     font-optical-sizing: auto;
     text-rendering: optimizeLegibility;
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "tnum" 1;
-    line-height: 1.6;
+    line-height: 1.55;
     min-height: 100vh;
     margin: 0;
     padding: 0;
     overscroll-behavior: none;
-    position: relative;
   }
-
   body::before {
     content: "";
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.025;
+    inset: 0;
+    background-image: linear-gradient(rgba(102,199,244,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(102,199,244,.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom, black, transparent 80%);
     pointer-events: none;
     z-index: 9999;
   }
-
-  button, input, select, textarea, kbd, nav {
-    font-family: var(--font-sans);
-  }
-
-  code, pre, .font-mono {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-  }
-
-
-  :focus-visible {
-    outline: 2px solid rgba(125, 211, 252, 0.75);
-    outline-offset: 2px;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.01em;
-    font-weight: 500;
-  }
-
-  .font-display {
-    font-family: var(--font-display);
-    font-weight: 400;
-  }
+  button, input, select, textarea, kbd, nav { font-family: var(--font-sans); }
+  code, pre, .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid #66c7f4; outline-offset: 3px; }
+  h1, h2, h3, h4, h5, h6 { letter-spacing: -0.025em; font-weight: 650; }
+  .font-display, .font-serif { font-family: var(--font-sans); font-style: normal; }
 }
 
-/* Material symbols outlined alignment */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -118,18 +93,28 @@
   vertical-align: middle;
 }
 
-/* Minimal subtle scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(139, 145, 159, 0.2);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 145, 159, 0.4);
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(126, 167, 202, .22); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(126, 167, 202, .4); }
+
+/* Legacy surface aliases: preserve component behavior while bringing Research and Breezy into one language. */
+.bg-stone-950 { background-color: #081525 !important; }
+.bg-stone-900 { background-color: #0b1b2f !important; }
+.bg-stone-800 { background-color: #14304d !important; }
+.bg-stone-100 { background-color: #eef7ff !important; }
+.text-stone-100 { color: #eef7ff !important; }
+.text-stone-200 { color: #d8e8f5 !important; }
+.text-stone-300 { color: #bfd1e1 !important; }
+.text-stone-400 { color: #91a9bf !important; }
+.text-stone-500 { color: #7891a8 !important; }
+.text-stone-600 { color: #5f7891 !important; }
+.text-stone-700 { color: #41617e !important; }
+.border-stone-800 { border-color: rgba(92, 137, 174, .22) !important; }
+.border-stone-700 { border-color: rgba(102, 160, 204, .3) !important; }
+.border-stone-100 { border-color: rgba(238, 247, 255, .3) !important; }
+.bg-stone-100.text-stone-950, .text-stone-950 { color: #06111f !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

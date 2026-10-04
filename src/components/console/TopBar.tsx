@@ -78,12 +78,12 @@ export const TopBar: React.FC<TopBarProps> = ({
               />
               <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-[#090d16]/95 backdrop-blur-2xl border border-white/[0.08] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_24px_rgba(56,189,248,0.08)] z-40 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                    Breezy spaces
+                    <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                    Workspaces
                   </span>
                   <span className="text-[9px] text-stone-400 bg-white/[0.05] px-2 py-0.5 rounded-full border border-white/[0.06]">
-                    Choose a workspace
+                    Switch workspace
                   </span>
                 </div>
 
@@ -113,11 +113,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                           Breezy
                         </span>
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          AI Chat
+                          Chat
                         </span>
                       </div>
                       <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
-                        Chat, creative canvas & code ideation
+                        Everyday chat, canvas and code
                       </span>
                     </div>
                   </div>
@@ -153,11 +153,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                           Research
                         </span>
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          Multi-model
+                          Research
                         </span>
                       </div>
                       <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
-                        Multi-model adversarial debate & verification
+                        Compare perspectives and check evidence
                       </span>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <span>
                     Current: <strong className="text-stone-200">{productMode === 'breezy' ? 'Breezy' : 'Research'}</strong>
                   </span>
-                  <span className="text-[9px] text-stone-400">Select a workspace</span>
+                    <span className="text-[9px] text-stone-400">One product, different rooms</span>
                 </div>
               </div>
             </>

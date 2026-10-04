@@ -118,7 +118,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               <span className={`material-symbols-outlined text-[17px] ${activeTab === 'chat' ? 'text-sky-400' : 'text-slate-500'}`}>
                 forum
               </span>
-              <span>Breezy Chat</span>
+              <span>Chat</span>
             </button>
 
             <button
@@ -136,7 +136,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               <span className={`material-symbols-outlined text-[17px] ${activeTab === 'ide' ? 'text-sky-400' : 'text-slate-500'}`}>
                 code
               </span>
-              <span>Embedded IDE Workspace</span>
+              <span>Build</span>
             </button>
 
             <button
@@ -154,7 +154,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               <span className={`material-symbols-outlined text-[17px] ${activeTab === 'canvas' ? 'text-sky-400' : 'text-slate-500'}`}>
                 dashboard_customize
               </span>
-              <span>Workspace Canvas</span>
+              <span>Canvas</span>
             </button>
           </div>
 
@@ -186,19 +186,19 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
             className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-sans text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-all cursor-pointer"
           >
             <span className="material-symbols-outlined text-sm font-bold">add</span>
-            <span>New Chat Stream</span>
+                <span>New chat</span>
           </button>
 
           {/* Stream List */}
           <div className="flex-1 overflow-y-auto flex flex-col gap-3 mt-1">
             <div className="flex flex-col gap-1.5">
               <span className="px-2 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                Recent Streams
+                Recent chats
               </span>
 
               {chatList.length === 0 ? (
                 <p className="px-2 font-sans text-xs text-slate-500 mt-1">
-                  No active streams yet.
+                  No chats yet.
                 </p>
               ) : (
                 <div className="flex flex-col gap-1">
@@ -227,7 +227,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
                             chat_bubble
                           </span>
                           <span className="truncate font-sans text-xs font-medium">
-                            {c.title || 'New chat stream'}
+                            {c.title || 'New chat'}
                           </span>
                         </div>
                         <button
