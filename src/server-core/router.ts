@@ -652,7 +652,6 @@ Analyze this deliberation and output the JSON object.`;
       keys = {},
       seats = {},
       enableSearchGrounding = false,
-      agreementThreshold = 78,
       autoResolve = true,
       selectedRound = 2,
       researchMethod = 'adaptive',
@@ -1138,8 +1137,9 @@ Structure in clean Markdown with clear headings.`;
 
         const skepticSystemPrompt = `You are the **Lead Critic** in a multi-model dialectical review pipeline.
 Your objective is to stress-test the Analyst proposal for correctness, scaling limits, edge cases, and hidden assumptions.
+You are responding to another model, not starting a fresh answer. Directly challenge specific claims from the Analyst, explain why a claim survives or fails, and identify what evidence would change your mind.
 ${toneInstruction}
-Structure with clear headings: Core Vulnerabilities, Edge Cases, and Concrete Recommendations.`;
+Structure with clear headings: Claims Under Attack, Core Vulnerabilities, Edge Cases, and Concrete Recommendations.`;
 
         const skepticUserPrompt = `USER INQUIRY: ${prompt}
 
@@ -1149,7 +1149,7 @@ ${proposalSummary}
 FULL PROPOSAL:
 ${proposalContent}
 
-Stress-test this proposal rigorously. Identify genuine technical vulnerabilities, edge cases, and operational limits.`;
+Debunk the proposal where it deserves it. For each major claim, distinguish supported, weak, unverified, or contradicted. Identify genuine technical vulnerabilities, edge cases, and operational limits.`;
 
         let critiqueContent = '';
         const round2Start = Date.now();
@@ -1292,8 +1292,8 @@ Directives:
 2. Adjudicate impartially: thoroughly integrate mitigations for every genuine edge case.
 3. Deliver a comprehensive, high-caliber, practical solution.
 4. Clearly specify operational boundaries and limitations: state candidly when NOT to use this approach.
-5. SYNTHEXIS CRITERIA: Ensure the synthexis has at least ${agreementThreshold}% logical consistency and factual alignment between model claims.
-6. CONTRADICTION STRATEGY: ${autoResolve ? 'Auto-resolve opposing claims by identifying empirical common ground and technical synthexis.' : 'Do not auto-resolve: clearly list any unresolved disagreements and contradictory viewpoints under a separate "Unresolved Contradictions" section.'}
+5. CONTRADICTION STRATEGY: ${autoResolve ? 'Resolve disagreements only when the evidence supports a reconciliation. Otherwise preserve the conflict explicitly and explain what remains uncertain.' : 'Do not auto-resolve: clearly list unresolved disagreements and contradictory viewpoints under a separate "Unresolved Contradictions" section.'}
+6. TRUTH STANDARD: Never manufacture agreement, numeric confidence, or factual certainty merely because multiple models said the same thing.
 ${toneInstruction}
 Structure your response in clean Markdown with clear headings.`;
 
