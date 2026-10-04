@@ -447,6 +447,18 @@ export default function App() {
     }
   };
 
+  const handleSteerCurrentResearch = (instruction: string) => {
+    if (!currentSession || !instruction.trim()) return;
+    const transcript = (currentSession.steps || [])
+      .filter((step) => step.content)
+      .map((step) => `[Round ${step.role}] ${step.content}`)
+      .join('\n\n')
+      .slice(-16000);
+    const branchedPrompt = `${currentSession.prompt}\n\nUSER STEERING INPUT:\n${instruction.trim()}\n\nCURRENT DEBATE STATE:\n${transcript}\n\nContinue the research with the user's steering input treated as the newest instruction. Preserve the original scope unless the user explicitly changed it.`;
+    toast('Steering the research into a new branch…');
+    startDebate(branchedPrompt, currentSession.protocol === 'solo' ? 'solo' : 'deep');
+  };
+
   const handleExportMarkdown = () => {
     if (!currentSession) return;
     exportSynthexisAsMarkdown({
@@ -597,6 +609,7 @@ export default function App() {
                 liveUsage={liveUsage}
                 heartbeatState={heartbeatState}
                 onStartDebate={startDebate}
+                onSteer={handleSteerCurrentResearch}
                 researchEvents={researchEvents}
                 onSaveNote={(title, content) => {
                   const newNoteSession = createNewSession(title, currentSession.protocol as any, [], currentSession.tone);
