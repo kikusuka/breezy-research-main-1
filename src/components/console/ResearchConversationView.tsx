@@ -61,618 +61,323 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   useEffect(() => {
     if (!isDeliberating) return;
     const timer = window.setInterval(() => setNowMs(Date.now()), 500);
-    return () => window.clearInterval(timer);
-  }, [isDeliberating]);
+    return (
+    <div className="relative min-h-full w-full bg-surface text-on-surface overflow-x-hidden">
+      <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".txt,.md,.json,.csv,.py,.ts,.tsx,.js" />
 
-  const elapsedSeconds = activeRoundStartedAt ? Math.max(0, Math.floor((nowMs - activeRoundStartedAt) / 1000)) : 0;
-  const formatDuration = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-
-  const handleInitiate = () => {
-    if (!inputText.trim()) {
-      textareaRef.current?.focus();
-      return;
-    }
-    let promptToSend = inputText.trim();
-    if (attachedFile) {
-      promptToSend += `\n\n--- [Attached Reference Context: ${attachedFile.name}] ---\n${attachedFile.content}\n--- [End Context] ---`;
-    }
-    const depthMap = {
-      fast: 'solo' as const,
-      standard: 'standard' as const,
-      exhaustive: 'deep' as const,
-    };
-    onStartDebate(promptToSend, depthMap[researchDepth]);
-    setInputText('');
-    setAttachedFile(null);
-  };
-
-  const handleApplyDirective = (text: string) => {
-    setInputText(text);
-    textareaRef.current?.focus();
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      const content = typeof loadEvent.target?.result === 'string' ? loadEvent.target.result : '';
-      setAttachedFile({ name: file.name, content: content.slice(0, 15000) });
-      showToast(`Uploaded ${file.name}`);
-    };
-    reader.readAsText(file);
-  };
-
-  const handleCopy = () => {
-    if (!session?.finalOutput) return;
-    navigator.clipboard.writeText(session.finalOutput);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    showToast('Copied synthesis to clipboard');
-  };
-
-  const handleSave = () => {
-    if (!session || !onSaveNote) return;
-    onSaveNote(session.prompt.slice(0, 60), session.finalOutput || session.prompt);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const sampleDirectives = [
-    {
-      domain: 'Domain #01',
-      title: 'Electrochemical Degradation',
-      desc: 'NMC cathode lattice oxygen release & impedance growth mechanics.',
-      prompt: 'Electrochemical Degradation: Synthesize degradation pathways of high-nickel NMC cathodes during ultra-fast C-rate cycling under thermal stress.',
-    },
-    {
-      domain: 'Domain #02',
-      title: 'Distributed Consensus',
-      desc: 'Asynchronous DAG invariants under network partitions.',
-      prompt: 'Distributed Consensus Kernels: Formalize safety bounds of DAG-based asynchronous consensus protocols under dynamic quorum availability.',
-    },
-    {
-      domain: 'Domain #03',
-      title: 'Game Theory',
-      desc: 'Equilibrium shifts in automated cross-pool liquidity provision.',
-      prompt: 'Algorithmic Game Theory: Evaluate strategic equilibrium stability in high-frequency multi-agent automated market maker pools.',
-    },
-  ];
-
-  const currentRunTitle = session?.prompt
-    ? session.prompt.length > 50
-      ? `${session.prompt.slice(0, 48)}...`
-      : session.prompt
-    : 'Unallocated Run';
-
-  const steps = session?.steps || [];
-  const proposals = steps.filter((s) => s.role === 'architect' || s.role === 'solo');
-  const challenges = steps.filter((s) => s.role === 'skeptic');
-  const verifications = steps.filter((s) => s.role === 'verifier');
-  const sources: EvidenceSource[] = session?.evidenceGraph?.sourcesConsulted || [];
-
-  return (
-    <div className="relative w-full flex-1 flex flex-col bg-surface font-sans text-on-surface overflow-x-hidden pb-16">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        onChange={handleFileUpload}
-        className="hidden"
-        accept=".txt,.md,.json,.csv,.py,.ts,.tsx,.js"
-      />
-
-      {/* Atmospheric Ambient Glows */}
-      
-
-      <div className="w-full max-w-5xl mx-auto px-space-md sm:px-space-lg pt-space-md flex flex-col gap-space-lg">
-        {/* Workspace Subheader & Operational Status */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-xs border-b border-outline-variant/20">
-          <div className="flex flex-col gap-space-xs">
-            <div className="flex items-center gap-space-sm font-mono text-code-sm uppercase tracking-wider text-outline">
-              <span>Workspace / Research</span>
+      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 pb-20 pt-5 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-3 border-b border-outline-variant/40 pb-5 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.14em] text-outline">
+              <span>Workspace</span>
               <span className="text-outline-variant">/</span>
-              <span className="text-primary truncate max-w-xs sm:max-w-md">{currentRunTitle}</span>
+              <span className="truncate text-primary">{currentRunTitle}</span>
             </div>
-            <h1 className="font-headline font-semibold text-headline-lg text-on-surface tracking-tight">
-              Research Workspace
-            </h1>
+            <h1 className="mt-2 font-headline text-2xl font-semibold tracking-tight text-on-surface sm:text-3xl">Research</h1>
+            <p className="mt-1 max-w-2xl text-sm text-on-surface-variant">Explore a question, compare perspectives, challenge assumptions, and follow the evidence.</p>
           </div>
-
-          {/* Status badge */}
-          <div className="flex items-center gap-space-sm self-start md:self-auto font-mono text-code-sm">
-            <div className="flex items-center gap-space-xs px-space-md py-1 rounded-full bg-surface-container-high border border-outline-variant/30 shadow-sm">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isDeliberating ? 'bg-primary animate-pulse' : 'bg-tertiary'
-                }`}
-              />
-              <span className="font-sans text-label-md text-on-surface">
-                {isDeliberating ? 'Researching' : 'Ready'}
-              </span>
-              <span className="text-outline-variant">·</span>
-              <span className="text-on-surface-variant">
-                {isDeliberating ? `Round ${activeRound} (${formatDuration(elapsedSeconds)})` : 'Ready to research'}
-              </span>
+          <div className="flex shrink-0 items-center gap-2 self-start md:self-auto">
+            <div className={`flex items-center gap-2 border border-outline-variant/50 bg-surface-container-low px-2.5 py-1.5 font-mono text-[10px] ${isDeliberating ? 'text-primary' : 'text-on-surface-variant'}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${isDeliberating ? 'bg-primary animate-pulse' : 'bg-outline'}`} />
+              {isDeliberating ? `Researching · ${formatDuration(elapsedSeconds)}` : 'Ready'}
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Central Progressive Inquiry Formulation Composer */}
-        <div className="bg-surface-container border border-outline-variant/30 shadow-xl p-space-md sm:p-space-lg rounded-3xl relative">
-          <div className="flex items-center justify-between pb-space-sm">
-            <div className="flex items-center gap-space-sm text-primary font-mono text-code-sm">
-              <span className="material-symbols-outlined text-headline-sm">neurology</span>
-              <span className="tracking-wide uppercase font-semibold">Inquiry Formulation</span>
+        <section className="border border-outline-variant/50 bg-surface-container p-4 sm:p-5 lg:p-6">
+          <div className="flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-3">
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary">New research</span>
+              <p className="mt-1 text-sm text-on-surface-variant">Start with a question or an idea you want tested.</p>
             </div>
-            <div className="flex items-center gap-space-xs text-outline font-mono text-code-sm">
-              <span>LaTeX &amp; Markdown Enabled</span>
-            </div>
+            <span className="hidden font-mono text-[10px] text-outline sm:block">Shift + Enter for newline</span>
           </div>
 
-          {/* Textarea */}
-          <div className="relative bg-surface-container-low rounded-2xl border border-outline-variant/30 focus-within:border-primary/50 transition-all">
+          <div className="mt-4 border border-outline-variant/45 bg-surface-container-low focus-within:border-primary/60">
             <textarea
               ref={textareaRef}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleInitiate();
                 }
               }}
-              placeholder="State your research inquiry, theorem, or experimental hypothesis..."
-              rows={3}
-              className="w-full bg-transparent px-space-md py-space-md font-sans text-body-md text-on-surface placeholder:text-outline focus:outline-none resize-none leading-relaxed"
+              rows={5}
+              placeholder="What are you trying to figure out?"
+              className="min-h-[150px] w-full resize-none bg-transparent px-4 py-4 text-base leading-7 text-on-surface outline-none placeholder:text-outline sm:px-5 sm:text-lg"
             />
-            <div className="px-space-md pb-space-sm flex items-center justify-between text-outline font-mono text-code-sm">
-              <span>{inputText.length > 0 ? `${inputText.length} characters staged` : 'Awaiting statement formulation'}</span>
-              <div className="hidden sm:flex items-center gap-space-xs">
-                <kbd className="bg-surface-container px-1 py-0.5 rounded text-outline-variant">⌘</kbd>
-                <span>+</span>
-                <kbd className="bg-surface-container px-1 py-0.5 rounded text-outline-variant">Return</kbd>
-                <span>to initiate</span>
-              </div>
+            <div className="flex items-center justify-between border-t border-outline-variant/35 px-4 py-2.5 text-[10px] font-mono text-outline">
+              <span>{inputText.length ? `${inputText.length} characters` : 'Ready for your question'}</span>
+              <span className="hidden sm:inline">Enter to start</span>
             </div>
           </div>
 
-          {/* Parameter Controls Bar */}
-          <div className="pt-space-md flex flex-wrap items-center justify-between gap-space-md">
-            <div className="flex flex-wrap items-center gap-space-sm">
-              {/* Depth Selection */}
-              <div className="flex items-center gap-space-xs bg-surface-container-high px-space-sm py-1 text-on-surface rounded-full border border-outline-variant/30">
-                <span className="material-symbols-outlined text-[16px] text-primary">speed</span>
-                <span className="font-mono text-label-sm text-outline uppercase tracking-wider">Depth:</span>
+          <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 border border-outline-variant/50 bg-surface-container-low px-2.5 py-2 text-xs text-on-surface">
+                <span className="material-symbols-outlined text-[17px] text-primary">speed</span>
+                <span className="text-outline">Depth</span>
                 <select
                   value={researchDepth}
                   onChange={(e) => setResearchDepth(e.target.value as any)}
-                  className="bg-transparent font-sans text-label-md text-on-surface focus:outline-none cursor-pointer"
+                  className="bg-transparent font-medium text-on-surface outline-none"
                 >
-                  <option value="fast" className="bg-surface-container-high text-on-surface">
-                    Fast Scan (12k tokens)
-                  </option>
-                  <option value="standard" className="bg-surface-container-high text-on-surface">
-                    Comprehensive (48k tokens)
-                  </option>
-                  <option value="exhaustive" className="bg-surface-container-high text-on-surface">
-                    Exhaustive Answer (128k)
-                  </option>
+                  <option value="fast">Quick</option>
+                  <option value="standard">Research</option>
+                  <option value="exhaustive">Deep</option>
                 </select>
-              </div>
+              </label>
 
-              {/* Mode Selection */}
-              <div className="flex items-center gap-space-xs bg-surface-container-high px-space-sm py-1 text-on-surface rounded-full border border-outline-variant/30">
-                <span className="material-symbols-outlined text-[16px] text-tertiary">fact_check</span>
-                <span className="font-mono text-label-sm text-outline uppercase tracking-wider">Mode:</span>
+              <label className="flex items-center gap-2 border border-outline-variant/50 bg-surface-container-low px-2.5 py-2 text-xs text-on-surface">
+                <span className="material-symbols-outlined text-[17px] text-tertiary">fact_check</span>
+                <span className="text-outline">Mode</span>
                 <select
                   value={verificationMode}
                   onChange={(e) => setVerificationMode(e.target.value as any)}
-                  className="bg-transparent font-sans text-label-md text-on-surface focus:outline-none cursor-pointer"
+                  className="bg-transparent font-medium text-on-surface outline-none"
                 >
-                  <option value="cross-exam" className="bg-surface-container-high text-on-surface">
-                    Rigorous Cross-Exam
-                  </option>
-                  <option value="consensus" className="bg-surface-container-high text-on-surface">
-                    Peer Consensus Protocol
-                  </option>
-                  <option value="adversarial" className="bg-surface-container-high text-on-surface">
-                    Adversarial Falsification
-                  </option>
+                  <option value="cross-exam">Grounded</option>
+                  <option value="consensus">Consensus</option>
+                  <option value="adversarial">Stress test</option>
                 </select>
-              </div>
+              </label>
 
-              {/* File / Context attachment */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-space-xs px-space-sm py-1 rounded-full border transition-colors font-sans text-label-md ${
-                  attachedFile
-                    ? 'bg-surface-container-highest border-primary/40 text-primary'
-                    : 'bg-surface-container-high hover:bg-surface-container-highest border-outline-variant/30 text-on-surface-variant'
-                }`}
+                className={`flex items-center gap-2 border px-2.5 py-2 text-xs transition-colors ${attachedFile ? 'border-primary/60 bg-primary/10 text-primary' : 'border-outline-variant/50 bg-surface-container-low text-on-surface-variant hover:border-outline hover:text-on-surface'}`}
               >
-                <span className="material-symbols-outlined text-[16px] text-secondary">attachment</span>
-                <span>{attachedFile ? attachedFile.name : '+ Upload Files / DOI list'}</span>
+                <span className="material-symbols-outlined text-[17px]">attach_file</span>
+                <span className="max-w-[220px] truncate">{attachedFile ? attachedFile.name : 'Add file'}</span>
               </button>
             </div>
 
-            {/* Initiate Button */}
             <button
               type="button"
               onClick={handleInitiate}
               disabled={isDeliberating}
-              className="flex items-center gap-space-sm bg-primary hover:bg-secondary text-on-primary font-headline font-semibold text-headline-sm px-space-lg py-2 rounded-full shadow-[0_0_16px_rgba(76,214,251,0.25)] transition-all active:scale-[0.98] disabled:opacity-50"
+              className="flex h-11 items-center justify-center gap-2 bg-primary px-5 text-xs font-semibold text-on-primary transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <span>{isDeliberating ? 'Researching...' : 'Start research'}</span>
-              <span className="material-symbols-outlined text-headline-sm">
-                {isDeliberating ? 'sync' : 'arrow_forward'}
-              </span>
+              {isDeliberating ? 'Researching...' : 'Start research'}
+              <span className="material-symbols-outlined text-[17px]">{isDeliberating ? 'sync' : 'arrow_forward'}</span>
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* 6-Stage Pipeline Stepper */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-space-md sm:p-space-lg shadow-sm">
-          <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
-            <span className="font-mono text-code-sm text-outline uppercase tracking-wider">
-              Research progress
-            </span>
-            <span className="font-mono text-code-sm text-tertiary flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-              {isDeliberating ? `Stage 0${activeRound} Active` : session?.status === 'completed' ? 'Research complete' : 'Standby'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-space-xs text-left">
-            {[
-              { num: '01', name: 'Question', sub: 'Boundary Parse', icon: 'help_outline' },
-              { num: '02', name: 'Exploration', sub: 'Corpus Grounding', icon: 'travel_explore' },
-              { num: '03', name: 'Proposals', sub: 'Multi-Hypothesis', icon: 'lightbulb' },
-              { num: '04', name: 'Challenge', sub: 'Adversarial Stress', icon: 'gavel' },
-              { num: '05', name: 'Evidence', sub: 'DOI Verification', icon: 'fact_check' },
-              { num: '06', name: 'Answer', sub: 'Final answer', icon: 'auto_stories' },
-            ].map((step, idx) => {
-              const stepRound = idx + 1;
-              const isPast = (session?.status === 'completed') || (isDeliberating && activeRound > stepRound);
-              const isCurrent = isDeliberating && activeRound === stepRound;
-
-              return (
-                <div
-                  key={step.num}
-                  className={`p-space-sm rounded-xl border flex flex-col justify-between transition-all ${
-                    isCurrent
-                      ? 'bg-surface-container-high border-primary/50 text-primary shadow-md'
-                      : isPast
-                      ? 'bg-surface-container border-tertiary/30 text-tertiary'
-                      : 'bg-surface-container-lowest border-outline-variant/20 text-outline'
-                  }`}
-                >
-                  <div className="flex items-center justify-between pb-1">
-                    <span className="font-mono text-code-sm font-semibold">{step.num}</span>
-                    <span className="material-symbols-outlined text-[16px]">{step.icon}</span>
-                  </div>
-                  <div className="font-headline font-semibold text-body-sm text-on-surface">
-                    {step.name}
-                  </div>
-                  <div className="font-sans text-[11px] text-on-surface-variant truncate">
-                    {step.sub}
-                  </div>
+        {!session?.finalOutput && !isDeliberating && (
+          <section className="grid gap-px border border-outline-variant/45 bg-outline-variant/45 lg:grid-cols-[1.15fr_.85fr]">
+            <div className="bg-surface-container-low p-5 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-headline text-lg font-semibold text-on-surface">Research pipeline</h2>
+                  <p className="mt-1 text-sm text-on-surface-variant">Breezy works through these stages without making you manage them.</p>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Dynamic Display: Results / Answer OR Empty State */}
-        {session?.finalOutput || isDeliberating ? (
-          <div ref={resultsTopRef} className="flex flex-col gap-space-lg w-full">
-            {/* Live Streaming Indicator (if active) */}
-            {isDeliberating && (
-              <div className="p-space-md rounded-2xl bg-surface-container border border-primary/30 shadow-lg flex flex-col gap-space-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-space-sm text-primary font-mono text-code-sm">
-                    <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                    <span>Stage {activeRound}: {streamingRole} Deliberation in progress</span>
-                  </div>
-                  <span className="font-mono text-code-sm text-outline">
-                    Tokens: {liveUsage?.totalTokens ? liveUsage.totalTokens.toLocaleString() : '—'}
-                  </span>
-                </div>
-                {streamingRoundText ? (
-                  <div className="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 text-on-surface font-sans text-body-sm leading-relaxed max-h-56 overflow-y-auto font-mono text-xs">
-                    {streamingRoundText.slice(-600)}
-                  </div>
-                ) : (
-                  <div className="text-body-sm text-on-surface-variant animate-pulse font-sans">
-                    Orchestrating model nodes, cross-examining assertions, and validating citation paths...
-                  </div>
-                )}
+                <span className="font-mono text-[10px] uppercase tracking-wider text-outline">Ready</span>
               </div>
-            )}
 
-            {/* Answer First: Executive Answer Takeaway */}
-            {session?.finalOutput && (
-              <div className="rounded-3xl bg-surface-container border border-outline-variant/40 shadow-xl p-space-md sm:p-space-lg flex flex-col gap-space-md">
-                <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
-                  <div className="flex items-center gap-space-sm">
-                    <span className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="font-headline font-semibold text-headline-sm text-on-surface">
-                      Breezy's answer
-                    </span>
+              <div className="relative mt-6 pl-7">
+                <div className="absolute bottom-2 left-2 top-2 w-px bg-outline-variant/70" />
+                {[
+                  ['01','Question','Understand the problem','help_outline'],
+                  ['02','Exploration','Find relevant information','travel_explore'],
+                  ['03','Perspectives','Develop independent views','lightbulb'],
+                  ['04','Challenge','Look for weak assumptions','gavel'],
+                  ['05','Evidence','Check supporting sources','fact_check'],
+                  ['06','Answer','Bring the useful pieces together','auto_stories'],
+                ].map(([num,title,desc,icon], index) => (
+                  <div key={num} className="relative mb-5 flex items-start gap-3 last:mb-0">
+                    <div className={`absolute -left-7 top-0 flex h-5 w-5 items-center justify-center border bg-surface ${index === 0 ? 'border-primary/60 text-primary' : 'border-outline-variant text-outline'}`}>
+                      <span className="material-symbols-outlined text-[14px]">{icon}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-on-surface">{num}. {title}</span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-on-surface-variant">{desc}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-space-xs font-mono text-code-sm text-outline">
-                    <span></span>
-                    <span>·</span>
-                    <span className="text-tertiary">Verified</span>
-                  </div>
-                </div>
-
-                <div className="prose prose-invert max-w-none font-sans text-body-md text-on-surface leading-relaxed">
-                  <ReactMarkdown>{session.finalOutput}</ReactMarkdown>
-                </div>
-
-                {/* Bottom Action Ribbon */}
-                <div className="pt-space-md border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-space-sm">
-                  <div className="flex flex-wrap items-center gap-space-xs">
-                    <button
-                      type="button"
-                      onClick={handleCopy}
-                      className="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-label-md flex items-center gap-1 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">
-                        {copied ? 'check' : 'content_copy'}
-                      </span>
-                      <span>{copied ? 'Copied' : 'Copy Answer'}</span>
-                    </button>
-
-                    {onExportMarkdown && (
-                      <button
-                        type="button"
-                        onClick={onExportMarkdown}
-                        className="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-label-md flex items-center gap-1 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">download</span>
-                        <span>Export Markdown</span>
-                      </button>
-                    )}
-
-                    {onSaveNote && (
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        className="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-label-md flex items-center gap-1 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">
-                          {saved ? 'bookmark_added' : 'bookmark'}
-                        </span>
-                        <span>{saved ? 'Saved' : 'Save to History'}</span>
-                      </button>
-                    )}
-
-                    {onPinToCanvas && (
-                      <button
-                        type="button"
-                        onClick={() => onPinToCanvas(session)}
-                        className="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-label-md flex items-center gap-1 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">draw</span>
-                        <span>Pin to Canvas</span>
-                      </button>
-                    )}
-
-                    {onOpenInIde && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenInIde(session)}
-                        className="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-label-md flex items-center gap-1 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">terminal</span>
-                        <span>Open in Build</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowEvidenceGraph((prev) => !prev)}
-                    className="font-mono text-code-sm text-primary hover:underline flex items-center gap-1"
-                  >
-                    <span>{showEvidenceGraph ? 'Hide Evidence Graph' : 'Inspect Evidence Graph'}</span>
-                    <span className="material-symbols-outlined text-[16px]">
-                      {showEvidenceGraph ? 'expand_less' : 'expand_more'}
-                    </span>
-                  </button>
-                </div>
-
-                {/* Evidence Graph Drawer */}
-                {showEvidenceGraph && session.evidenceGraph && (
-                  <div className="mt-space-sm pt-space-sm border-t border-outline-variant/20">
-                    <EvidenceGraphView
-                      evidenceGraph={session.evidenceGraph}
-                      researchMetrics={session.researchMetrics}
-                    />
-                  </div>
-                )}
+                ))}
               </div>
-            )}
-
-            {/* Supporting Reasoning: Verified Evidence Sources */}
-            {sources.length > 0 && (
-              <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-space-sm">
-                    <span className="material-symbols-outlined text-tertiary text-headline-sm">
-                      verified_user
-                    </span>
-                    <h3 className="font-headline font-semibold text-headline-sm text-on-surface">
-                      Sources ({sources.length})
-                    </h3>
-                  </div>
-                  <span className="font-mono text-code-sm text-tertiary"></span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-xs pt-1">
-                  {sources.map((src: EvidenceSource, idx: number) => (
-                    <a
-                      key={src.id || idx}
-                      href={src.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-space-sm rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 flex flex-col justify-between transition-colors group"
-                    >
-                      <div className="flex items-start justify-between gap-space-xs">
-                        <span className="font-mono text-code-sm text-primary group-hover:underline truncate">
-                          {src.title || src.url}
-                        </span>
-                        <span className="material-symbols-outlined text-outline text-[16px]">
-                          north_east
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between font-mono text-[11px] text-outline mt-2">
-                        <span>{src.domain || 'Verified Domain'}</span>
-                        <span className="text-tertiary">Source</span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Perspectives vs Contradictions Grid */}
-            {(proposals.length > 0 || challenges.length > 0) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                {/* Perspectives Considered */}
-                <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-sm">
-                  <div className="flex items-center gap-space-xs text-primary font-mono text-code-sm">
-                    <span className="material-symbols-outlined text-[18px]">lightbulb</span>
-                    <span className="font-semibold uppercase">Perspectives</span>
-                  </div>
-                  <div className="space-y-space-sm">
-                    {proposals.map((p, idx) => (
-                      <div
-                        key={idx}
-                        className="p-space-sm rounded-xl bg-surface-container border border-outline-variant/20 font-sans text-body-sm leading-relaxed"
-                      >
-                        <div className="font-mono text-code-sm text-secondary font-medium pb-1">
-                          Perspective {idx + 1} ({p.role})
-                        </div>
-                        <p className="line-clamp-4 text-on-surface-variant">{p.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Challenges & Contradictions Surfaced */}
-                <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-sm">
-                  <div className="flex items-center gap-space-xs text-secondary font-mono text-code-sm">
-                    <span className="material-symbols-outlined text-[18px]">gavel</span>
-                    <span className="font-semibold uppercase">Challenges</span>
-                  </div>
-                  <div className="space-y-space-sm">
-                    {challenges.length === 0 ? (
-                      <div className="p-space-md rounded-xl bg-surface-container text-outline font-sans text-body-sm">
-                        No critical logic flaws detected across participating models.
-                      </div>
-                    ) : (
-                      challenges.map((c, idx) => (
-                        <div
-                          key={idx}
-                          className="p-space-sm rounded-xl bg-surface-container border border-outline-variant/20 font-sans text-body-sm leading-relaxed"
-                        >
-                          <div className="font-mono text-code-sm text-tertiary font-medium pb-1">
-                            Challenge {idx + 1} ({c.role})
-                          </div>
-                          <p className="line-clamp-4 text-on-surface-variant">{c.content}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Empty Slate State */
-          <div className="bg-surface-container-low/70 border border-outline-variant/30 p-space-lg sm:p-space-xl rounded-3xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-sm">
-            <div className="max-w-xl flex flex-col items-center gap-space-xs">
-              <h2 className="font-headline font-semibold text-headline-md text-on-surface">
-                No active synthesis in progress
-              </h2>
-              <p className="font-sans text-body-md text-on-surface-variant leading-relaxed">
-                Submit an inquiry above to coordinate multi-model exploration, adversarial
-                cross-examination, and literature grounding.
-              </p>
             </div>
 
-            {/* Sample Directives */}
-            <div className="mt-space-xl pt-space-lg w-full max-w-3xl border-t border-outline-variant/20">
-              <div className="flex items-center justify-center gap-space-xs mb-space-md text-outline font-mono text-label-sm uppercase tracking-wider">
-                <span className="material-symbols-outlined text-label-md text-primary">bolt</span>
-                <span>Sample Directives</span>
+            <div className="bg-surface-container p-5 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-headline text-lg font-semibold text-on-surface">Good places to start</h2>
+                  <p className="mt-1 text-sm text-on-surface-variant">Use one as-is or edit it in the composer.</p>
+                </div>
+                <span className="material-symbols-outlined text-primary">north_east</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-space-sm text-left">
-                {sampleDirectives.map((d) => (
+
+              <div className="mt-5 space-y-2">
+                {sampleDirectives.map((d, idx) => (
                   <button
                     key={d.domain}
                     type="button"
                     onClick={() => handleApplyDirective(d.prompt)}
-                    className="p-space-md bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 transition-all group flex flex-col justify-between rounded-2xl active:scale-[0.99]"
+                    className="group flex w-full items-start gap-3 border border-outline-variant/40 bg-surface-container-low p-3 text-left transition-colors hover:bg-surface-container-high hover:border-outline"
                   >
-                    <div className="flex items-center justify-between w-full mb-space-xs">
-                      <span className="font-mono text-code-sm text-primary">{d.domain}</span>
-                      <span className="material-symbols-outlined text-label-md text-outline group-hover:text-primary transition-colors">
-                        north_east
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-headline font-semibold text-headline-sm text-on-surface mb-1">
-                        {d.title}
-                      </h4>
-                      <p className="font-sans text-body-sm text-on-surface-variant line-clamp-2">
-                        {d.desc}
-                      </p>
-                    </div>
+                    <span className="mt-0.5 font-mono text-[10px] text-primary">0{idx + 1}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-on-surface">{d.title}</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-on-surface-variant">{d.desc}</span>
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Active Cluster Hardware Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-space-sm font-mono text-code-sm text-outline pt-space-xs">
-          <div className="flex items-center gap-space-sm bg-surface-container-low border border-outline-variant/30 px-space-md py-space-sm rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
-            <span className="text-on-surface-variant">Verifier:</span>
-            <span className="text-on-surface ml-auto truncate">Claude 3.7 Sonnet</span>
-          </div>
-          <div className="flex items-center gap-space-sm bg-surface-container-low border border-outline-variant/30 px-space-md py-space-sm rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            <span className="text-on-surface-variant">Explorer:</span>
-            <span className="text-on-surface ml-auto truncate">DeepSeek-R1</span>
-          </div>
-          <div className="flex items-center gap-space-sm bg-surface-container-low border border-outline-variant/30 px-space-md py-space-sm rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-            <span className="text-on-surface-variant">Corpus:</span>
-            <span className="text-on-surface ml-auto truncate">arXiv + PubMed</span>
-          </div>
-          <div className="flex items-center gap-space-sm bg-surface-container-low border border-outline-variant/30 px-space-md py-space-sm rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-tertiary-container" />
-            <span className="text-on-surface-variant">Sandbox:</span>
-            <span className="text-on-surface ml-auto truncate">Lean 4 Kernel</span>
-          </div>
-        </div>
+        {isDeliberating && (
+          <section className="border border-primary/35 bg-surface-container-low p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant/40 pb-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                Stage {String(activeRound).padStart(2, '0')} · {streamingRole || 'Research'}
+              </div>
+              <span className="font-mono text-[10px] text-outline">{liveUsage?.totalTokens ? liveUsage.totalTokens.toLocaleString() + ' tokens' : 'Running'}</span>
+            </div>
+            <div className="mt-4 min-h-20 text-sm leading-6 text-on-surface-variant">
+              {streamingRoundText ? streamingRoundText.slice(-1200) : 'Working through the research stages…'}
+            </div>
+          </section>
+        )}
+
+        {session?.finalOutput && (
+          <>
+            <section className="grid gap-px border border-outline-variant/45 bg-outline-variant/45 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <article className="min-w-0 bg-surface-container p-5 sm:p-7">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-outline-variant/40 pb-4">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-primary">Answer</div>
+                    <h2 className="mt-1 font-headline text-xl font-semibold text-on-surface sm:text-2xl">Breezy's answer</h2>
+                  </div>
+                  <span className="text-xs text-on-surface-variant">Research completed</span>
+                </div>
+
+                <div className="prose prose-invert mt-6 max-w-none font-sans text-[15px] leading-7 text-on-surface">
+                  <ReactMarkdown>{session.finalOutput}</ReactMarkdown>
+                </div>
+
+                <div className="mt-7 flex flex-wrap gap-2 border-t border-outline-variant/40 pt-4">
+                  <button type="button" onClick={handleCopy} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs text-on-surface hover:border-outline">
+                    <span className="material-symbols-outlined text-[16px]">{copied ? 'check' : 'content_copy'}</span>
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                  {onExportMarkdown && <button type="button" onClick={onExportMarkdown} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs text-on-surface hover:border-outline"><span className="material-symbols-outlined text-[16px]">download</span>Export</button>}
+                  {onSaveNote && <button type="button" onClick={handleSave} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs text-on-surface hover:border-outline"><span className="material-symbols-outlined text-[16px]">{saved ? 'bookmark_added' : 'bookmark'}</span>{saved ? 'Saved' : 'Save'}</button>}
+                  {onPinToCanvas && <button type="button" onClick={() => onPinToCanvas(session)} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs text-on-surface hover:border-outline"><span className="material-symbols-outlined text-[16px]">draw</span>Canvas</button>}
+                  {onOpenInIde && <button type="button" onClick={() => onOpenInIde(session)} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs text-on-surface hover:border-outline"><span className="material-symbols-outlined text-[16px]">terminal</span>Build</button>}
+                  <button type="button" onClick={() => setShowEvidenceGraph((prev) => !prev)} className="ml-auto flex h-9 items-center gap-1.5 text-xs text-primary hover:text-secondary">
+                    <span className="material-symbols-outlined text-[16px]">{showEvidenceGraph ? 'expand_less' : 'account_tree'}</span>
+                    {showEvidenceGraph ? 'Hide graph' : 'Evidence graph'}
+                  </button>
+                </div>
+
+                {showEvidenceGraph && session.evidenceGraph && (
+                  <div className="mt-5 border-t border-outline-variant/40 pt-5">
+                    <EvidenceGraphView evidenceGraph={session.evidenceGraph} researchMetrics={session.researchMetrics} />
+                  </div>
+                )}
+              </article>
+
+              <aside className="bg-surface-container-low p-5 sm:p-6">
+                <div className="border-b border-outline-variant/40 pb-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-outline">Research stages</div>
+                  <div className="mt-1 text-sm font-semibold text-on-surface">{session.status === 'completed' ? 'Complete' : 'In progress'}</div>
+                </div>
+
+                <div className="relative mt-5 pl-6">
+                  <div className="absolute bottom-2 left-2 top-2 w-px bg-outline-variant/70" />
+                  {[
+                    ['01','Question'],['02','Exploration'],['03','Perspectives'],['04','Challenge'],['05','Evidence'],['06','Answer']
+                  ].map(([num,title], index) => {
+                    const done = session.status === 'completed' || index < activeRound;
+                    const active = isDeliberating && index === activeRound - 1;
+                    return (
+                      <div key={num} className="relative mb-4 last:mb-0">
+                        <span className={`absolute -left-6 top-0.5 h-4 w-4 rounded-full border-2 border-surface-container-low ${active ? 'bg-primary' : done ? 'bg-tertiary' : 'bg-surface-container-highest'}`} />
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-xs font-medium ${active ? 'text-primary' : done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{num}. {title}</span>
+                          <span className="material-symbols-outlined text-[15px] text-outline">{done ? 'check' : active ? 'more_horiz' : 'radio_button_unchecked'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </aside>
+            </section>
+
+            {sources.length > 0 && (
+              <section className="border border-outline-variant/45 bg-surface-container-low p-5 sm:p-6">
+                <div className="flex items-end justify-between gap-3 border-b border-outline-variant/40 pb-3">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-tertiary">Evidence</div>
+                    <h3 className="mt-1 font-headline text-lg font-semibold text-on-surface">Sources</h3>
+                  </div>
+                  <span className="text-xs text-on-surface-variant">{sources.length} source{sources.length === 1 ? '' : 's'}</span>
+                </div>
+                <div className="mt-4 grid gap-px border border-outline-variant/40 bg-outline-variant/40 md:grid-cols-2">
+                  {sources.map((src: EvidenceSource, idx: number) => (
+                    <a key={src.id || idx} href={src.url} target="_blank" rel="noopener noreferrer" className="group min-w-0 bg-surface-container p-4 hover:bg-surface-container-high">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-on-surface group-hover:text-primary">{src.title || src.url}</div>
+                          <div className="mt-1 truncate font-mono text-[10px] text-outline">{src.domain || src.url}</div>
+                        </div>
+                        <span className="material-symbols-outlined shrink-0 text-[17px] text-outline group-hover:text-primary">north_east</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {(proposals.length > 0 || challenges.length > 0) && (
+              <section className="grid gap-px border border-outline-variant/45 bg-outline-variant/45 md:grid-cols-2">
+                <div className="bg-surface-container p-5 sm:p-6">
+                  <div className="flex items-center gap-2 border-b border-outline-variant/40 pb-3">
+                    <span className="material-symbols-outlined text-[18px] text-primary">lightbulb</span>
+                    <h3 className="text-sm font-semibold text-on-surface">Perspectives</h3>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {proposals.map((p, idx) => (
+                      <div key={idx} className="border border-outline-variant/40 bg-surface-container-low p-3">
+                        <div className="font-mono text-[10px] text-secondary">Perspective {idx + 1}</div>
+                        <p className="mt-1 line-clamp-5 text-xs leading-5 text-on-surface-variant">{p.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-surface-container-low p-5 sm:p-6">
+                  <div className="flex items-center gap-2 border-b border-outline-variant/40 pb-3">
+                    <span className="material-symbols-outlined text-[18px] text-secondary">gavel</span>
+                    <h3 className="text-sm font-semibold text-on-surface">Challenges</h3>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {challenges.length === 0 ? (
+                      <div className="border border-outline-variant/40 bg-surface-container p-3 text-xs text-on-surface-variant">No challenges were returned for this run.</div>
+                    ) : challenges.map((c, idx) => (
+                      <div key={idx} className="border border-outline-variant/40 bg-surface-container p-3">
+                        <div className="font-mono text-[10px] text-tertiary">Challenge {idx + 1}</div>
+                        <p className="mt-1 line-clamp-5 text-xs leading-5 text-on-surface-variant">{c.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </div>
 
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-surface-container-high border border-outline-variant/40 text-on-surface px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[18px]">info</span>
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-4 right-4 z-50 border border-outline-variant/60 bg-surface-container-high px-4 py-3 text-xs text-on-surface shadow-[0_12px_32px_-8px_rgba(0,0,0,.65)]">
+          <span className="mr-2 inline-flex align-middle material-symbols-outlined text-[16px] text-primary">info</span>
+          {toastMessage}
         </div>
       )}
     </div>
