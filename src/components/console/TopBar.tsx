@@ -141,18 +141,18 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   className={`group relative w-full text-left p-2.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 mt-1.5 ${
                     productMode === 'synthexis'
-                      ? 'bg-emerald-500/10 border border-emerald-500/30'
-                      : 'bg-white/[0.02] hover:bg-emerald-500/[0.08] border border-white/[0.05] hover:border-emerald-500/30'
+                      ? 'bg-sky-500/10 border border-sky-500/30'
+                      : 'bg-white/[0.02] hover:bg-sky-500/[0.08] border border-white/[0.05] hover:border-sky-500/30'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <SynthexisLogoIcon className="w-6 h-6 text-emerald-400 shrink-0 group-hover:scale-105 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)] transition-transform" />
+                    <SynthexisLogoIcon className="w-6 h-6 text-sky-400 shrink-0 group-hover:scale-105 drop-shadow-[0_0_8px_rgba(56,189,248,0.35)] transition-transform" />
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-sans font-semibold text-xs text-stone-100 group-hover:text-emerald-300 transition-colors">
-                          Synthexis
+                        <span className="font-sans font-semibold text-xs text-stone-100 group-hover:text-sky-300 transition-colors">
+                          Research
                         </span>
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
                           Research
                         </span>
                       </div>
@@ -162,9 +162,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                     </div>
                   </div>
                   {productMode === 'synthexis' ? (
-                    <span className="material-symbols-outlined text-[18px] text-emerald-400 shrink-0">check</span>
+                    <span className="material-symbols-outlined text-[18px] text-sky-400 shrink-0">check</span>
                   ) : (
-                    <div className="w-6 h-6 rounded-lg bg-white/[0.04] group-hover:bg-emerald-500/20 border border-white/[0.06] group-hover:border-emerald-500/30 flex items-center justify-center text-stone-400 group-hover:text-emerald-300 transition-colors shrink-0">
+                    <div className="w-6 h-6 rounded-lg bg-white/[0.04] group-hover:bg-sky-500/20 border border-white/[0.06] group-hover:border-sky-500/30 flex items-center justify-center text-stone-400 group-hover:text-sky-300 transition-colors shrink-0">
                       <span className="material-symbols-outlined text-[15px] group-hover:translate-x-0.5 transition-transform">
                         arrow_forward
                       </span>
@@ -175,9 +175,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                 {/* Subtle footer */}
                 <div className="px-2.5 pt-2 pb-0.5 mt-1.5 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-stone-400">
                   <span>
-                    Current: <strong className="text-stone-200 capitalize">{productMode}</strong>
+                    Current: <strong className="text-stone-200">{productMode === 'breezy' ? 'Breezy' : 'Research'}</strong>
                   </span>
-                  <span className="font-mono text-[9px] text-stone-400">Click to switch</span>
+                  <span className="text-[9px] text-stone-400">Select a workspace</span>
                 </div>
               </div>
             </>
