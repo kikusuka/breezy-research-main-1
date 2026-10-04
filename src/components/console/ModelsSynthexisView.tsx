@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { providerConfigService, CanonicalWorkspaceConfig, AVAILABLE_MODELS } from '../../services/providerConfigService';
 import { effectiveProviderService } from '../../services/effectiveProviderService';
 import { apiClient } from '../../services/apiClient';
+import { ollamaService, OllamaModel } from '../../services/ollamaService';
 
 interface ModelsSynthexisViewProps {
   onOpenSettings: () => void;
@@ -14,13 +15,36 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; latencyMs?: number; msg?: string }>>({});
 
   const [serverGeminiActive, setServerGeminiActive] = useState(false);
+  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
+  const [ollamaConnected, setOllamaConnected] = useState(false);
+  const [ollamaChecking, setOllamaChecking] = useState(false);
 
   useEffect(() => {
     setConfig(providerConfigService.getConfig());
+    ollamaService.setBaseUrl(providerConfigService.getConfig().ollamaBaseUrl || 'http://localhost:11434');
     apiClient.getHealth().then((h) => {
       setServerGeminiActive(!!h.serverGeminiConfigured);
     }).catch(() => {});
   }, []);
+
+  const refreshOllama = async () => {
+    setOllamaChecking(true);
+    try {
+      const ok = await ollamaService.checkConnection();
+      setOllamaConnected(ok);
+      if (ok) {
+        const models = await ollamaService.getModels();
+        setOllamaModels(models);
+      } else {
+        setOllamaModels([]);
+      }
+    } catch {
+      setOllamaConnected(false);
+      setOllamaModels([]);
+    } finally {
+      setOllamaChecking(false);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -226,7 +250,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               { roleKey: 'arbiter', title: 'Synthesizer', sub: 'Resolution', desc: 'Reconciles conflicting perspectives into a unified, high-fidelity research output.' },
             ].map((item) => {
               const seat = rolesMap[item.roleKey as keyof typeof rolesMap] || { provider: '', model: '' };
-              const hasProviderKey = Boolean(config.keys?.[seat.provider]) || (seat.provider === 'gemini' && serverGeminiActive);
+              const hasProviderKey = seat.provider === 'ollama' ? ollamaConnected : Boolean(config.keys?.[seat.provider]) || (seat.provider === 'gemini' && serverGeminiActive);
               const isConfigured = Boolean(seat.provider && seat.model && hasProviderKey);
               const testInfo = testResults[seat.provider];
               return (
@@ -252,7 +276,9 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                         <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest">Provider</span>
                         <select value={seat.provider || ''} onChange={(e) => {
                           const nextProvider = e.target.value;
-                          const firstModel = nextProvider ? (AVAILABLE_MODELS?.[nextProvider]?.[0]?.id || '') : '';
+                          const firstModel = nextProvider === 'ollama'
+                            ? (ollamaModels[0]?.name || '')
+                            : nextProvider ? (AVAILABLE_MODELS?.[nextProvider]?.[0]?.id || '') : '';
                           updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], nextProvider, firstModel);
                         }} className="bg-stone-950 border border-stone-800 rounded-md px-2 py-2 text-[10px] text-stone-300 outline-none">
                           <option value="">Unassigned</option>
@@ -263,7 +289,9 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                         <span className="text-[9px] text-stone-600 uppercase font-bold tracking-widest">Model</span>
                         <select value={seat.model || ''} disabled={!seat.provider} onChange={(e) => updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], seat.provider, e.target.value)} className="bg-stone-950 border border-stone-800 rounded-md px-2 py-2 text-[10px] text-stone-300 outline-none disabled:opacity-40">
                           <option value="">No model</option>
-                          {(AVAILABLE_MODELS[seat.provider] || []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                          {seat.provider === 'ollama'
+                            ? ollamaModels.map((m) => <option key={m.name} value={m.name}>{m.name}</option>)
+                            : (AVAILABLE_MODELS[seat.provider] || []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select>
                         <input value={seat.model || ''} disabled={!seat.provider} onChange={(e) => updateRole(item.roleKey as keyof CanonicalWorkspaceConfig['roles'], seat.provider, e.target.value)} placeholder="Custom model ID" className="bg-stone-950 border border-stone-800 rounded-md px-2 py-1.5 text-[10px] text-stone-400 outline-none disabled:opacity-40" aria-label="Custom model ID" />
                       </label>
