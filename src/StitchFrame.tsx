@@ -82,11 +82,6 @@ function applyTruthfulModelSurface(doc: Document) {
   const cfg = providerConfigService.getConfig();
   const selects = Array.from(doc.querySelectorAll<HTMLSelectElement>('select')).slice(0, 4);
   const roles = ['architect','skeptic','verifier','arbiter'] as const;
-  const catalog = Object.entries(providerConfigService.getConfig().roles || {}).length
-    ? Object.entries(providerConfigService.getConfig())
-    : [];
-  void catalog;
-
   selects.forEach((select, index) => {
     const role = roles[index];
     if (!role) return;
@@ -107,6 +102,12 @@ function applyTruthfulModelSurface(doc: Document) {
       select.appendChild(opt);
     });
     const value = current.provider && current.model ? current.provider + ':' + current.model : '';
+    if (value && !liveOptions.some((item) => item.provider + ':' + item.model === value)) {
+      const custom = doc.createElement('option');
+      custom.value = value;
+      custom.textContent = providerDisplayName(current.provider) + ': ' + current.model + ' (current)';
+      select.appendChild(custom);
+    }
     select.value = value;
   });
 }
@@ -244,6 +245,13 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
         ['Zero Data Retention', 'Retention policy not verified'],
         ['100% VALIDATED', 'NOT VERIFIED'],
         ['ACTIVE', 'NOT VERIFIED'],
+        ['Inference: Idle', 'No live inference'],
+        ['OLLAMA:11434', 'Local provider not verified'],
+        ['10.240.4.11 • Debian 12 • 8x H100 Enclave', 'Compute enclave not connected'],
+        ['All memory pages are encrypted via ephemeral AES-256-GCM hardware keys and flushed on tab close.', 'Local encryption state not verified'],
+        ['Connected External Inferences & Vault Endpoints', 'Provider endpoints'],
+        ['Connected Research Workstations', 'Research workstations'],
+        ['Active Local Daemons', 'Local providers'],
       ]);
       applyTruthfulResearchLabels(doc);
 
