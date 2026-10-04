@@ -221,7 +221,7 @@ function Chat({serverGemini}:{serverGemini:boolean}) {
   </div>;
 }
 
-function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToast}:{sessions:DebateSession[];setSessions:React.Dispatch<React.SetStateAction<DebateSession[]>>;activeId:string|null;setActiveId:(v:string|null)=>void;serverGemini:boolean;onToast:(s:string)=>void}) {
+function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToast,pendingResearch,onConsumed}:{sessions:DebateSession[];setSessions:React.Dispatch<React.SetStateAction<DebateSession[]>>;activeId:string|null;setActiveId:(v:string|null)=>void;serverGemini:boolean;onToast:(s:string)=>void;pendingResearch:{q:string;d:Depth}|null;onConsumed:()=>void}) {
   const current=sessions.find((s)=>s.id===activeId) || sessions[0] || null;
   const [query,setQuery]=useState(current?.prompt || '');
   const [depth,setDepth]=useState<Depth>(current?.protocol==='solo'?'solo':current?.protocol==='deep'?'deep':'standard');
@@ -232,8 +232,18 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
 
   useEffect(()=>{if(current?.prompt)setQuery(current.prompt)},[current?.id]);
 
-  const start=async()=>{
-    const prompt=query.trim();
+  useEffect(()=>{
+    if(!pendingResearch || running) return;
+    const next=pendingResearch;
+    onConsumed();
+    setQuery(next.q);
+    setDepth(next.d);
+    setTimeout(()=>{ void start(next.q,next.d); },0);
+  },[pendingResearch]);
+
+  const start=async(forcedQuery?:string, forcedDepth?:Depth)=>{
+    const prompt=(forcedQuery || query).trim();
+    const chosenDepth=forcedDepth || depth;
     if(!prompt)return;
     const cfg=providerConfigService.getConfig();
     let serverAvailable=serverGemini;
@@ -244,7 +254,7 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
     }
     controller.current?.abort();
     const c=new AbortController(); controller.current=c;
-    const protocol = depth==='solo'?'solo':'trio';
+    const protocol = chosenDepth==='solo'?'solo':'trio';
     const session=createNewSession(prompt,protocol,makeInitialSteps(cfg,depth), 'balanced');
     session.status='running';
     session.searchEngine=(cfg.searchEngine || 'duckduckgo') as SearchEngineProvider;
@@ -487,26 +497,12 @@ export default function App() {
   useEffect(()=>{apiClient.getHealth().then((h)=>setServerGemini(Boolean(h.serverGeminiConfigured))).catch(()=>{});return effectiveProviderService.subscribe(()=>{})},[]);
 
   const showToast=(s:string)=>{setToast(s);window.setTimeout(()=>setToast(null),3200)};
-  const startFromLanding=(q:string,d:Depth)=>{setActive('research');window.setTimeout(()=>document.dispatchEvent(new CustomEvent('breezy:start',{detail:{q,d}})),0)};
-  useEffect(()=>{
-    const handler=(e:any)=>{const d=e.detail as {q:string;d:Depth};window.dispatchEvent(new Event('breezy:research'));void d;void d;localStorage.setItem('breezy_pending_research',JSON.stringify(d))}
-    document.addEventListener('breezy:start',handler as any);
-    return ()=>document.removeEventListener('breezy:start',handler as any);
-  },[]);
-  useEffect(()=>{
-    if(active!=='research')return;
-    const raw=localStorage.getItem('breezy_pending_research');
-    if(!raw)return;
-    localStorage.removeItem('breezy_pending_research');
-    const d=JSON.parse(raw);
-    setTimeout(()=>{const button=document.querySelector('[data-auto-research]') as HTMLButtonElement|null;if(button)button.click();},30);
-    localStorage.setItem('breezy_auto_prompt',JSON.stringify(d));
-  },[active]);
+  const startFromLanding=(q:string,d:Depth)=>{setPendingResearch({q,d});setActive('research')};
 
   const render=()=>{
     if(active==='landing')return <Landing serverGemini={serverGemini} onStart={startFromLanding} onGo={setActive}/>;
     if(active==='chat')return <Chat serverGemini={serverGemini}/>;
-    if(active==='research')return <Research sessions={sessions} setSessions={setSessions} activeId={activeSessionId} setActiveId={setActiveSessionId} serverGemini={serverGemini} onToast={showToast}/>;
+    if(active==='research')return <Research sessions={sessions} setSessions={setSessions} activeId={activeSessionId} setActiveId={setActiveSessionId} serverGemini={serverGemini} onToast={showToast} pendingResearch={pendingResearch} onConsumed={()=>setPendingResearch(null)}/>;
     if(active==='history'||active==='notes')return <History sessions={sessions} onSelect={(id)=>{setActiveSessionId(id);setActive('research')}}/>;
     if(active==='models')return <Models serverGemini={serverGemini} onToast={showToast}/>;
     if(active==='docs')return <Docs/>;
