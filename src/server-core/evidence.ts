@@ -91,7 +91,6 @@ export async function generateRealEvidenceGraph(opts: {
         claimsUnresolved: 0,
         sourcesConsulted: discoveredSources.length,
         primarySourcesCount: 0,
-        synthexisRate: null, // Truthful: No synthexis measurement in solo mode
       },
     };
   }
@@ -260,7 +259,6 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
         claimsUnresolved: 0,
         sourcesConsulted: discoveredSources.length,
         primarySourcesCount: 0,
-        synthexisRate: null, // Truthful: Report null on audit failure
       },
     };
   }
