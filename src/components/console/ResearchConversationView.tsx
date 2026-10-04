@@ -13,6 +13,7 @@ interface ResearchConversationViewProps {
   streamingRoundText: string;
   streamingRole: string;
   onStartDebate: (prompt: string, depth?: 'solo' | 'standard' | 'deep') => void;
+  onSteer?: (prompt: string) => void;
   activeRoundStartedAt?: number | null;
   liveUsage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; round?: number } | null;
   heartbeatState?: { statusText?: string; taskReminder?: string; checkpoint?: string } | null;
@@ -33,6 +34,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   streamingRoundText,
   streamingRole,
   onStartDebate,
+  onSteer,
   activeRoundStartedAt,
   liveUsage,
   heartbeatState,
@@ -90,7 +92,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   }, [streamingRoundText, isDeliberating]);
 
   const handleSend = () => {
-    if (!inputText.trim() || isDeliberating) return;
+    if (!inputText.trim()) return;
     const prompt = inputText.trim();
     
     // Only guard direct GitHub repo mutations
@@ -110,7 +112,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    onStartDebate(fullPromptWithContext, researchDepth);
+    if (isDeliberating && onSteer) {
+      onSteer(fullPromptWithContext);
+    } else {
+      onStartDebate(fullPromptWithContext, researchDepth);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -698,7 +704,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask follow-up query, challenge a synthexis claim..."
+                    placeholder={isDeliberating ? 'Steer the debate: challenge a claim, add evidence, change direction...' : 'Ask follow-up query, challenge a synthexis claim...'}
                     rows={1}
                     className="w-full bg-transparent text-stone-100 placeholder-stone-500 text-sm resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
                   />
@@ -730,13 +736,13 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     <button
                       type="button"
                       onClick={handleSend}
-                      disabled={!inputText.trim() || isDeliberating}
+                      disabled={!inputText.trim()}
                       className={`flex items-center justify-center w-8 h-8 rounded-full transition-all ${
                         inputText.trim() && !isDeliberating
                           ? 'bg-stone-100 text-stone-950 hover:bg-white cursor-pointer'
                           : 'bg-white/5 text-stone-500 cursor-not-allowed'
                       }`}
-                      title="Send follow-up"
+                      title={isDeliberating ? 'Steer the active research branch' : 'Send follow-up'}
                     >
                       <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
                     </button>
