@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SynthexisLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
+import { ResearchLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
 
 export type ProductMode = 'breezy' | 'synthexis';
 
@@ -29,7 +29,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         isSidebarOpen ? 'lg:left-64' : 'left-0'
       } right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-stone-800/80 bg-[#090d16]/90 text-stone-100 shadow-sm transition-all duration-300`}
     >
-      {/* Left: Sidebar Toggle + Seamless Unboxed Workspace Switcher */}
+      {/* Left: Sidebar Toggle + Seamless Unboxed Switch workspace */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           type="button"
@@ -58,7 +58,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <BreezyLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_0_12px_rgba(56,189,248,0.35)] transition-all shrink-0" />
             )}
             <span className="font-sans font-bold text-base sm:text-lg tracking-tight text-white group-hover:text-sky-200 transition-colors">
-              {productMode === 'breezy' ? 'Breezy' : 'Synthexis'}
+              {productMode === 'breezy' ? 'Breezy' : 'Research'}
             </span>
             <span
               className={`material-symbols-outlined text-[20px] text-stone-400 group-hover:text-stone-200 transition-transform duration-200 ${
@@ -80,10 +80,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div className="px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                    Workspaces
+                    Breezy spaces
                   </span>
                   <span className="text-[9px] text-stone-400 bg-white/[0.05] px-2 py-0.5 rounded-full border border-white/[0.06]">
-                    Select View
+                    Choose a workspace
                   </span>
                 </div>
 
