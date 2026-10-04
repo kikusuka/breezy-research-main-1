@@ -1,4 +1,4 @@
-import { SearchEngineProvider } from '../types';
+import { ProviderId, SearchEngineProvider } from '../types';
 
 /**
  * Canonical Provider Configuration Service
@@ -7,7 +7,7 @@ import { SearchEngineProvider } from '../types';
  */
 
 export interface RoleSeatConfig {
-  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic' | 'ollama' | 'openai-compatible';
+  provider: ProviderId | '';
   model: string;
 }
 
@@ -52,7 +52,7 @@ export const AVAILABLE_MODELS: Record<string, { id: string; name: string; descri
 };
 
 export interface CanonicalWorkspaceConfig {
-  defaultProvider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic' | 'ollama' | 'openai-compatible';
+  defaultProvider: ProviderId | '';
   defaultModel: string;
   preset: 'fast' | 'balanced' | 'deep' | 'custom';
   roles: {
@@ -63,7 +63,7 @@ export interface CanonicalWorkspaceConfig {
   };
   fallback: {
     enabled: boolean;
-    provider: 'gemini' | 'ollama' | 'openai-compatible';
+    provider: ProviderId | '';
     model: string;
   };
   keys: CanonicalProviderKeys;
@@ -80,7 +80,7 @@ export interface CanonicalWorkspaceConfig {
 
 const CANONICAL_STORAGE_KEY = 'breezy_canonical_provider_config';
 
-export const UNCONFIGURED_ROLE: RoleSeatConfig = { provider: '' as any, model: '' };
+export const UNCONFIGURED_ROLE: RoleSeatConfig = { provider: '', model: '' };
 
 const UNCONFIGURED_ROLES: CanonicalWorkspaceConfig['roles'] = {
   architect: UNCONFIGURED_ROLE,
@@ -166,11 +166,11 @@ export const providerConfigService = {
       const hasAnyKey = Object.keys(keys).some((k) => Boolean(keys[k]));
 
       const initialConfig: CanonicalWorkspaceConfig = {
-        defaultProvider: hasAnyKey ? 'gemini' : ('' as any),
+        defaultProvider: hasAnyKey ? 'gemini' : '',
         defaultModel: hasAnyKey ? 'gemini-2.5-flash' : '',
         preset: 'balanced',
         roles: hasAnyKey ? DEFAULT_ROLES : UNCONFIGURED_ROLES,
-        fallback: { enabled: false, provider: '' as any, model: '' },
+        fallback: { enabled: false, provider: '', model: '' },
         keys,
         autoResolve: true,
         agreementThreshold: 78,
@@ -187,11 +187,11 @@ export const providerConfigService = {
       return initialConfig;
     } catch {
       return {
-        defaultProvider: '' as any,
+        defaultProvider: '',
         defaultModel: '',
         preset: 'balanced',
         roles: UNCONFIGURED_ROLES,
-        fallback: { enabled: false, provider: '' as any, model: '' },
+        fallback: { enabled: false, provider: '', model: '' },
         keys: {},
         autoResolve: true,
         selectedRound: 2,
