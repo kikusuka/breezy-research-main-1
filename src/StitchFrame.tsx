@@ -187,6 +187,13 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
         ['CONNECTED', 'NOT VERIFIED'],
         ['100% VALIDATED', 'NOT VERIFIED'],
         ['CONFIDENCE: 99.4%', 'ILLUSTRATIVE PREVIEW'],
+        ['Integrity Verified: 0x9f1a...c82d', 'Integrity status not verified'],
+        ['MATCH VERIFIED', 'Verification status not verified'],
+        ['Latency: 1.4ms · Zero outbound telemetry', 'Live latency not measured'],
+        ['Validated using deterministic tree traversal. Zero drift detected.', 'Validation method not connected.'],
+        ['Zero Data Retention', 'Retention policy not verified'],
+        ['100% VALIDATED', 'NOT VERIFIED'],
+        ['ACTIVE', 'NOT VERIFIED'],
       ]);
       applyTruthfulResearchLabels(doc);
 
