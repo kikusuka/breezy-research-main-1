@@ -246,3 +246,4 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       {toastMessage&&<div className="fixed bottom-4 right-4 z-50 border border-outline-variant/60 bg-surface-container-high px-4 py-3 text-xs shadow-[0_12px_32px_-8px_rgba(0,0,0,.65)]"><span className="mr-2 inline-flex align-middle material-symbols-outlined text-[16px] text-primary">info</span>{toastMessage}</div>}
     </div>
   );
+};
