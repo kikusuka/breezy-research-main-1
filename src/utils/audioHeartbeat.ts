@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- * 
  * Synthesizes a low-frequency, rhythmic heartbeat ambient sound effect
  * using the browser Web Audio API to reinforce the 'alive' dialectic chamber aesthetic.
  */
