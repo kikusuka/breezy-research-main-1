@@ -7,7 +7,7 @@ import { SearchEngineProvider } from '../types';
  */
 
 export interface RoleSeatConfig {
-  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic';
+  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic' | 'ollama' | 'openai-compatible';
   model: string;
 }
 
@@ -20,6 +20,8 @@ export interface CanonicalProviderKeys {
   serper?: string;
   brave?: string;
   anthropic?: string;
+  ollama?: string;
+  openaiCompatible?: string;
   [key: string]: string | undefined;
 }
 
@@ -48,7 +50,7 @@ export const AVAILABLE_MODELS: Record<string, { id: string; name: string; descri
 };
 
 export interface CanonicalWorkspaceConfig {
-  defaultProvider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic';
+  defaultProvider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic' | 'ollama' | 'openai-compatible';
   defaultModel: string;
   preset: 'fast' | 'balanced' | 'deep' | 'custom';
   roles: {
@@ -59,7 +61,7 @@ export interface CanonicalWorkspaceConfig {
   };
   fallback: {
     enabled: boolean;
-    provider: 'gemini';
+    provider: 'gemini' | 'ollama' | 'openai-compatible';
     model: string;
   };
   keys: CanonicalProviderKeys;
@@ -68,6 +70,10 @@ export interface CanonicalWorkspaceConfig {
   selectedRound?: number;
   searchEngine?: SearchEngineProvider;
   researchMethod?: 'adaptive' | 'systematic' | 'evidence-map' | 'comparative';
+  heartbeatEnabled?: boolean;
+  heartbeatIntervalSec?: number;
+  ollamaBaseUrl?: string;
+  openaiCompatibleBaseUrl?: string;
 }
 
 const CANONICAL_STORAGE_KEY = 'breezy_canonical_provider_config';
@@ -141,6 +147,10 @@ export const providerConfigService = {
           selectedRound: typeof parsed.selectedRound === 'number' ? parsed.selectedRound : 2,
           searchEngine: parsed.searchEngine || 'duckduckgo',
           researchMethod: parsed.researchMethod || 'adaptive',
+          heartbeatEnabled: typeof parsed.heartbeatEnabled === 'boolean' ? parsed.heartbeatEnabled : true,
+          heartbeatIntervalSec: typeof parsed.heartbeatIntervalSec === 'number' ? Math.min(300, Math.max(20, parsed.heartbeatIntervalSec)) : 60,
+          ollamaBaseUrl: parsed.ollamaBaseUrl || 'http://localhost:11434',
+          openaiCompatibleBaseUrl: parsed.openaiCompatibleBaseUrl || '',
         };
       }
 
@@ -165,6 +175,10 @@ export const providerConfigService = {
         selectedRound: 2,
         searchEngine: 'duckduckgo',
         researchMethod: 'adaptive',
+        heartbeatEnabled: true,
+        heartbeatIntervalSec: 60,
+        ollamaBaseUrl: 'http://localhost:11434',
+        openaiCompatibleBaseUrl: '',
       };
 
       this.saveConfig(initialConfig);
@@ -182,6 +196,10 @@ export const providerConfigService = {
         selectedRound: 2,
         searchEngine: 'duckduckgo',
         researchMethod: 'adaptive',
+        heartbeatEnabled: true,
+        heartbeatIntervalSec: 60,
+        ollamaBaseUrl: 'http://localhost:11434',
+        openaiCompatibleBaseUrl: '',
       };
     }
   },
