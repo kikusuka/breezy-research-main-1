@@ -113,7 +113,6 @@ export interface ResearchMetrics {
   sourcesConsulted: number;
   primarySourcesCount?: number;
   preferredDomainSourcesCount?: number;
-  synthexisRate?: number | null;
 }
 
 export interface EvidenceGraph {
@@ -143,7 +142,6 @@ export interface DebateSession {
   usage?: DebateUsage;
   metrics?: {
     durationMs: number;
-    synthexisRate: number; // 0 - 100%
     contentionLevel: 'Low' | 'Moderate' | 'High' | 'Severe';
     resolvedPointsCount: number;
   };
