@@ -330,7 +330,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                           ? 'bg-white/10 text-stone-100'
                           : 'text-stone-400 hover:text-stone-200'
                       }`}
-                      title="Deep Mode: Multi-angle synthexis and exhaustive cross-checks"
+                      title="Deep mode: multiple perspectives and independent checks"
                     >
                       Deep
                     </button>
@@ -517,14 +517,14 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               ) : (
                 <div className="text-stone-400 text-xs sm:text-sm flex items-center gap-2">
                   <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
-                  <span>Evaluating assumptions and research topology...</span>
+                  <span>Reviewing assumptions and evidence...</span>
                 </div>
               )}
             </article>
 
             {/* Action Bridge: Integration into other workspaces */}
             {session?.finalOutput && !isDeliberating && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-emerald-500/10 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg my-3">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-500/10 to-sky-500/5 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg my-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-stone-200 shrink-0">
                     <span className="material-symbols-outlined text-[20px]">hub</span>
