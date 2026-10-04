@@ -264,7 +264,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           webhookUrl,
-          payload: { text: 'Breezy Synthexis Webhook Connection Test Successful' },
+          payload: { text: 'Breezy webhook connection test' },
         }),
       });
       const data = await res.json();
@@ -297,8 +297,8 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-stone-900 text-stone-100 shadow-2xl flex items-center gap-3 border border-stone-800 animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md">
           <span className="material-symbols-outlined text-stone-400 text-[20px]">task_alt</span>
           <div className="flex flex-col">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-widest">Workspace_Alert</span>
-            <span className="font-mono text-[11px] text-stone-400 uppercase tracking-tighter">{toastMessage}</span>
+            <span className="text-[11px] font-medium text-stone-300">Settings</span>
+            <span className="text-[11px] text-stone-400">{toastMessage}</span>
           </div>
         </div>
       )}
@@ -310,8 +310,8 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
             <div className="flex items-center gap-2">
               {isSyncing ? (
                 <>
-                  <span className="font-mono text-[9px] uppercase text-stone-100 tracking-[0.2em] bg-stone-800 px-2.5 py-1 rounded font-bold">
-                    ACTIVE_SYNC_PIPELINE
+                  <span className="text-[11px] font-medium text-sky-200 tracking-tight bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
+                    Syncing
                   </span>
                   <span className="relative flex h-2 w-2 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-stone-100 opacity-75"></span>
@@ -320,25 +320,25 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                 </>
               ) : hasIntegrations ? (
                 <>
-                  <span className="font-mono text-[9px] uppercase text-stone-100 tracking-[0.2em] bg-stone-800 px-2.5 py-1 rounded font-bold">
-                    INTEGRATED_WORKSPACE
+                  <span className="text-[11px] font-medium text-sky-200 tracking-tight bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
+                    Connected
                   </span>
                   <span className="flex h-1.5 w-1.5 rounded-full bg-stone-100"></span>
                 </>
               ) : (
                 <>
-                  <span className="font-mono text-[9px] uppercase text-stone-500 tracking-[0.2em] bg-stone-950 px-2.5 py-1 rounded font-bold border border-stone-900">
-                    ISOLATED_WORKSPACE
+                  <span className="text-[11px] font-medium text-stone-500 bg-white/[0.03] px-2.5 py-1 rounded-md border border-white/[0.06]">
+                    Local only
                   </span>
                   <span className="flex h-1.5 w-1.5 rounded-full bg-stone-800"></span>
                 </>
               )}
             </div>
-            <h1 className="font-serif italic text-2xl sm:text-3xl text-stone-100 tracking-tight font-semibold mt-2">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.03em] text-white mt-2">
               System Configuration
             </h1>
-            <p className="text-[11px] text-stone-500 max-w-2xl leading-relaxed uppercase tracking-widest">
-              Manage multi-model routing, credential vaults, and external spec integrations.
+            <p className="text-sm text-stone-400 max-w-2xl leading-relaxed">
+              Connect providers, tune research behavior, and link the services Breezy can use.
             </p>
           </div>
         </div>
@@ -346,18 +346,18 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
         {/* Tab Switcher */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {[
-            { id: 'integrations', label: 'Sync_Pipeline', icon: 'sync_alt' },
-            { id: 'general', label: 'Engine_Logic', icon: 'tune' },
-            { id: 'models', label: 'Key_Vault', icon: 'key' },
-            { id: 'synthexis', label: 'Dispatch_Rules', icon: 'notifications_active' },
+            { id: 'integrations', label: 'Connections', icon: 'link' },
+            { id: 'general', label: 'General', icon: 'tune' },
+            { id: 'models', label: 'Providers', icon: 'key' },
+            { id: 'synthexis', label: 'Research', icon: 'science' },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              className={`px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-stone-100 text-stone-950 shadow-lg'
+                  ? 'bg-sky-400 text-slate-950 shadow-lg shadow-sky-500/10'
                   : 'bg-stone-900/40 text-stone-500 hover:text-stone-200 border border-stone-800/60'
               }`}
             >
