@@ -176,15 +176,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         updatedKeys.openrouter = key.trim() || undefined;
       }
 
+      const currentConfig = providerConfigService.getConfig();
       providerConfigService.saveConfig({
-        defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) && key.trim()) ? provider as any : '' as any,
-        defaultModel: key.trim() ? model.trim() : '',
+        ...currentConfig,
+        defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) && key.trim()) ? provider as any : currentConfig.defaultProvider || '' as any,
+        defaultModel: key.trim() ? model.trim() : currentConfig.defaultModel || '',
         preset,
         roles: roles as any,
-        fallback: { enabled: false, provider: '' as any, model: '' },
         keys: updatedKeys,
-        searchEngine: providerConfigService.getConfig().searchEngine || 'duckduckgo',
-        researchMethod: providerConfigService.getConfig().researchMethod || 'adaptive',
       });
 
       localStorage.setItem('synthexis_byok_keys', JSON.stringify(updatedKeys));
