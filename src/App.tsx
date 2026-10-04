@@ -5,15 +5,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar, ConsoleTab } from './components/console/Sidebar';
-import { TopBar, ProductMode } from './components/console/TopBar';
+import { TopBar } from './components/console/TopBar';
 import { ResearchConversationView } from './components/console/ResearchConversationView';
 import { ResearchNotesView } from './components/console/ResearchNotesView';
 import { ModelsSynthexisView } from './components/console/ModelsSynthexisView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
+import { GuideView } from './components/console/GuideView';
+import { ChatView } from './components/console/ChatView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
-import { BreezySidebar, BreezyTab } from './components/breezy/BreezySidebar';
-import { BreezyWorkspace } from './components/breezy/BreezyWorkspace';
 import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
 import { BreezyCanvasWorkspace } from './components/breezy/BreezyCanvasWorkspace';
 import { ProfileSettingsModal } from './components/console/ProfileSettingsModal';
@@ -41,10 +41,10 @@ export default function App() {
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<ConsoleTab>(() => {
     const hash = window.location.hash.replace('#', '');
-    if (['chat', 'notes', 'models', 'settings', 'landing'].includes(hash)) {
+    if (['landing', 'chat', 'research', 'history', 'notes', 'models', 'docs', 'settings', 'build', 'canvas'].includes(hash)) {
       return hash as ConsoleTab;
     }
-    return 'chat';
+    return 'research';
   });
 
   useEffect(() => {
@@ -56,84 +56,13 @@ export default function App() {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
   const handleToggleSidebar = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setIsMobileMenuOpen((prev) => !prev);
     } else {
       setIsSidebarOpen((prev) => !prev);
-    }
-  };
-  const [productMode, setProductMode] = useState<ProductMode>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const modeParam = params.get('mode');
-    if (modeParam === 'synthexis' || modeParam === 'breezy') {
-      return modeParam;
-    }
-    const hash = window.location.hash.toLowerCase();
-    if (hash.includes('synthexis')) return 'synthexis';
-
-    const saved = localStorage.getItem('breezy_product_mode');
-    if (saved === 'synthexis' || saved === 'breezy') {
-      return saved as ProductMode;
-    }
-    return 'breezy';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('breezy_product_mode', productMode);
-  }, [productMode]);
-
-  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
-  const [breezyTab, setBreezyTab] = useState<BreezyTab>('chat');
-
-  // Breezy chat states
-  const [breezyChats, setBreezyChats] = useState<Record<string, any>>(() => {
-    try {
-      const profile = userProfileService.getProfile();
-      if (profile.autoSaveToDrive) {
-        const raw = localStorage.getItem('breezy:chats');
-        return raw ? JSON.parse(raw) : {};
-      }
-      return {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [breezyActiveId, setBreezyActiveId] = useState<string | null>(null);
-
-  const handleNewBreezyChat = () => {
-    const newId = `chat-${Date.now()}`;
-    const newChat = {
-      id: newId,
-      title: 'New chat',
-      messages: [],
-      createdAt: new Date().toISOString(),
-    };
-    const next = { [newId]: newChat, ...breezyChats };
-    setBreezyChats(next);
-    setBreezyActiveId(newId);
-    
-    const profile = userProfileService.getProfile();
-    if (profile.autoSaveToDrive) {
-      try {
-        localStorage.setItem('breezy:chats', JSON.stringify(next));
-      } catch {}
-    }
-  };
-
-  const handleDeleteBreezyChat = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const next = { ...breezyChats };
-    delete next[id];
-    setBreezyChats(next);
-    try {
-      localStorage.setItem('breezy:chats', JSON.stringify(next));
-    } catch {}
-    if (breezyActiveId === id) {
-      const remaining = Object.keys(next);
-      setBreezyActiveId(remaining.length ? remaining[0] : null);
     }
   };
 
@@ -143,14 +72,11 @@ export default function App() {
     if (profile.autoSaveToDrive) {
       return loadSessions() || [];
     }
-    return [];
+    return loadSessions() || [];
   });
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => loadActiveSessionId() || sessions[0]?.id || null);
-  const [synthexisMode, setSynthexisMode] = useState(true);
 
-  const handleToggleSynthexisMode = () => setSynthexisMode((prev) => !prev);
-
-  const currentSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const currentSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || null;
   const [isDeliberating, setIsDeliberating] = useState(false);
   const [activeRound, setActiveRound] = useState(1);
   const [streamingText, setStreamingText] = useState('');
@@ -162,24 +88,20 @@ export default function App() {
   const [heartbeatState, setHeartbeatState] = useState<any>(null);
 
   useEffect(() => {
-    const profile = userProfileService.getProfile();
-    if (profile.autoSaveToDrive) {
-      saveSessions(sessions);
-    }
+    saveSessions(sessions);
   }, [sessions]);
 
   useEffect(() => {
-    const profile = userProfileService.getProfile();
-    if (profile.autoSaveToDrive && activeSessionId) {
+    if (activeSessionId) {
       saveActiveSessionId(activeSessionId);
     }
   }, [activeSessionId]);
 
-  // Compact Google Docs archive for Synthexis Research. One document is reused rather than creating a file per session.
+  // Google Docs archive sync
   useEffect(() => {
     const profile = userProfileService.getProfile();
     if (!profile.autoSaveToDrive || !currentSession || isDeliberating) return;
-    
+
     const token = authService.getAccessToken();
     if (!token) return;
 
@@ -192,7 +114,7 @@ export default function App() {
         localStorage.setItem(savedKey, '1');
         console.log('Breezy Research Google Docs archive sync complete.');
       } catch (e) {
-        console.warn('Synthexis auto-save failed:', e);
+        console.warn('Auto-save failed:', e);
       }
     }, 10000);
 
@@ -211,15 +133,15 @@ export default function App() {
   };
 
   const handleNewDebate = () => {
-    const fresh = createNewSession('New Inquiry', 'trio', [], 'balanced');
+    const fresh = createNewSession('New Investigation', 'trio', [], 'balanced');
     setSessions((prev) => [fresh, ...prev]);
     setActiveSessionId(fresh.id);
-    setActiveTab('chat');
+    setActiveTab('research');
   };
 
   const handleSelectSession = (id: string) => {
     setActiveSessionId(id);
-    setActiveTab('chat');
+    setActiveTab('research');
   };
 
   const handleDeleteSession = (id: string, e: React.MouseEvent) => {
@@ -250,7 +172,7 @@ export default function App() {
     } catch {}
 
     if (configuredList.length === 0 && !serverGeminiAvailable) {
-      toast('No AI providers configured. Please add an API key in Settings (BYOK) to run deliberations.');
+      toast('No AI providers configured. Please add an API key in Settings (BYOK).');
       setIsProfileSettingsOpen(true);
       return;
     }
@@ -267,13 +189,9 @@ export default function App() {
     setActiveRoundStartedAt(Date.now());
     setLiveUsage(null);
     setHeartbeatState(null);
-    setResearchEvents([
-      !synthexisMode 
-        ? `Starting lightweight single-model query: "${promptText.slice(0, 50)}..."` 
-        : `Starting multi-model synthexis audit: "${promptText.slice(0, 50)}..."`
-    ]);
+    setResearchEvents([`Initiating multi-model research investigation: "${promptText.slice(0, 50)}..."`]);
 
-    const protocol = !synthexisMode ? 'solo' : depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
+    const protocol = depthMode === 'solo' ? 'solo' : depthMode === 'deep' ? 'deep' : currentSession?.protocol || 'trio';
     const tone: DebateTone = 'balanced';
     const searchEngine: SearchEngineProvider = providerConfigService.getConfig().searchEngine || 'duckduckgo';
     const seats = providerConfigService.getSeatsPayload();
@@ -290,6 +208,7 @@ export default function App() {
     newSession.heartbeatIntervalSec = config.heartbeatIntervalSec || 60;
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
+    setActiveTab('research');
 
     try {
       await apiClient.streamDebate(
@@ -383,18 +302,6 @@ export default function App() {
                 if (data.round) next.round = data.round;
                 return next;
               });
-              setSessions((prev) => {
-                const currentId = activeSessionIdRef.current;
-                return prev.map((s) => s.id === currentId ? { ...s, usage: {
-                  ...(s.usage || { inputTokens: 0, outputTokens: 0, totalTokens: 0, reasoningTokens: 0, estimated: false }),
-                  inputTokens: (s.usage?.inputTokens || 0) + (data.usage?.inputTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.inputTokens || 0),
-                  outputTokens: (s.usage?.outputTokens || 0) + (data.usage?.outputTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.outputTokens || 0),
-                  totalTokens: (s.usage?.totalTokens || 0) + (data.usage?.totalTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.totalTokens || 0),
-                  reasoningTokens: (s.usage?.reasoningTokens || 0) + (data.usage?.reasoningTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.reasoningTokens || 0),
-                  estimated: false,
-                  byRound: { ...(s.usage?.byRound || {}), [String(data.round)]: data.usage },
-                } } : s);
-              });
             } else if (data.type === 'heartbeat') {
               setHeartbeatState(data);
               if (data.statusText) setResearchEvents((prev) => [...prev, data.statusText]);
@@ -404,8 +311,15 @@ export default function App() {
                 ...prev,
                 plan.length ? 'Research plan established: ' + plan.slice(0, 3).join(' · ') : 'Research plan established.',
               ]);
+            } else if (data.type === 'search_grounding') {
+              if (data.sources) {
+                setSessions((prev) => {
+                  const currentId = activeSessionIdRef.current;
+                  return prev.map((s) => (s.id === currentId ? { ...s, sources: data.sources } : s));
+                });
+              }
             } else if (data.type === 'complete') {
-              setResearchEvents((prev) => [...prev, "Research complete."]);
+              setResearchEvents((prev) => [...prev, 'Research investigation complete.']);
               setSessions((prev) => {
                 const currentId = activeSessionIdRef.current;
                 return prev.map((s) => {
@@ -423,12 +337,12 @@ export default function App() {
               });
               setIsDeliberating(false);
               setActiveRoundStartedAt(null);
-              setLiveUsage(data.usage || liveUsage);
             } else if (data.type === 'error') {
               const errorMessage = data.message || data.error || 'Research failed on server.';
               setResearchEvents((prev) => [...prev, `Error: ${errorMessage}`]);
               setIsDeliberating(false);
               setActiveRoundStartedAt(null);
+              toast(`Investigation error: ${errorMessage}`);
             }
           },
         }
@@ -438,7 +352,7 @@ export default function App() {
         console.log('Debate cancelled');
       } else {
         console.error('Debate error:', err);
-        const errorMessage = err?.message || 'Research engine failure';
+        const errorMessage = err?.message || 'Research failure';
         setResearchEvents((prev) => [...prev, `Critical Error: ${errorMessage}`]);
         toast(`Engine Error: ${errorMessage}. Check your network or provider keys.`);
       }
@@ -455,7 +369,7 @@ export default function App() {
       .map((step) => `[Round ${step.role}] ${step.content}`)
       .join('\n\n')
       .slice(-16000);
-    const branchedPrompt = `${currentSession.prompt}\n\nUSER STEERING INPUT:\n${instruction.trim()}\n\nCURRENT DEBATE STATE:\n${transcript}\n\nContinue the research with the user's steering input treated as the newest instruction. Preserve the original scope unless the user explicitly changed it.`;
+    const branchedPrompt = `${currentSession.prompt}\n\nUSER STEERING INPUT:\n${instruction.trim()}\n\nCURRENT DEBATE STATE:\n${transcript}\n\nContinue the research with the user's steering input treated as the newest instruction.`;
     toast('Steering the research into a new branch…');
     startDebate(branchedPrompt, currentSession.protocol === 'solo' ? 'solo' : 'deep');
   };
@@ -469,106 +383,12 @@ export default function App() {
       finalOutput: currentSession.finalOutput,
       metrics: currentSession.metrics,
     });
+    toast('Transcript exported as Markdown.');
   };
-
-  if (productMode === 'breezy') {
-    return (
-      <div className={`flex min-h-screen font-sans antialiased overflow-x-hidden bg-[#090d16] text-slate-100`}>
-        <BreezySidebar
-          activeTab={breezyTab}
-          onSelectTab={setBreezyTab}
-          chats={breezyChats}
-          activeId={breezyActiveId}
-          onSelectChat={setBreezyActiveId}
-          onNewChat={handleNewBreezyChat}
-          onDeleteChat={handleDeleteBreezyChat}
-          onOpenProfile={() => setIsProfileSettingsOpen(true)}
-          onSwitchToSynthexis={() => setProductMode('synthexis')}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          isOpenMobile={isMobileMenuOpen}
-          onCloseMobile={() => setIsMobileMenuOpen(false)}
-        />
-
-        <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
-          <TopBar
-            productMode={productMode}
-            onSelectProductMode={setProductMode}
-            onOpenSearch={() => setIsCommandPaletteOpen(true)}
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={handleToggleSidebar}
-            onToggleMobileMenu={handleToggleSidebar}
-          />
-
-          <main className="relative pt-16 flex-1 flex flex-col min-h-0">
-            {breezyTab === 'chat' && (
-              <BreezyWorkspace
-                onOpenSettings={() => setIsProfileSettingsOpen(true)}
-                toast={toast}
-                chats={breezyChats}
-                activeId={breezyActiveId}
-                onSelectChat={setBreezyActiveId}
-                onUpdateChats={(next) => {
-                  setBreezyChats(next);
-                  const profile = userProfileService.getProfile();
-                  if (profile.autoSaveToDrive) {
-                    try {
-                      localStorage.setItem('breezy:chats', JSON.stringify(next));
-                    } catch {}
-                  }
-                }}
-                onNewChat={handleNewBreezyChat}
-                onSwitchToSynthexis={() => {
-                  setProductMode('synthexis');
-                  toast('Switched to Breezy Research.');
-                }}
-                isSidebarOpen={isSidebarOpen}
-              />
-            )}
-
-            {breezyTab === 'ide' && (
-              <BreezyIdeWorkspace
-                onOpenSettings={() => setIsProfileSettingsOpen(true)}
-              />
-            )}
-
-            {breezyTab === 'canvas' && (
-              <BreezyCanvasWorkspace
-                onOpenSettings={() => setIsProfileSettingsOpen(true)}
-              />
-            )}
-          </main>
-        </div>
-
-        <CommandPaletteModal
-          isOpen={isCommandPaletteOpen}
-          onClose={() => setIsCommandPaletteOpen(false)}
-          onSelectTab={setActiveTab}
-          sessions={sessions}
-          onSelectSession={handleSelectSession}
-          onNewSession={handleNewDebate}
-          onSelectProductMode={setProductMode}
-        />
-
-        {appToast && (
-          <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-            <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
-            <span>{appToast}</span>
-          </div>
-        )}
-
-        <ProfileSettingsModal
-          isOpen={isProfileSettingsOpen}
-          onClose={() => setIsProfileSettingsOpen(false)}
-          keys={keys}
-          onSaveKeys={handleSaveKeys}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="bg-surface font-sans text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
+      {/* Stitch Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -576,112 +396,117 @@ export default function App() {
         activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewDebate}
-        synthexisMode={synthexisMode}
-        onToggleSynthexisMode={handleToggleSynthexisMode}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
         onDeleteSession={handleDeleteSession}
-        onSwitchToBreezy={() => setProductMode('breezy')}
+        onOpenGuide={() => setActiveTab('docs')}
       />
 
+      {/* Main Content Layout with Fixed TopBar */}
       <div className={`flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
         <TopBar
-          productMode={productMode}
-          onSelectProductMode={setProductMode}
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={handleToggleSidebar}
           onToggleMobileMenu={handleToggleSidebar}
+          isDeliberating={isDeliberating}
+          onOpenProfile={() => setIsProfileSettingsOpen(true)}
+          onOpenSettings={() => setActiveTab('settings')}
         />
 
-        <main className="relative pt-16 bg-[#07111f] min-h-screen flex-1 flex flex-col">
-          {activeTab === 'chat' && (
-            currentSession ? (
-              <ResearchConversationView
-                session={currentSession}
-                isDeliberating={isDeliberating}
-                activeRound={activeRound}
-                streamingRoundText={streamingText}
-                streamingRole={streamingRole}
-                activeRoundStartedAt={activeRoundStartedAt}
-                liveUsage={liveUsage}
-                heartbeatState={heartbeatState}
-                onStartDebate={startDebate}
-                onSteer={handleSteerCurrentResearch}
-                researchEvents={researchEvents}
-                onSaveNote={(title, content) => {
-                  const newNoteSession = createNewSession(title, currentSession.protocol as any, [], currentSession.tone);
-                  newNoteSession.finalOutput = content;
-                  setSessions((prev) => {
-                    const next = [newNoteSession, ...prev];
-                    saveSessions(next);
-                    return next;
-                  });
-                  toast('Note saved to research archive.');
-                }}
-                onExportMarkdown={handleExportMarkdown}
-                keys={keys}
-                onOpenNotes={() => setActiveTab('notes')}
-                onOpenInBreezy={(s) => {
-                  handleNewBreezyChat();
-                  setProductMode('breezy');
-                  setBreezyTab('chat');
-                  toast('Transferred session to Breezy AI.');
-                }}
-                onOpenInIde={(s) => {
-                  const codeMatch = s.finalOutput?.match(/```(?:python|javascript|typescript|html|bash|json)?\n([\s\S]*?)```/);
-                  const codeContent = codeMatch
-                    ? codeMatch[1]
-                    : `# Research Output\n# Topic: ${s.prompt}\n\n"""\n${s.finalOutput?.slice(0, 600) || ''}\n"""\n`;
-                  localStorage.setItem('breezy_ide_active_code', codeContent);
-                  setProductMode('breezy');
-                  setBreezyTab('ide');
-                }}
-                onPinToCanvas={(s) => {
-                  const newCard = {
-                    id: `card-${Date.now()}`,
-                    type: 'research',
-                    title: s.prompt.slice(0, 60),
-                    content: s.finalOutput?.slice(0, 400) || s.prompt,
-                    color: 'violet',
-                    tags: ['Synthexis', s.protocol || 'Research'],
-                    createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                  };
-                  try {
-                    const raw = localStorage.getItem('breezy:canvas:cards');
-                    const existing = raw ? JSON.parse(raw) : [];
-                    localStorage.setItem('breezy:canvas:cards', JSON.stringify([newCard, ...existing]));
-                  } catch {}
-                  setProductMode('breezy');
-                  setBreezyTab('canvas');
-                  toast('Pinned research findings to Breezy Canvas.');
-                }}
-              />
-            ) : (
-              <LandingPageView
-                onLaunchWorkspace={(query, depth) => {
-                  if (query) {
-                    startDebate(query, depth);
-                  }
-                  setActiveTab('chat');
-                }}
-                onOpenNotes={() => setActiveTab('notes')}
-                onOpenModels={() => setActiveTab('models')}
-              />
-            )
+        <main className="relative pt-16 bg-surface min-h-screen flex-1 flex flex-col pb-16 lg:pb-0">
+          {activeTab === 'landing' && (
+            <LandingPageView
+              onLaunchWorkspace={(query, depth) => {
+                if (query) {
+                  startDebate(query, depth);
+                } else {
+                  setActiveTab('research');
+                }
+              }}
+              onOpenNotes={() => setActiveTab('history')}
+              onOpenModels={() => setActiveTab('models')}
+              onOpenDocs={() => setActiveTab('docs')}
+            />
           )}
 
-          {activeTab === 'notes' && (
+          {activeTab === 'chat' && (
+            <ChatView
+              onOpenHistory={() => setActiveTab('history')}
+              onOpenSettings={() => setActiveTab('settings')}
+              onStartDeepResearch={(query) => {
+                startDebate(query);
+                setActiveTab('research');
+              }}
+            />
+          )}
+
+          {activeTab === 'research' && (
+            <ResearchConversationView
+              session={currentSession}
+              isDeliberating={isDeliberating}
+              activeRound={activeRound}
+              streamingRoundText={streamingText}
+              streamingRole={streamingRole}
+              activeRoundStartedAt={activeRoundStartedAt}
+              liveUsage={liveUsage}
+              heartbeatState={heartbeatState}
+              onStartDebate={startDebate}
+              onSteer={handleSteerCurrentResearch}
+              researchEvents={researchEvents}
+              onSaveNote={(title, content) => {
+                const newNoteSession = createNewSession(title, currentSession?.protocol as any || 'trio', [], currentSession?.tone || 'balanced');
+                newNoteSession.finalOutput = content;
+                setSessions((prev) => {
+                  const next = [newNoteSession, ...prev];
+                  saveSessions(next);
+                  return next;
+                });
+                toast('Note saved to research archive.');
+              }}
+              onExportMarkdown={handleExportMarkdown}
+              keys={keys}
+              onOpenNotes={() => setActiveTab('history')}
+              onOpenInIde={(s) => {
+                const codeMatch = s.finalOutput?.match(/```(?:python|javascript|typescript|html|bash|json)?\n([\s\S]*?)```/);
+                const codeContent = codeMatch
+                  ? codeMatch[1]
+                  : `# Research Output\n# Topic: ${s.prompt}\n\n"""\n${s.finalOutput?.slice(0, 600) || ''}\n"""\n`;
+                localStorage.setItem('breezy_ide_active_code', codeContent);
+                setActiveTab('build');
+              }}
+              onPinToCanvas={(s) => {
+                const newCard = {
+                  id: `card-${Date.now()}`,
+                  type: 'research',
+                  title: s.prompt.slice(0, 60),
+                  content: s.finalOutput?.slice(0, 400) || s.prompt,
+                  color: 'cyan',
+                  tags: ['Breezy', s.protocol || 'Research'],
+                  createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                };
+                try {
+                  const raw = localStorage.getItem('breezy:canvas:cards');
+                  const existing = raw ? JSON.parse(raw) : [];
+                  localStorage.setItem('breezy:canvas:cards', JSON.stringify([newCard, ...existing]));
+                } catch {}
+                setActiveTab('canvas');
+                toast('Pinned research findings to Canvas.');
+              }}
+            />
+          )}
+
+          {(activeTab === 'history' || activeTab === 'notes') && (
             <ResearchNotesView
               sessions={sessions}
               onSelectNotePrompt={(prompt) => {
                 if (prompt) {
                   startDebate(prompt);
                 }
-                setActiveTab('chat');
+                setActiveTab('research');
               }}
               onSync={() => {
                 const refreshed = loadSessions();
@@ -693,6 +518,8 @@ export default function App() {
           {activeTab === 'models' && (
             <ModelsSynthexisView onOpenSettings={() => setActiveTab('settings')} />
           )}
+
+          {activeTab === 'docs' && <GuideView />}
 
           {activeTab === 'settings' && (
             <WorkspaceSettingsView
@@ -717,20 +544,45 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'landing' && (
-            <LandingPageView
-              onLaunchWorkspace={(query, depth) => {
-                if (query) {
-                  startDebate(query, depth);
-                }
-                setActiveTab('chat');
-              }}
-              onOpenNotes={() => setActiveTab('notes')}
-              onOpenModels={() => setActiveTab('models')}
-            />
+          {activeTab === 'build' && (
+            <BreezyIdeWorkspace onOpenSettings={() => setIsProfileSettingsOpen(true)} />
+          )}
+
+          {activeTab === 'canvas' && (
+            <BreezyCanvasWorkspace onOpenSettings={() => setIsProfileSettingsOpen(true)} />
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Tab Navigation */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="fixed bottom-0 inset-x-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-t border-outline-variant/30 flex justify-around items-center h-16 lg:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.35)]"
+      >
+        {[
+          { id: 'chat' as const, label: 'Chat', icon: 'chat_bubble' },
+          { id: 'research' as const, label: 'Research', icon: 'psychology' },
+          { id: 'history' as const, label: 'History', icon: 'history' },
+          { id: 'models' as const, label: 'Models', icon: 'hub' },
+          { id: 'docs' as const, label: 'Docs', icon: 'menu_book' },
+          { id: 'settings' as const, label: 'Settings', icon: 'settings' },
+        ].map((item) => {
+          const active = activeTab === item.id || (item.id === 'history' && activeTab === 'notes');
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center justify-center min-w-[48px] h-12 rounded-lg transition-colors gap-0.5 ${
+                active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+              <span className="font-sans text-[11px] font-medium tracking-tight">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       <CommandPaletteModal
         isOpen={isCommandPaletteOpen}
@@ -739,7 +591,6 @@ export default function App() {
         sessions={sessions}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewDebate}
-        onSelectProductMode={setProductMode}
       />
 
       <ProfileSettingsModal
@@ -750,8 +601,8 @@ export default function App() {
       />
 
       {appToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#1e1e2d] text-stone-100 px-4 py-2.5 rounded-xl border border-white/10 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
+        <div className="fixed bottom-20 lg:bottom-6 right-6 z-50 bg-surface-container-high border border-outline-variant/40 text-on-surface px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
           <span>{appToast}</span>
         </div>
       )}

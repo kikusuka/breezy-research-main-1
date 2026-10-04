@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ProviderKeyConfig } from '../../types';
-import { authService, AuthUser, isFirebaseConfigured } from '../../services/authService';
+import { authService, AuthUser } from '../../services/authService';
 import { workspaceService, GoogleDriveFile, GmailMessage, CalendarEvent } from '../../services/workspaceService';
-import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
+import { gitHubService, GitHubRepository } from '../../services/gitHubService';
 import { providerConfigService } from '../../services/providerConfigService';
-
-const getSpeedEstimate = (rounds: number): string => {
-  if (rounds <= 1) return 'Fastest';
-  if (rounds === 2) return 'Balanced';
-  return 'Most thorough';
-};
+import { userProfileService, UserProfile } from '../../services/userProfileService';
 
 interface WorkspaceSettingsViewProps {
   keys: ProviderKeyConfig;
@@ -17,1116 +12,750 @@ interface WorkspaceSettingsViewProps {
   onConnectWorkspace: (scopeType: string) => Promise<void>;
 }
 
-export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ keys, onSaveKeys, onConnectWorkspace }) => {
+export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
+  keys,
+  onSaveKeys,
+  onConnectWorkspace,
+}) => {
   const canonical = providerConfigService.getConfig();
-  const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthexis' | 'integrations' | 'team' | 'billing'>('integrations');
-  const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
-  const [autoResolve, setAutoResolve] = useState<boolean>(canonical.autoResolve ?? true);
-  const [agreementThreshold, setAgreementThreshold] = useState<number>(canonical.agreementThreshold ?? 78);
-  const [webhookActive, setWebhookActive] = useState<boolean>(() => {
-    const saved = localStorage.getItem('breezy_webhook_active');
-    return saved !== null ? saved === 'true' : false;
-  });
-  const [webhookUrl, setWebhookUrl] = useState<string>(() => {
-    return localStorage.getItem('breezy_webhook_url') || '';
-  });
-  const [showToast, setShowToast] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string>('Settings updated: Configuration saved.');
+  const [activeTab, setActiveTab] = useState<'general' | 'synthesis' | 'privacy' | 'storage' | 'shortcuts' | 'integrations' | 'profile'>('general');
 
-  // Role routing & presets
-  const [preset, setPreset] = useState<'fast' | 'balanced' | 'deep' | 'custom'>(canonical.preset || 'balanced');
-  const [autoSaveToDrive, setAutoSaveToDrive] = useState<boolean>(() => {
-    return localStorage.getItem('breezy_auto_save_drive') === 'true';
-  });
-  const [roles, setRoles] = useState(canonical.roles || {
-    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
-    skeptic: { provider: 'gemini', model: 'gemini-2.5-flash' },
-    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
-  });
+  // General settings
+  const [workspaceName, setWorkspaceName] = useState(() => localStorage.getItem('breezy_workspace_name') || 'Aris Analytical Lab / Macro-Risk');
+  const [defaultCanvas, setDefaultCanvas] = useState<'chat' | 'research'>(() => (localStorage.getItem('breezy_default_canvas') as any) || 'research');
+  const [executionAlerts, setExecutionAlerts] = useState(true);
+  const [sourceConflicts, setSourceConflicts] = useState(true);
 
-  // Key inputs
-  const [geminiKey, setGeminiKey] = useState(keys.gemini || '');
-  const [groqKey, setGroqKey] = useState(keys.groq || '');
-  const [sambanovaKey, setSambanovaKey] = useState(keys.sambanova || '');
-  const [openrouterKey, setOpenrouterKey] = useState(keys.openrouter || '');
-  const [isDirty, setIsDirty] = useState<boolean>(false);
+  // Synthesis engine settings
+  const [reasoningDepth, setReasoningDepth] = useState<number>(() => {
+    return canonical.selectedRound ? Math.min(5, Math.max(1, canonical.selectedRound)) : 4;
+  });
+  const [autoGrounding, setAutoGrounding] = useState<boolean>(true);
+  const [adversarialRounds, setAdversarialRounds] = useState<number>(canonical.selectedRound || 2);
+  const [quoteInspection, setQuoteInspection] = useState<boolean>(true);
 
-  // Integration States (Google)
+  // Privacy settings
+  const [zeroRetention, setZeroRetention] = useState<boolean>(true);
+  const [keychainIntegration, setKeychainIntegration] = useState<boolean>(true);
+  const [telemetryDisabled, setTelemetryDisabled] = useState<boolean>(true);
+
+  // Profile state
+  const [profile, setProfile] = useState<UserProfile>(() => userProfileService.getProfile());
+  const [displayName, setDisplayName] = useState(profile.displayName || 'Dr. Aris Vance');
+  const [roleTitle, setRoleTitle] = useState(profile.roleTitle || 'Lead Analyst');
+  const [email, setEmail] = useState(profile.email || 'aris.vance@breezy-intel.io');
+
+  // Integrations state
   const [googleUser, setGoogleUser] = useState<AuthUser | null>(null);
   const [googleToken, setGoogleToken] = useState<string | null>(null);
-  const [googleSubTab, setGoogleSubTab] = useState<'drive' | 'gmail' | 'calendar'>('drive');
-  const [driveFiles, setDriveFiles] = useState<GoogleDriveFile[]>([]);
-  const [gmailMsgs, setGmailMessages] = useState<GmailMessage[]>([]);
-  const [calEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
-
-  // Integration States (GitHub)
-  const [githubToken, setGithubToken] = useState<string>(
-    () => localStorage.getItem('breezy_github_token') || localStorage.getItem('synthexis_github_token') || ''
-  );
-  const [githubAuthMode, setGithubAuthMode] = useState<'none' | 'pat' | 'oauth'>(() => {
-    const token = localStorage.getItem('breezy_github_token') || localStorage.getItem('synthexis_github_token') || '';
-    if (!token) return 'none';
-    return (localStorage.getItem('breezy_github_auth_mode') as any) || 'pat';
-  });
+  const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('breezy_github_token') || '');
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState<string>('');
-  const [repoContents, setRepoContents] = useState<GitHubContent[]>([]);
-  const [isLoadingGithub, setIsLoadingGithub] = useState<boolean>(false);
+  const [isLoadingGithub, setIsLoadingGithub] = useState(false);
 
-  // Load auth state
+  // Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   useEffect(() => {
-    const unsubscribe = authService.onAuthChange((user, token) => {
+    const unsub = authService.onAuthChange((user, token) => {
       setGoogleUser(user);
       setGoogleToken(token);
-      if (token) {
-        loadGoogleData(token);
-      }
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // Fetch Google data when tab changes or connected
-  const loadGoogleData = async (token: string) => {
-    setIsLoadingGoogle(true);
-    try {
-      const files = await workspaceService.listDriveFiles(token);
-      setDriveFiles(files);
-      const emails = await workspaceService.listGmailMessages(token);
-      setGmailMessages(emails);
-      const events = await workspaceService.listCalendarEvents(token);
-      setCalendarEvents(events);
-    } catch (e) {
-      console.error('Failed to load Google data', e);
-    } finally {
-      setIsLoadingGoogle(false);
-    }
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // GitHub loader
-  useEffect(() => {
-    if (githubAuthMode !== 'none' && githubToken) {
-      loadGithubRepos(githubToken);
-    }
-  }, [githubAuthMode, githubToken]);
+  const handleCommitChanges = () => {
+    localStorage.setItem('breezy_workspace_name', workspaceName);
+    localStorage.setItem('breezy_default_canvas', defaultCanvas);
 
-  const loadGithubRepos = async (token: string) => {
-    setIsLoadingGithub(true);
-    try {
-      const repos = await gitHubService.listRepositories(token);
-      setGithubRepos(repos);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoadingGithub(false);
-    }
-  };
+    const nextConfig = { ...canonical };
+    nextConfig.selectedRound = adversarialRounds;
+    providerConfigService.saveConfig(nextConfig);
 
-  const handleConnectGoogle = async () => {
-    try {
-      const res = await authService.signInWithGoogle();
-      if (res) {
-        setGoogleUser(res.user);
-        setGoogleToken(res.accessToken);
-        loadGoogleData(res.accessToken);
-        setToastMessage('Google Workspace integrated successfully.');
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      }
-    } catch (err: any) {
-      alert(`Google Connection Failed: ${err.message}`);
-    }
-  };
-
-  const handleDisconnectGoogle = async () => {
-    await authService.signOut();
-    setGoogleUser(null);
-    setGoogleToken(null);
-    setDriveFiles([]);
-    setGmailMessages([]);
-    setCalendarEvents([]);
-    setToastMessage('Google Workspace disconnected.');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
-
-  const handleConnectGithub = () => {
-    if (!githubToken.trim()) return;
-    localStorage.setItem('synthexis_github_token', githubToken.trim());
-    localStorage.setItem('breezy_github_auth_mode', 'pat');
-    setGithubAuthMode('pat');
-    setToastMessage('GitHub Personal Access Token registered.');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
-
-  const handleDisconnectGithub = () => {
-    localStorage.removeItem('synthexis_github_token');
-    localStorage.removeItem('breezy_github_auth_mode');
-    setGithubToken('');
-    setGithubAuthMode('none');
-    setGithubRepos([]);
-    setSelectedRepo('');
-    setRepoContents([]);
-    setToastMessage('GitHub connection cleared.');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
-
-  const handleGithubOAuthPopup = async () => {
-    try {
-      const res = await authService.signInWithGithub();
-      if (res) {
-        setGithubToken(res.accessToken);
-        localStorage.setItem('synthexis_github_token', res.accessToken);
-        localStorage.setItem('breezy_github_auth_mode', 'oauth');
-        setGithubAuthMode('oauth');
-        setToastMessage('GitHub OAuth Authorized Successfully!');
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      }
-    } catch (err: any) {
-      alert(`GitHub OAuth connection issue: ${err.message}. You can also enter a Personal Access Token below.`);
-    }
-  };
-
-  const handleSelectRepo = async (repoFullName: string) => {
-    setSelectedRepo(repoFullName);
-    if (!repoFullName) {
-      setRepoContents([]);
-      return;
-    }
-    setIsLoadingGithub(true);
-    try {
-      const contents = await gitHubService.listRepoContents(githubToken, repoFullName);
-      setRepoContents(contents);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoadingGithub(false);
-    }
-  };
-
-  const handleSave = () => {
-    onSaveKeys({
-      ...keys,
-      gemini: geminiKey.trim() || undefined,
-      groq: groqKey.trim() || undefined,
-      sambanova: sambanovaKey.trim() || undefined,
-      openrouter: openrouterKey.trim() || undefined,
+    userProfileService.saveProfile({
+      displayName,
+      roleTitle,
+      email,
     });
 
-    const currentConfig = providerConfigService.getConfig();
-    providerConfigService.saveConfig({
-      ...currentConfig,
-      preset,
-      roles,
-      agreementThreshold,
-      autoResolve,
-      selectedRound,
-    });
-
-    localStorage.setItem('breezy_webhook_url', webhookUrl.trim());
-    localStorage.setItem('breezy_webhook_active', String(webhookActive));
-    localStorage.setItem('breezy_auto_save_drive', String(autoSaveToDrive));
-    setIsDirty(false);
-    setToastMessage('Settings updated: Configuration saved.');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    showToast('All configuration nodes committed securely.');
   };
 
-  const handleDiscard = () => {
-    setGeminiKey(keys.gemini || '');
-    setGroqKey(keys.groq || '');
-    setSambanovaKey(keys.sambanova || '');
-    setOpenrouterKey(keys.openrouter || '');
-
-    const current = providerConfigService.getConfig();
-    setPreset(current.preset || 'balanced');
-    setRoles(current.roles);
-    setAgreementThreshold(current.agreementThreshold ?? 78);
-    setAutoResolve(current.autoResolve ?? true);
-    setSelectedRound(current.selectedRound ?? 2);
-
-    setIsDirty(false);
+  const handleResetDefaults = () => {
+    setWorkspaceName('Aris Analytical Lab / Macro-Risk');
+    setDefaultCanvas('research');
+    setReasoningDepth(4);
+    setAdversarialRounds(2);
+    showToast('Settings reset to system defaults.');
   };
 
-  const testWebhook = async () => {
-    if (!webhookUrl || !webhookUrl.startsWith('http')) {
-      setToastMessage('Enter a valid webhook HTTP(S) URL to test dispatch');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      return;
-    }
-    setToastMessage('Dispatching webhook test payload via backend...');
-    setShowToast(true);
-    try {
-      const res = await fetch('/api/webhook/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          webhookUrl,
-          payload: { text: 'Breezy webhook connection test' },
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setToastMessage(`Webhook payload accepted (HTTP ${data.status})`);
-      } else {
-        setToastMessage(`Webhook dispatch rejected: ${data.error || 'HTTP ' + data.status}`);
-      }
-    } catch (err: any) {
-      setToastMessage(`Webhook test failed: ${err.message || 'Connection error'}`);
-    }
-    setTimeout(() => setShowToast(false), 3500);
-  };
-
-  const getSpeedEstimate = (rounds: number) => {
-    const activeRoles = Object.values(roles);
-    if (activeRoles.length === 0) return `~${rounds * 2}s`;
-    const avgSeconds = activeRoles.reduce((sum, r) => {
-      if (r.provider === 'anthropic' || (r.model && r.model.includes('sonnet'))) return sum + 4.5;
-      if (r.provider === 'groq') return sum + 1.2;
-      return sum + 2.0;
-    }, 0) / activeRoles.length;
-    const totalEst = Math.max(1, Math.round(avgSeconds * rounds));
-    return `~${totalEst}s`;
-  };
-
-  const roundLabels: Record<number, string> = {
-    1: `1 Round • Fast (${getSpeedEstimate(1)})`,
-    2: `2 Rounds • Balanced (${getSpeedEstimate(2)})`,
-    4: `4 Rounds • Deep Audit (${getSpeedEstimate(4)})`,
-  };
-
-  const isGoogleConnected = Boolean(googleUser && googleToken);
-  const isGithubConnected = Boolean(githubToken && githubAuthMode !== 'none');
-  const hasIntegrations = isGoogleConnected || isGithubConnected;
-  const isSyncing = isLoadingGoogle || isLoadingGithub;
+  const depthNames = [
+    'Fast Surface Scan (Tier 1)',
+    'Basic Literature (Tier 2)',
+    'Standard Synthesis (Tier 3)',
+    'Exhaustive (Tier 4)',
+    'Autonomous Deep Audit (Tier 5)',
+  ];
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-4rem)] pb-24 text-stone-200">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-24 right-8 z-50 p-4 rounded-xl bg-stone-900 text-stone-100 shadow-2xl flex items-center gap-3 border border-stone-800 animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md">
-          <span className="material-symbols-outlined text-stone-400 text-[20px]">task_alt</span>
-          <div className="flex flex-col">
-            <span className="text-[11px] font-medium text-stone-300">Settings</span>
-            <span className="text-[11px] text-stone-400">{toastMessage}</span>
-          </div>
-        </div>
-      )}
+    <div className="relative w-full flex-1 flex flex-col bg-surface font-sans text-on-surface p-space-md sm:p-space-lg pb-24 max-w-7xl mx-auto">
+      {/* Subtle Ambient Radial Lighting */}
+      <div className="pointer-events-none absolute -top-12 left-1/4 w-[640px] h-[360px] bg-primary/10 rounded-full blur-[128px] -z-10" />
 
-      <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-8 flex flex-col gap-8">
-        {/* Header Strip */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-stone-800/40">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              {isSyncing ? (
-                <>
-                  <span className="text-[11px] font-medium text-sky-200 tracking-tight bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
-                    Syncing
-                  </span>
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-stone-100 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-stone-50"></span>
-                  </span>
-                </>
-              ) : hasIntegrations ? (
-                <>
-                  <span className="text-[11px] font-medium text-sky-200 tracking-tight bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
-                    Connected
-                  </span>
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-stone-100"></span>
-                </>
-              ) : (
-                <>
-                  <span className="text-[11px] font-medium text-stone-500 bg-white/[0.03] px-2.5 py-1 rounded-md border border-white/[0.06]">
-                    Local only
-                  </span>
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-stone-800"></span>
-                </>
-              )}
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.03em] text-white mt-2">
-              System Configuration
-            </h1>
-            <p className="text-sm text-stone-400 max-w-2xl leading-relaxed">
-              Connect providers, tune research behavior, and link the services Breezy can use.
-            </p>
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md pt-space-xs pb-space-lg">
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center gap-space-sm text-outline font-mono text-code-sm uppercase tracking-wider">
+            <span>Preferences</span>
+            <span className="text-outline-variant">/</span>
+            <span className="text-primary font-medium">Breezy Control Plane</span>
           </div>
+          <h1 className="font-headline font-bold text-headline-xl text-on-surface tracking-tight">
+            System Configuration
+          </h1>
+          <p className="font-sans text-body-md text-on-surface-variant max-w-2xl">
+            Configure runtime synthesis parameters, data boundaries, storage cache, and identity
+            safeguards for local and distributed investigations.
+          </p>
         </div>
+        <div className="flex items-center gap-space-sm self-start md:self-auto">
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            className="px-space-md py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-sans text-label-md"
+          >
+            Reset defaults
+          </button>
+          <button
+            type="button"
+            onClick={handleCommitChanges}
+            className="flex items-center gap-space-xs px-space-lg py-2 rounded-xl bg-primary text-on-primary font-headline font-semibold text-headline-sm hover:bg-secondary transition-all shadow-[0_0_14px_rgba(76,214,251,0.25)]"
+          >
+            <span className="material-symbols-outlined text-[18px]">check</span>
+            <span>Commit changes</span>
+          </button>
+        </div>
+      </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+        {/* Navigation Sidebar */}
+        <aside className="lg:col-span-3 flex lg:flex-col gap-space-xs overflow-x-auto lg:overflow-visible pb-space-xs lg:pb-0 sticky top-20 z-30">
           {[
-            { id: 'integrations', label: 'Connections', icon: 'link' },
-            { id: 'general', label: 'General', icon: 'tune' },
-            { id: 'models', label: 'Providers', icon: 'key' },
-            { id: 'synthexis', label: 'Research', icon: 'science' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-sky-400 text-slate-950 shadow-lg shadow-sky-500/10'
-                  : 'bg-stone-900/40 text-stone-500 hover:text-stone-200 border border-stone-800/60'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[15px]">{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
+            { id: 'general' as const, label: 'General', icon: 'tune' },
+            { id: 'synthesis' as const, label: 'Research & Synthesis', icon: 'psychology', badge: 'v2' },
+            { id: 'privacy' as const, label: 'Data & Privacy', icon: 'shield', iconBadge: 'lock' },
+            { id: 'storage' as const, label: 'API Keys & Storage', icon: 'database' },
+            { id: 'shortcuts' as const, label: 'Shortcuts', icon: 'keyboard', badge: '⌘/' },
+            { id: 'integrations' as const, label: 'Integrations', icon: 'hub' },
+            { id: 'profile' as const, label: 'Profile', icon: 'person' },
+          ].map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center justify-between gap-space-md px-space-md py-2 rounded-xl text-left transition-all font-sans text-body-md border ${
+                  active
+                    ? 'bg-surface-container-high text-primary font-medium shadow-sm border-primary/30'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-space-sm min-w-0">
+                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                  <span className="truncate">{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span className="font-mono text-code-sm text-tertiary px-1 rounded bg-tertiary/10">
+                    {item.badge}
+                  </span>
+                )}
+                {item.iconBadge && (
+                  <span className="material-symbols-outlined text-[16px] text-tertiary">
+                    {item.iconBadge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
 
-        {/* Workspace Sync Tab Content */}
-        {activeTab === 'integrations' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {!isFirebaseConfigured && (
-              <div className="col-span-1 lg:col-span-12 p-4 rounded-xl bg-amber-950/40 border border-amber-500/20 text-amber-200 text-xs flex items-start gap-3">
-                <span className="material-symbols-outlined text-amber-400 text-[18px]">warning</span>
-                <div className="flex flex-col gap-1">
-                  <span className="font-semibold text-amber-100">Firebase OAuth Flow Unconfigured</span>
-                  <span>Google Workspace & GitHub sync require active Firebase credentials. Provide VITE_FIREBASE_* environment variables to enable active auth flows. The application will safely fall back to unconfigured, local-only sandbox state.</span>
+          <div className="hidden lg:flex flex-col mt-space-lg p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+            <div className="flex items-center justify-between mb-space-xs font-mono text-code-sm">
+              <span className="uppercase text-outline">Runtime Node</span>
+              <span className="text-tertiary font-medium">Connected</span>
+            </div>
+            <p className="font-mono text-code-sm text-on-surface">node-04-eu-central</p>
+            <div className="mt-space-sm flex items-center gap-space-xs font-mono text-code-sm">
+              <div className="h-1 flex-1 rounded bg-surface-container-highest overflow-hidden">
+                <div className="w-1/3 h-full bg-primary" />
+              </div>
+              <span className="text-on-surface-variant">32% memory</span>
+            </div>
+          </div>
+        </aside>
+
+        {/* Content Panels */}
+        <main className="lg:col-span-9 flex flex-col gap-space-lg min-w-0">
+          {/* General Section */}
+          {activeTab === 'general' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    General Environment
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Workspace namespace, landing defaults, and notification routing.
+                  </p>
+                </div>
+                <span className="font-mono text-code-sm px-space-xs py-0.5 rounded bg-surface-container-high text-primary border border-primary/20">
+                  ENV_PROD
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+                <div className="flex flex-col gap-space-xs">
+                  <label className="font-sans text-label-md text-on-surface font-medium" htmlFor="wsName">
+                    Workspace Identifier
+                  </label>
+                  <input
+                    id="wsName"
+                    type="text"
+                    value={workspaceName}
+                    onChange={(e) => setWorkspaceName(e.target.value)}
+                    className="w-full px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
+                  />
+                  <span className="font-sans text-label-sm text-outline">
+                    Shared across collaborative synthesis threads and export schemas.
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-space-xs">
+                  <label className="font-sans text-label-md text-on-surface font-medium">
+                    Default Landing Canvas
+                  </label>
+                  <div className="grid grid-cols-2 gap-space-xs p-1 rounded-xl bg-surface-container border border-outline-variant/30">
+                    <button
+                      type="button"
+                      onClick={() => setDefaultCanvas('chat')}
+                      className={`py-1.5 px-space-sm rounded-lg font-sans text-label-md transition-all flex items-center justify-center gap-space-xs ${
+                        defaultCanvas === 'chat'
+                          ? 'bg-primary text-on-primary font-semibold shadow-sm'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
+                      <span>Direct Chat</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDefaultCanvas('research')}
+                      className={`py-1.5 px-space-sm rounded-lg font-sans text-label-md transition-all flex items-center justify-center gap-space-xs ${
+                        defaultCanvas === 'research'
+                          ? 'bg-primary text-on-primary font-semibold shadow-sm'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">psychology</span>
+                      <span>Deep Research</span>
+                    </button>
+                  </div>
+                  <span className="font-sans text-label-sm text-outline">
+                    Initial screen loaded upon application startup.
+                  </span>
                 </div>
               </div>
-            )}
-            {/* Google Integration (7 Columns) */}
-            <div className="lg:col-span-7 flex flex-col gap-6">
-              <section className="p-6 rounded-2xl bg-[#161a22] border border-white/5 flex flex-col gap-6">
-                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300">
-                      <span className="material-symbols-outlined text-[24px]">cloud</span>
-                    </div>
+
+              <div className="pt-space-sm flex flex-col gap-space-sm">
+                <span className="font-sans text-label-md text-on-surface font-medium">
+                  Telemetry &amp; Alert Routing
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+                  <label className="flex items-start gap-space-sm p-space-md rounded-xl bg-surface-container border border-outline-variant/30 cursor-pointer hover:bg-surface-container-high transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={executionAlerts}
+                      onChange={(e) => setExecutionAlerts(e.target.checked)}
+                      className="mt-1 accent-primary w-4 h-4 rounded"
+                    />
                     <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-stone-100">Google Workspace Sync</span>
-                      <span className="text-[11px] text-stone-400">Read Google Drive files, Doc contents, Gmail snippets & Schedule</span>
-                    </div>
-                  </div>
-
-                  {googleUser ? (
-                    <button
-                      type="button"
-                      onClick={handleDisconnectGoogle}
-                      className="px-3 py-1.5 rounded-lg bg-red-950 hover:bg-red-900 border border-red-500/20 text-xs font-medium text-red-200 transition-colors cursor-pointer"
-                    >
-                      Disconnect
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleConnectGoogle}
-                      className="px-4 py-2 rounded-lg bg-stone-100 hover:bg-white text-stone-950 text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer shadow-md"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">login</span>
-                      <span>Sign in with Google</span>
-                    </button>
-                  )}
-                </div>
-
-                {googleUser ? (
-                  <div className="flex flex-col gap-5">
-                    {/* User profile strip */}
-                    <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
-                      {googleUser.photoURL && (
-                        <img src={googleUser.photoURL} alt="Google User" className="w-8 h-8 rounded-full border border-white/10" referrerPolicy="no-referrer" />
-                      )}
-                      <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-stone-200">{googleUser.displayName}</span>
-                        <span className="text-[10px] text-stone-500 font-mono">{googleUser.email}</span>
-                      </div>
-                      <span className="ml-auto text-[10px] uppercase font-bold tracking-widest text-[#7bdb80] bg-[#7bdb80]/10 px-2 py-0.5 rounded border border-[#7bdb80]/20">
-                        Synchronized
+                      <span className="font-sans text-label-md text-on-surface font-medium">Execution Alerts</span>
+                      <span className="font-sans text-body-sm text-outline">
+                        Notify when asynchronous research stages complete.
                       </span>
                     </div>
-
-                    {/* Sub tabs for Google Workspace Services */}
-                    <div className="flex items-center gap-1.5 p-1 bg-black/20 rounded-lg border border-white/5">
-                      <button
-                        type="button"
-                        onClick={() => setGoogleSubTab('drive')}
-                        className={`flex-1 py-1.5 rounded-md text-xs font-medium text-center transition-colors cursor-pointer ${
-                          googleSubTab === 'drive' ? 'bg-white/10 text-stone-100' : 'text-stone-400 hover:text-stone-200'
-                        }`}
-                      >
-                        Google Drive
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setGoogleSubTab('gmail')}
-                        className={`flex-1 py-1.5 rounded-md text-xs font-medium text-center transition-colors cursor-pointer ${
-                          googleSubTab === 'gmail' ? 'bg-white/10 text-stone-100' : 'text-stone-400 hover:text-stone-200'
-                        }`}
-                      >
-                        Gmail Messages
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setGoogleSubTab('calendar')}
-                        className={`flex-1 py-1.5 rounded-md text-xs font-medium text-center transition-colors cursor-pointer ${
-                          googleSubTab === 'calendar' ? 'bg-white/10 text-stone-100' : 'text-stone-400 hover:text-stone-200'
-                        }`}
-                      >
-                        Calendar events
-                      </button>
-                    </div>
-
-                    {/* Auto-save & Firebase Bridge */}
-                    <div className="flex flex-col gap-3 p-4 rounded-xl bg-sky-950/20 border border-sky-500/20">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-sky-200 uppercase tracking-widest">Auto-save to Drive</span>
-                          <span className="text-[10px] text-sky-400/80">Automatically sync research and chats to Google Drive</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAutoSaveToDrive(!autoSaveToDrive);
-                            setIsDirty(true);
-                          }}
-                          className={`w-10 h-5 rounded-full p-0.5 transition-colors cursor-pointer ${
-                            autoSaveToDrive ? 'bg-sky-500' : 'bg-stone-800'
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                              autoSaveToDrive ? 'translate-x-5' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="pt-3 border-t border-sky-500/10 flex items-start gap-2">
-                        <span className="material-symbols-outlined text-sky-400 text-[16px]">integration_instructions</span>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-sky-100 uppercase tracking-tight">Firebase Cloud Bridge</span>
-                          <p className="text-[9px] text-sky-400/70 leading-relaxed italic">
-                            Since you are authenticated via Google, you can bridge your Firebase instance to enable unified backend synchronization across all endpoints.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content lists */}
-                    <div className="max-h-[320px] overflow-y-auto pr-1 flex flex-col gap-2">
-                      {isLoadingGoogle ? (
-                        <div className="py-12 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
-                          <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
-                          <span>Loading active Google Workspace assets...</span>
-                        </div>
-                      ) : googleSubTab === 'drive' ? (
-                        driveFiles.length > 0 ? (
-                          driveFiles.map((f) => (
-                            <div key={f.id} className="p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs transition-colors">
-                              <div className="flex items-center gap-2.5 truncate pr-2">
-                                <span className="material-symbols-outlined text-stone-500 text-[18px]">
-                                  {f.mimeType.includes('document') ? 'description' : f.mimeType.includes('spreadsheet') ? 'table_chart' : 'picture_as_pdf'}
-                                </span>
-                                <div className="flex flex-col truncate">
-                                  <span className="text-stone-200 font-medium truncate">{f.name}</span>
-                                  <span className="text-[10px] text-stone-500 mt-0.5">Modified {f.modifiedTime ? new Date(f.modifiedTime).toLocaleDateString() : 'recently'}</span>
-                                </div>
-                              </div>
-                              {f.webViewLink && (
-                                <a href={f.webViewLink} target="_blank" rel="noreferrer noopener" className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded text-[10px] text-stone-300 font-medium whitespace-nowrap">
-                                  Open Drive
-                                </a>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="py-12 text-center text-xs text-stone-500">No matching Google Documents or spreadsheets found in drive.</div>
-                        )
-                      ) : googleSubTab === 'gmail' ? (
-                        gmailMsgs.length > 0 ? (
-                          gmailMsgs.map((m) => (
-                            <div key={m.id} className="p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 flex flex-col gap-1 text-xs">
-                              <div className="flex justify-between items-center text-stone-400 font-sans text-[11px]">
-                                <span className="truncate max-w-[180px] font-medium">{m.from}</span>
-                                <span className="text-stone-500 text-[10px]">{m.date ? new Date(m.date).toLocaleDateString() : ''}</span>
-                              </div>
-                              <span className="text-stone-200 font-semibold truncate mt-0.5">{m.subject}</span>
-                              <p className="text-[11px] text-stone-400 italic line-clamp-2 mt-0.5 leading-relaxed">"{m.snippet}"</p>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="py-12 text-center text-xs text-stone-500">No recent messages retrieved from Gmail workspace.</div>
-                        )
-                      ) : (
-                        calEvents.length > 0 ? (
-                          calEvents.map((evt) => (
-                            <div key={evt.id} className="p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-stone-200 font-semibold">{evt.summary}</span>
-                                {evt.start?.dateTime && (
-                                  <span className="text-[10px] text-stone-500">{new Date(evt.start.dateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-                                )}
-                              </div>
-                              <span className="text-[9px] uppercase tracking-wider text-stone-400 bg-white/5 border border-white/5 px-2 py-0.5 rounded font-mono">
-                                Calendar Event
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="py-12 text-center text-xs text-stone-500">No upcoming primary calendar events documented.</div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-stone-800 bg-stone-900/10 p-8 text-center flex flex-col items-center justify-center gap-4">
-                    <span className="material-symbols-outlined text-stone-700 text-3xl">cloud_sync</span>
-                    <div className="max-w-sm">
-                      <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Synchronization_Inactive</h4>
-                      <p className="text-[11px] text-stone-600 mt-2 leading-relaxed font-serif italic">
-                        Authorize Breezy Research to read spec documents directly from your Google Drive files for evidence-grounded research.
-                      </p>
-                      <button
-                        onClick={() => onConnectWorkspace(googleSubTab)}
-                        className="mt-6 px-5 py-2 bg-stone-100 hover:bg-white rounded-lg text-[10px] text-stone-950 font-bold uppercase tracking-widest transition-all shadow-lg"
-                      >
-                        Authorize {googleSubTab.toUpperCase()}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </section>
-            </div>
-
-            {/* GitHub Integration (5 Columns) */}
-            <div className="lg:col-span-5 flex flex-col gap-6">
-              <section className="p-6 rounded-2xl bg-[#161a22] border border-white/5 flex flex-col gap-5">
-                <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-stone-300">
-                    <span className="material-symbols-outlined text-[24px]">terminal</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-sans text-sm font-semibold text-stone-100">GitHub Sync Setup</span>
-                    <span className="text-[11px] text-stone-400">Import code files directly from repo specs</span>
-                  </div>
-                </div>
-
-                {githubAuthMode !== 'none' ? (
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs">
-                      <div className="flex items-center gap-2">
-                        {githubAuthMode === 'oauth' ? (
-                          <>
-                            <span className="material-symbols-outlined text-emerald-400 text-[18px]">verified</span>
-                            <div className="flex flex-col">
-                              <span className="text-stone-200 font-medium">GitHub OAuth Connected</span>
-                              <span className="text-[10px] text-emerald-400">Live Account Linked</span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <span className="material-symbols-outlined text-emerald-400 text-[18px]">key</span>
-                            <span className="text-stone-200 font-medium">PAT Token Active</span>
-                          </>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleDisconnectGithub}
-                        className="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-500/10 text-red-200 text-[10px] rounded cursor-pointer"
-                      >
-                        Disconnect
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[11px] text-stone-450 uppercase tracking-wider font-semibold">Select Repository</label>
-                      <select
-                        value={selectedRepo}
-                        onChange={(e) => handleSelectRepo(e.target.value)}
-                        className="w-full bg-[#1c212a] border border-white/10 rounded-lg p-2 text-xs text-stone-200 outline-none"
-                      >
-                        <option value="">-- Choose Repository --</option>
-                        {githubRepos.map((repo) => (
-                          <option key={repo.id} value={repo.full_name}>{repo.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {isLoadingGithub ? (
-                      <div className="py-8 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
-                        <span className="material-symbols-outlined text-[15px] animate-spin">sync</span>
-                        <span>Browsing GitHub...</span>
-                      </div>
-                    ) : repoContents.length > 0 ? (
-                      <div className="flex flex-col gap-2">
-                        <span className="text-[11px] text-stone-450 uppercase tracking-wider font-semibold">Root Contents</span>
-                        <div className="max-h-[160px] overflow-y-auto pr-1 border border-white/5 bg-black/10 rounded-lg p-2 flex flex-col gap-1.5 text-[11px]">
-                          {repoContents.map((file) => (
-                            <div key={file.path} className="flex items-center gap-2 text-stone-300">
-                              <span className="material-symbols-outlined text-stone-500 text-[15px]">
-                                {file.type === 'dir' ? 'folder' : 'article'}
-                              </span>
-                              <span className="truncate">{file.name}</span>
-                              {file.type === 'file' && (
-                                <span className="ml-auto text-[9px] text-stone-500">{(file.size / 1024).toFixed(1)} KB</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      selectedRepo && <div className="py-6 text-center text-xs text-stone-500">Empty repository or permission error.</div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {/* Native GitHub OAuth button */}
-                    <button
-                      type="button"
-                      onClick={handleGithubOAuthPopup}
-                      className="w-full bg-[#24292e] hover:bg-[#2f363d] border border-white/10 text-stone-100 font-sans text-xs font-semibold py-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">account_circle</span>
-                      <span>Sign in with GitHub OAuth</span>
-                    </button>
-
-                    <div className="relative flex py-1 items-center">
-                      <div className="flex-grow border-t border-white/5"></div>
-                      <span className="flex-shrink mx-3 text-[10px] text-stone-500 uppercase tracking-widest font-mono">or personal access token</span>
-                      <div className="flex-grow border-t border-white/5"></div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] text-stone-450 uppercase tracking-wider font-semibold font-mono">Personal Access Token (PAT)</label>
-                      <input
-                        type="password"
-                        value={githubToken}
-                        onChange={(e) => setGithubToken(e.target.value)}
-                        placeholder="ghp_..."
-                        className="bg-[#1c212a] border border-white/10 rounded-lg px-3 py-2 text-xs text-stone-100 outline-none focus:border-white/20"
-                      />
-                      <p className="text-[10px] text-stone-500 leading-relaxed">
-                        Specify a custom read-only token to connect repositories securely.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleConnectGithub}
-                      disabled={!githubToken.trim()}
-                      className="w-full bg-stone-100 hover:bg-white text-stone-950 font-sans text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Connect Token
-                    </button>
-                  </div>
-                )}
-              </section>
-            </div>
-          </div>
-        )}
-
-        {/* Synthexis tab content */}
-        {activeTab === 'general' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
-            <div className="lg:col-span-8 flex flex-col gap-8">
-              {/* Role Model Customization Section */}
-              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
-                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-[#ccbdff]/10 text-[#ccbdff]">
-                      <span className="material-symbols-outlined text-[20px]">account_tree</span>
-                    </div>
-                    <div>
-                      <h2 className="font-sans text-base font-semibold text-stone-100">Role Model Routing</h2>
-                      <p className="font-sans text-xs text-stone-400">
-                        Assign distinct AI model families to each research role in the dialectic pipeline
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <label className="font-mono text-[10px] text-stone-400 uppercase tracking-wider font-semibold">
-                    Research Style Presets
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: 'fast', name: 'Fast', desc: 'Speed optimized (Single model)' },
-                      { id: 'balanced', name: 'Balanced', desc: 'Multi-perspective analysis' },
-                      { id: 'deep', name: 'Deep', desc: 'Rigorous cross-verification' },
-                    ].map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          const p = item.id as any;
-                          setPreset(p);
-                          const updatedConfig = providerConfigService.applyPreset(p);
-                          if (updatedConfig.roles) {
-                            setRoles(updatedConfig.roles);
-                          }
-                          setToastMessage(`Research preset updated to ${item.name}`);
-                          setShowToast(true);
-                          setTimeout(() => setShowToast(false), 2500);
-                        }}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                          preset === item.id
-                            ? 'bg-[#ccbdff]/15 border-[#ccbdff] text-white'
-                            : 'bg-black/20 border-white/5 text-stone-400 hover:bg-white/5'
-                        }`}
-                      >
-                        <div className="font-sans text-xs font-bold text-stone-200">{item.name}</div>
-                        <div className="font-mono text-[10px] opacity-70 mt-0.5">{item.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 mt-2">
-                  <label className="font-mono text-[10px] text-stone-400 uppercase tracking-wider font-semibold">
-                    Role Assignments
+                  <label className="flex items-start gap-space-sm p-space-md rounded-xl bg-surface-container border border-outline-variant/30 cursor-pointer hover:bg-surface-container-high transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={sourceConflicts}
+                      onChange={(e) => setSourceConflicts(e.target.checked)}
+                      className="mt-1 accent-primary w-4 h-4 rounded"
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-sans text-label-md text-on-surface font-medium">Source Conflicts</span>
+                      <span className="font-sans text-body-sm text-outline">
+                        Immediate flag on adversarial falsification findings.
+                      </span>
+                    </div>
                   </label>
-                  <div className="flex flex-col gap-3 bg-black/20 border border-white/5 rounded-xl p-4">
-                    {[
-                      { key: 'architect', title: 'Analyst', desc: 'Framing & core thesis proposal' },
-                      { key: 'skeptic', title: 'Critic', desc: 'Identifies logical flaws & counter-evidence' },
-                      { key: 'verifier', title: 'Verifier', desc: 'Fact & constraint validation' },
-                      { key: 'arbiter', title: 'Synthesizer', desc: 'Executive resolution & summary' },
-                    ].map((role) => (
-                      <div key={role.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/5 last:border-b-0 last:pb-0">
-                        <div>
-                          <div className="font-sans text-xs font-semibold text-stone-200">{role.title}</div>
-                          <div className="font-mono text-[10px] text-stone-400">{role.desc}</div>
-                        </div>
-                        <select
-                          value={roles[role.key as keyof typeof roles]?.provider || ''}
-                          onChange={(e) => {
-                            const p = e.target.value as any;
-                            const defaultM = p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'sambanova' ? 'Meta-Llama-3.3-70B-Instruct' : p === 'openrouter' ? 'meta-llama/llama-3.3-70b-instruct' : p === 'gemini' ? 'gemini-2.5-flash' : '';
-                            const nextRoles = {
-                              ...roles,
-                              [role.key]: { provider: p, model: defaultM },
-                            };
-                            setRoles(nextRoles as any);
-                            setPreset('custom');
-                            const cfg = providerConfigService.getConfig();
-                            cfg.preset = 'custom';
-                            cfg.roles = nextRoles as any;
-                            providerConfigService.saveConfig(cfg);
-                            setToastMessage(`Assigned ${p.toUpperCase()} to ${role.title}`);
-                            setShowToast(true);
-                            setTimeout(() => setShowToast(false), 2500);
-                          }}
-                          className="bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 outline-none focus:border-[#ccbdff] cursor-pointer"
-                        >
-                          <option value="">Unassigned</option>
-                          <option value="gemini">Google Gemini</option>
-                          <option value="anthropic">Anthropic Claude</option>
-                          <option value="groq">Groq (Llama 3.3)</option>
-                          <option value="sambanova">SambaNova (Llama/Qwen)</option>
-                          <option value="openrouter">OpenRouter</option>
-                        </select>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              </section>
+              </div>
+            </section>
+          )}
 
-              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
+          {/* Research & Synthesis Section */}
+          {activeTab === 'synthesis' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    Research &amp; Synthesis Engine
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Control generative rigor, source anchoring, and adversarial logic verification.
+                  </p>
+                </div>
+                <div className="flex items-center gap-space-xs text-tertiary bg-surface-container-high border border-tertiary/20 px-space-sm py-1 rounded-full font-mono text-code-sm">
+                  <span className="material-symbols-outlined text-[16px]">verified</span>
+                  <span>Rigorous Mode</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-space-sm pt-space-xs">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-white/5 text-stone-300">
-                      <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                  <label className="font-sans text-label-md text-on-surface font-medium">
+                    Default Reasoning Depth
+                  </label>
+                  <span className="font-mono text-code-sm text-primary px-space-xs py-0.5 rounded bg-surface-container border border-primary/20">
+                    {depthNames[reasoningDepth - 1]}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={reasoningDepth}
+                  onChange={(e) => setReasoningDepth(parseInt(e.target.value, 10))}
+                  className="w-full accent-primary bg-surface-container h-2 rounded cursor-pointer"
+                />
+                <div className="flex justify-between font-sans text-label-sm text-outline">
+                  <span>Fast Surface Scan</span>
+                  <span>Standard Synthesis</span>
+                  <span>Exhaustive Multi-Pass</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-space-md pt-space-sm">
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <div className="flex items-start gap-space-md">
+                    <span className="material-symbols-outlined text-primary text-headline-md mt-0.5">
+                      auto_stories
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-sans text-label-md text-on-surface font-medium">
+                        Auto-Grounding Against arXiv &amp; Crossref
+                      </span>
+                      <span className="font-sans text-body-sm text-on-surface-variant max-w-xl">
+                        Compiles citation vectors and fetches raw DOI abstracts for factual validation.
+                      </span>
                     </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={autoGrounding}
+                    onChange={(e) => setAutoGrounding(e.target.checked)}
+                    className="accent-primary w-5 h-5 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <div className="flex items-start gap-space-md">
+                    <span className="material-symbols-outlined text-secondary text-headline-md mt-0.5">
+                      balance
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-sans text-label-md text-on-surface font-medium">
+                        Adversarial Challenge Loops
+                      </span>
+                      <span className="font-sans text-body-sm text-on-surface-variant max-w-xl">
+                        Applies dedicated skeptic reviewer models to stress-test claims before final synthesis.
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-space-sm shrink-0 font-mono text-code-sm">
+                    <span className="text-outline">Rounds:</span>
+                    <div className="flex items-center bg-surface-container-high rounded-lg border border-outline-variant/30 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setAdversarialRounds((r) => Math.max(1, r - 1))}
+                        className="w-7 h-7 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded transition-colors"
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center text-primary font-bold">{adversarialRounds}</span>
+                      <button
+                        type="button"
+                        onClick={() => setAdversarialRounds((r) => Math.min(5, r + 1))}
+                        className="w-7 h-7 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <div className="flex items-start gap-space-md">
+                    <span className="material-symbols-outlined text-tertiary text-headline-md mt-0.5">
+                      format_quote
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-sans text-label-md text-on-surface font-medium">
+                        Verbatim Quote Inspection
+                      </span>
+                      <span className="font-sans text-body-sm text-on-surface-variant max-w-xl">
+                        Display direct source fragments side-by-side with synthesized findings.
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={quoteInspection}
+                    onChange={(e) => setQuoteInspection(e.target.checked)}
+                    className="accent-primary w-5 h-5 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Privacy Section */}
+          {activeTab === 'privacy' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    Data &amp; Cryptographic Privacy
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Air-gap enforcement, zero-retention triggers, and localized encryption hooks.
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-tertiary text-headline-lg">security</span>
+              </div>
+
+              <div className="flex flex-col gap-space-md pt-space-xs">
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-space-xs">
+                      <span className="font-sans text-label-md text-on-surface font-medium">
+                        Strict Zero-Retention Pipeline
+                      </span>
+                      <span className="font-mono text-code-sm text-primary bg-primary/10 px-1 rounded border border-primary/20">
+                        No-Cloud-Log
+                      </span>
+                    </div>
+                    <span className="font-sans text-body-sm text-on-surface-variant max-w-xl mt-0.5">
+                      Prompts and embeddings reside only in volatile local memory during synthesis and are scrubbed
+                      instantly after run completion.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={zeroRetention}
+                    onChange={(e) => setZeroRetention(e.target.checked)}
+                    className="accent-primary w-5 h-5 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-space-xs">
+                      <span className="font-sans text-label-md text-on-surface font-medium">
+                        Local OS Keychain Integration
+                      </span>
+                      <span className="font-mono text-code-sm text-outline">Hardware-Backed Storage</span>
+                    </div>
+                    <span className="font-sans text-body-sm text-on-surface-variant max-w-xl mt-0.5">
+                      Store remote provider tokens exclusively in your browser/system key vault. Never touches disk
+                      in plain text.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={keychainIntegration}
+                    onChange={(e) => setKeychainIntegration(e.target.checked)}
+                    className="accent-primary w-5 h-5 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <div className="flex flex-col">
+                    <span className="font-sans text-label-md text-on-surface font-medium">
+                      Zero Telemetry Transmission
+                    </span>
+                    <span className="font-sans text-body-sm text-on-surface-variant max-w-xl mt-0.5">
+                      Disables crash reporting, token count diagnostic beacons, and external latency probes.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={telemetryDisabled}
+                    onChange={(e) => setTelemetryDisabled(e.target.checked)}
+                    className="accent-primary w-5 h-5 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Storage & API Keys Section */}
+          {activeTab === 'storage' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    API Keys &amp; Storage Footprint
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Provider key vault status, local vector indexing cache, and workspace exports.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                <div className="p-space-md rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col justify-between gap-space-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-sans text-label-md text-on-surface font-medium">Anthropic Claude</span>
+                    <span className="font-mono text-code-sm text-tertiary">
+                      {keys.anthropic ? 'Configured' : 'Missing'}
+                    </span>
+                  </div>
+                  <div className="font-mono text-code-sm text-on-surface-variant bg-surface-container-high px-space-sm py-1 rounded-lg">
+                    {keys.anthropic ? `sk-ant-••••••••${keys.anthropic.slice(-4)}` : 'No key set'}
+                  </div>
+                </div>
+
+                <div className="p-space-md rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col justify-between gap-space-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-sans text-label-md text-on-surface font-medium">Google Gemini</span>
+                    <span className="font-mono text-code-sm text-tertiary">
+                      {keys.gemini ? 'Configured' : 'Environment Key Active'}
+                    </span>
+                  </div>
+                  <div className="font-mono text-code-sm text-on-surface-variant bg-surface-container-high px-space-sm py-1 rounded-lg">
+                    {keys.gemini ? `AIzaSy••••••••${keys.gemini.slice(-4)}` : 'Server Environment Key'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Cache purge */}
+              <div className="p-space-md rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col gap-space-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-sans text-label-md text-on-surface font-medium">Vector Embeddings Cache</span>
+                    <p className="font-sans text-body-sm text-outline">
+                      Local Fragment Index and citation registry chunks
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('breezy_evidence_cache');
+                      showToast('Local vector cache purged successfully.');
+                    }}
+                    className="px-space-md py-1 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-sans text-label-sm border border-outline-variant/30 transition-colors"
+                  >
+                    Purge Cache
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Shortcuts Section */}
+          {activeTab === 'shortcuts' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    Analytical Shortcuts
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Keyboard navigation keys for accelerated cognitive synthesis.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <span className="font-sans text-body-sm text-on-surface">Direct Inquiry Focus</span>
+                  <div className="flex items-center gap-1 font-mono text-code-sm text-primary">
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">⌘</kbd>
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">K</kbd>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <span className="font-sans text-body-sm text-on-surface">Initiate Research</span>
+                  <div className="flex items-center gap-1 font-mono text-code-sm text-primary">
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">⌘</kbd>
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">Return</kbd>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <span className="font-sans text-body-sm text-on-surface">Toggle Navigation Drawer</span>
+                  <div className="flex items-center gap-1 font-mono text-code-sm text-primary">
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">⌘</kbd>
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">B</kbd>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
+                  <span className="font-sans text-body-sm text-on-surface">Close Modal or Dialog</span>
+                  <div className="flex items-center gap-1 font-mono text-code-sm text-primary">
+                    <kbd className="px-1.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30">Esc</kbd>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Integrations Section */}
+          {activeTab === 'integrations' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    External Integrations
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Connect Google Workspace services and GitHub repositories.
+                  </p>
+                </div>
+              </div>
+
+              {/* Google Workspace */}
+              <div className="p-space-md rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col gap-space-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-space-sm">
+                    <span className="material-symbols-outlined text-primary text-headline-md">cloud_sync</span>
                     <div>
-                      <h2 className="font-sans text-base font-semibold text-on-surface">Active Research Engine</h2>
-                      <p className="font-sans text-xs text-stone-400">
-                        Calibrate multi-turn cross validation and resolution strictness
+                      <h3 className="font-headline font-semibold text-headline-sm text-on-surface">Google Workspace</h3>
+                      <p className="font-sans text-body-sm text-outline">
+                        {googleUser ? `Connected as ${googleUser.email}` : 'Sync research docs to Drive, Docs & Sheets'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onConnectWorkspace('drive')}
+                    className="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-sans text-label-md border border-primary/20 transition-colors"
+                  >
+                    {googleUser ? 'Manage Scopes' : 'Connect Google'}
+                  </button>
+                </div>
+              </div>
+
+              {/* GitHub Integration */}
+              <div className="p-space-md rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col gap-space-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-space-sm">
+                    <span className="material-symbols-outlined text-secondary text-headline-md">terminal</span>
+                    <div>
+                      <h3 className="font-headline font-semibold text-headline-sm text-on-surface">GitHub Integration</h3>
+                      <p className="font-sans text-body-sm text-outline">
+                        Mount repositories directly into Breezy Build / IDE
                       </p>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex flex-col gap-3 pt-1">
-                  <div className="flex justify-between items-center">
-                    <label className="font-sans text-xs text-stone-300 font-medium flex items-center gap-1.5">
-                      Deliberation Rounds
-                    </label>
-                    <span className="font-mono text-xs text-stone-400">{roundLabels[selectedRound]}</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-1.5 bg-black/20 rounded-xl border border-white/5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRound(1);
-                        setIsDirty(true);
-                      }}
-                      className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all cursor-pointer ${
-                        selectedRound === 1
-                          ? 'bg-white/10 text-stone-100 shadow-xs'
-                          : 'bg-transparent text-stone-400 hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-sans text-sm font-semibold">Fast</span>
-                        <span className="font-mono text-[10px] text-stone-500">{getSpeedEstimate(1)}</span>
-                      </div>
-                      <span className="font-sans text-[11px] text-stone-500">1 Round • Fast answer</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRound(2);
-                        setIsDirty(true);
-                      }}
-                      className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all cursor-pointer ${
-                        selectedRound === 2
-                          ? 'bg-white/10 text-stone-100 shadow-xs'
-                          : 'bg-transparent text-stone-400 hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-sans text-sm font-semibold">Balanced</span>
-                        <span className="font-mono text-[10px] text-stone-500">{getSpeedEstimate(2)}</span>
-                      </div>
-                      <span className="font-sans text-[11px] text-stone-500">2 Rounds • Recommended</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRound(4);
-                        setIsDirty(true);
-                      }}
-                      className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all cursor-pointer ${
-                        selectedRound === 4
-                          ? 'bg-white/10 text-stone-100 shadow-xs'
-                          : 'bg-transparent text-stone-400 hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-sans text-sm font-semibold">Deep Audit</span>
-                        <span className="font-mono text-[10px] text-stone-500">{getSpeedEstimate(4)}</span>
-                      </div>
-                      <span className="font-sans text-[11px] text-stone-500">4 Rounds • Exhaustive check</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-white/[0.02] flex flex-col gap-4 border border-white/5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-col">
-                      <span className="font-sans text-xs text-stone-300 font-medium">Auto-resolve Contradictions</span>
-                      <span className="font-sans text-[11px] text-stone-400">
-                        Automatically find common ground when the configured agreement threshold is reached
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAutoResolve(!autoResolve);
-                        setIsDirty(true);
-                      }}
-                      className={`w-11 h-6 rounded-full relative p-0.5 transition-colors cursor-pointer ${
-                        autoResolve ? 'bg-stone-100' : 'bg-white/10'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-stone-950 shadow-xs transition-transform duration-200 ${
-                          autoResolve ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col gap-2 pt-1 border-t border-white/5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-xs text-stone-300 font-medium">Agreement Threshold</span>
-                      <span className="font-mono text-xs text-stone-400 font-semibold">{agreementThreshold}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="50"
-                      max="95"
-                      value={agreementThreshold}
-                      onChange={(e) => {
-                        setAgreementThreshold(Number(e.target.value));
-                        setIsDirty(true);
-                      }}
-                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-stone-100"
-                    />
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-        )}
-
-        {/* Models and BYOK API Keys Tab Content */}
-        {activeTab === 'models' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
-            <div className="lg:col-span-8 flex flex-col gap-6">
-              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
-                <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                  <div className="p-2 rounded-xl bg-white/5 text-stone-300">
-                    <span className="material-symbols-outlined text-[20px]">key</span>
-                  </div>
-                  <div>
-                    <h2 className="font-sans text-base font-semibold text-stone-100">BYOK Key Vault Configuration</h2>
-                    <p className="font-sans text-xs text-stone-400">
-                      Input your own developer provider credentials to leverage primary model families
-                    </p>
-                  </div>
-                </div>
-
-                {/* Security and Privacy Disclaimer (Safer Experience) */}
-                <div className="mx-1 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex gap-3 items-start">
-                  <span className="material-symbols-outlined text-amber-500 text-[18px] shrink-0 mt-0.5">security</span>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-semibold text-amber-200 uppercase tracking-wider">Privacy & Storage Notice</span>
-                    <p className="text-[11px] text-amber-200/70 leading-relaxed">
-                      API keys are stored <strong>only in your local browser storage</strong> (localStorage). They are transmitted directly to the edge backend proxies via secure headers and are never logged or stored on our servers. Disconnect or clear your browser data to remove them entirely.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">Google Gemini API Key</label>
-                    <input
-                      type="password"
-                      value={geminiKey}
-                      onChange={(e) => {
-                        setGeminiKey(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="AIzaSy... (leave empty to use default server key)"
-                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">Groq API Key</label>
-                    <input
-                      type="password"
-                      value={groqKey}
-                      onChange={(e) => {
-                        setGroqKey(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="gsk_..."
-                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">SambaNova API Key</label>
-                    <input
-                      type="password"
-                      value={sambanovaKey}
-                      onChange={(e) => {
-                        setSambanovaKey(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="Enter SambaNova key"
-                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-mono text-[10px] text-stone-400 uppercase font-semibold">OpenRouter API Key</label>
-                    <input
-                      type="password"
-                      value={openrouterKey}
-                      onChange={(e) => {
-                        setOpenrouterKey(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="sk-or-v1-..."
-                      className="bg-black/20 rounded-lg px-3 py-2 font-mono text-xs text-stone-100 border border-white/10 focus:border-white/20 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-4 border-t border-white/5 justify-end">
+                <div className="flex gap-space-sm pt-2">
+                  <input
+                    type="password"
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    placeholder="Personal Access Token (ghp_...)"
+                    className="flex-1 bg-surface-container-low px-space-md py-2 rounded-xl font-mono text-code-sm text-on-surface border border-outline-variant/30 focus:outline-none focus:border-primary"
+                  />
                   <button
                     type="button"
-                    onClick={handleDiscard}
-                    disabled={!isDirty}
-                    className="px-4 py-2 rounded-xl text-xs text-stone-400 hover:text-stone-200 cursor-pointer disabled:opacity-50"
+                    onClick={() => {
+                      localStorage.setItem('breezy_github_token', githubToken.trim());
+                      showToast('GitHub token saved.');
+                    }}
+                    className="px-space-md py-2 rounded-xl bg-primary text-on-primary font-headline font-semibold text-headline-sm hover:bg-secondary transition-all"
                   >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    className="px-5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-950 text-xs font-semibold cursor-pointer shadow-md"
-                  >
-                    Save Keys
+                    Save Token
                   </button>
                 </div>
-              </section>
-            </div>
-          </div>
-        )}
+              </div>
+            </section>
+          )}
 
-        {/* Notifications & Webhooks Tab Content */}
-        {activeTab === 'synthexis' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
-            <div className="lg:col-span-8 flex flex-col gap-6">
-              <section className="flex flex-col gap-5 p-6 rounded-2xl bg-[#161a22] border border-white/5">
-                <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                  <div className="p-2 rounded-xl bg-white/5 text-stone-300">
-                    <span className="material-symbols-outlined text-[20px]">notifications_active</span>
-                  </div>
-                  <div>
-                    <h2 className="font-sans text-base font-semibold text-stone-100">Research Webhook Dispatches</h2>
-                    <p className="font-sans text-xs text-stone-400">
-                      Configure webhook relays to notify external teams of completed inquiries or contradictions
-                    </p>
-                  </div>
+          {/* Profile Section */}
+          {activeTab === 'profile' && (
+            <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+              <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
+                <div>
+                  <h2 className="font-headline font-semibold text-headline-md text-on-surface">
+                    User Profile &amp; Credentials
+                  </h2>
+                  <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
+                    Manage researcher identity, signature authority, and session credentials.
+                  </p>
                 </div>
+                <span className="font-mono text-code-sm px-space-xs py-0.5 rounded bg-surface-container-high text-tertiary border border-tertiary/20">
+                  Verified Lead
+                </span>
+              </div>
 
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-stone-300 font-semibold">Relay Completion Status</span>
-                      <span className="text-[11px] text-stone-500 leading-relaxed">Send a lightweight JSON payload when final research answers complete</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setWebhookActive(!webhookActive)}
-                      className={`w-11 h-6 rounded-full relative p-0.5 transition-colors cursor-pointer ${
-                        webhookActive ? 'bg-stone-100' : 'bg-white/10'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-full bg-stone-950 transition-transform duration-200 ${webhookActive ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-
-                  {webhookActive && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <input
-                        type="text"
-                        value={webhookUrl}
-                        onChange={(e) => setWebhookUrl(e.target.value)}
-                        className="flex-1 bg-[#1c212a] border border-white/10 rounded-lg p-2 text-xs text-stone-200 outline-none"
-                        placeholder="https://hooks.slack.com/services/..."
-                      />
-                      <button
-                        type="button"
-                        onClick={testWebhook}
-                        className="px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-stone-300 font-semibold cursor-pointer shrink-0"
-                      >
-                        Test relay
-                      </button>
-                    </div>
-                  )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+                <div className="flex flex-col gap-space-xs">
+                  <label className="font-sans text-label-md text-on-surface font-medium">Display Name</label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
+                  />
                 </div>
-              </section>
-            </div>
-          </div>
-        )}
+                <div className="flex flex-col gap-space-xs">
+                  <label className="font-sans text-label-md text-on-surface font-medium">Role &amp; Title</label>
+                  <input
+                    type="text"
+                    value={roleTitle}
+                    onChange={(e) => setRoleTitle(e.target.value)}
+                    className="w-full px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
+                  />
+                </div>
+                <div className="flex flex-col gap-space-xs md:col-span-2">
+                  <label className="font-sans text-label-md text-on-surface font-medium">Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-sans text-body-md border border-outline-variant/30 focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
       </div>
+
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-surface-container-high border border-outline-variant/40 text-on-surface px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { DebateSession } from '../../types';
-import { providerConfigService } from '../../services/providerConfigService';
-import { apiClient } from '../../services/apiClient';
 import { googleDocsService } from '../../services/googleDocsService';
 
 interface ResearchNotesViewProps {
@@ -10,23 +8,14 @@ interface ResearchNotesViewProps {
   onSync?: () => void;
 }
 
-export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNotePrompt, sessions, onSync }) => {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'solo' | 'multi'>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({
+  onSelectNotePrompt,
+  sessions,
+}) => {
+  const [filterMode, setFilterMode] = useState<'all' | 'standard' | 'solo'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [savingDocId, setSavingDocId] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    apiClient.checkHealth(true).then((ok) => {
-      if (!cancelled) setBackendStatus(ok ? 'online' : 'offline');
-    }).catch(() => {
-      if (!cancelled) setBackendStatus('offline');
-    });
-    return () => { cancelled = true; };
-  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -34,12 +23,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
   };
 
   const copyCitation = (title: string, protocol?: string) => {
-    const label =
-      protocol === 'solo'
-        ? 'Solo Model Inquiry'
-        : protocol === 'quad'
-          ? 'Quad-Model Research'
-          : 'Multi-Model Research';
+    const label = protocol === 'solo' ? 'Solo Scan' : 'Multi-Model Synthesis';
     navigator.clipboard.writeText(`Breezy Research Archive: "${title}" (${label})`);
     showToast('Citation reference copied to clipboard');
   };
@@ -49,7 +33,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
     setSavingDocId(session.id);
     try {
       const url = await googleDocsService.saveResearchSession(session);
-      showToast('Saved to your single Breezy Research Google Doc.');
+      showToast('Saved to your Breezy Research Google Doc archive.');
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
       showToast(err?.message || 'Google Docs save failed.');
@@ -58,15 +42,12 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
     }
   };
 
-  // Only display completed sessions as formal notes/archives
-  const completedSessions = sessions.filter((s) => s.status === 'completed');
+  const completedSessions = sessions.filter((s) => s.status === 'completed' || s.finalOutput);
 
   const filteredSessions = completedSessions.filter((s) => {
-    // Filter by mode
-    if (activeCategory === 'solo' && s.protocol !== 'solo') return false;
-    if (activeCategory === 'multi' && s.protocol === 'solo') return false;
+    if (filterMode === 'solo' && s.protocol !== 'solo') return false;
+    if (filterMode === 'standard' && s.protocol === 'solo') return false;
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
@@ -78,318 +59,169 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
   });
 
   return (
-    <div className="relative w-full px-4 sm:px-8 py-6 flex flex-col gap-6 font-sans">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0d1727]/95 text-slate-100 px-4 py-2.5 rounded-xl shadow-2xl border border-sky-400/15 animate-in fade-in slide-in-from-bottom-2 backdrop-blur-md">
-          <span className="material-symbols-outlined text-[#bcc9ce] text-[18px]">check_circle</span>
-          <span className="text-xs">{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Header Strip & Command Deck */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800/70 backdrop-blur-sm">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-[#b3ebff] bg-[#4cd6fb]/10 px-2.5 py-1 rounded-md border border-[#4cd6fb]/20">
-              Research history
-            </span>
-            <span className="text-[11px] text-slate-500">Stored in this browser</span>
+    <div className="relative w-full flex-1 flex flex-col bg-surface font-sans text-on-surface p-space-md sm:p-space-lg pb-24 max-w-7xl mx-auto gap-space-lg">
+      {/* Header Deck */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md pt-space-xs pb-space-sm border-b border-outline-variant/20">
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center gap-space-sm text-outline font-mono text-code-sm uppercase tracking-wider">
+            <span>Research OS</span>
+            <span className="text-outline-variant">/</span>
+            <span className="text-primary font-medium">Session Archives</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl text-white tracking-[-0.03em] font-semibold">
-            Research history
+          <h1 className="font-headline font-bold text-headline-xl text-on-surface tracking-tight">
+            Research History &amp; Evidence
           </h1>
-          <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
-            Your saved research runs, sources, and results.
+          <p className="font-sans text-body-md text-on-surface-variant max-w-xl">
+            Immutable records of past multi-model investigations, citations, contradiction logs, and definitive resolutions.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              const url = googleDocsService.getArchiveUrl();
-              if (url) window.open(url, '_blank', 'noopener,noreferrer');
-              else showToast('Save a research result first to create the Google Doc.');
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-[#4cd6fb]/10 text-slate-400 hover:text-[#b3ebff] text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">description</span>
-            <span>Open Google Doc</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onSync?.();
-              showToast('Research archive refreshed');
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-[#4cd6fb]/10 text-slate-400 hover:text-[#b3ebff] text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">sync</span>
-            <span>Refresh</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectNotePrompt('')}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-950 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-lg"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>New research</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Research sessions', value: completedSessions.length, icon: 'library_books' },
-          { label: 'Multi-model', value: completedSessions.filter((s) => s.protocol !== 'solo').length, icon: 'account_tree' },
-          { label: 'Single-model', value: completedSessions.filter((s) => s.protocol === 'solo').length, icon: 'bolt' },
-          { label: 'Sources used', value: completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0), icon: 'verified_user', color: 'text-[#bcc9ce]' },
-        ].map((stat, idx) => (
-          <div key={idx} className="bg-[#191c21]/40 p-4 rounded-xl flex items-center justify-between border border-stone-800/40 backdrop-blur-sm">
-            <div className="flex flex-col">
-              <span className="text-[9px] uppercase text-[#869398] font-bold font-mono tracking-widest">{stat.label}</span>
-              <span className={`text-xl text-[#e1e2e9] font-semibold mt-0.5 tabular-nums ${stat.color || ''}`}>{stat.value}</span>
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-[#272a30]/60 flex items-center justify-center text-[#bcc9ce] border border-[#3d494d]/40">
-              <span className="material-symbols-outlined text-[18px]">{stat.icon}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filter, View & Search Command Toolbar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#191c21]/40 p-2 rounded-xl border border-stone-800/40 backdrop-blur-sm">
-        {/* Search Field */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#111319]/60 text-[#69767b] focus-within:text-[#bcc9ce] flex-1 max-w-md border border-stone-800/60">
-          <span className="material-symbols-outlined text-[16px]">search</span>
+        {/* Search input */}
+        <div className="relative w-full sm:w-80">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search verified inquiries..."
-            className="bg-transparent border-0 outline-none font-mono text-[10px] text-[#e1e2e9] placeholder:text-stone-700 w-full uppercase tracking-widest"
+            placeholder="Search transcripts &amp; citations..."
+            className="w-full bg-surface-container text-on-surface placeholder:text-outline font-sans text-body-sm pl-9 pr-space-md py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary shadow-sm"
           />
+          <span className="material-symbols-outlined text-outline text-[18px] absolute left-3 top-2.5">
+            search
+          </span>
         </div>
+      </div>
 
-        {/* Tag Filters */}
-        <div className="flex items-center gap-1 overflow-x-auto py-0.5">
-          {(['all', 'solo', 'multi'] as const).map((cat) => (
+      {/* Filter Tabs Strip */}
+      <div className="flex items-center justify-between gap-space-md flex-wrap">
+        <div className="flex items-center gap-space-xs p-1 rounded-xl bg-surface-container-low border border-outline-variant/30">
+          {[
+            { id: 'all' as const, label: 'All Investigations' },
+            { id: 'standard' as const, label: 'Deep Syntheses' },
+            { id: 'solo' as const, label: 'Fast Scans' },
+          ].map((tab) => (
             <button
-              key={cat}
+              key={tab.id}
               type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer ${
-                activeCategory === cat
-                  ? 'bg-[#272a30] text-[#e1e2e9] shadow-sm'
-                  : 'bg-transparent text-[#869398] hover:text-[#e1e2e9]'
+              onClick={() => setFilterMode(tab.id)}
+              className={`px-space-md py-1.5 rounded-lg font-sans text-label-md transition-all ${
+                filterMode === tab.id
+                  ? 'bg-primary text-on-primary font-semibold shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              {cat === 'all'
-                ? 'Archives_All'
-                : cat === 'solo'
-                ? 'Fast_Solo'
-                : 'Deep_Research'}
+              {tab.label}
             </button>
           ))}
         </div>
 
-        {/* View Switcher */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-[#111319]/40 p-0.5 rounded-lg border border-stone-800/60">
-            <button
-              type="button"
-              aria-label="Grid View"
-              onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded cursor-pointer ${
-                viewMode === 'grid' ? 'bg-[#272a30] text-[#e1e2e9]' : 'text-[#69767b]'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">grid_view</span>
-            </button>
-            <button
-              type="button"
-              aria-label="List View"
-              onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded cursor-pointer ${
-                viewMode === 'list' ? 'bg-[#272a30] text-[#e1e2e9]' : 'text-[#69767b]'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">view_list</span>
-            </button>
-          </div>
+        <div className="font-mono text-code-sm text-outline">
+          Showing {filteredSessions.length} {filteredSessions.length === 1 ? 'record' : 'records'}
         </div>
       </div>
 
-      {/* Main Grid & Side Panel Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-        {/* Notes Column */}
-        <div className="xl:col-span-9 flex flex-col gap-4">
-          {filteredSessions.length > 0 ? (
-            <div
-              className={
-                viewMode === 'list'
-                  ? 'flex flex-col gap-3 w-full'
-                  : 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full'
-              }
-            >
-              {filteredSessions.map((note) => {
-                if (!note) return null;
-                const sourceCount = note.evidenceGraph?.sourcesConsulted?.length || 0;
-                const claimCount = note.evidenceGraph?.claims?.length || 0;
-                const contradictionCount = note.evidenceGraph?.contradictions?.length || 0;
-
-                return (
-                  <article
-                    key={note.id}
-                    className="flex flex-col justify-between bg-[#191c21]/20 hover:bg-[#191c21]/40 p-5 rounded-xl transition-all duration-300 border border-stone-800/40 hover:border-[#3d494d]/60 group relative backdrop-blur-sm"
-                  >
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between pt-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${note.protocol === 'solo' ? 'bg-stone-600' : 'bg-stone-100'}`}></span>
-                          <span className="font-mono text-[9px] text-[#869398] uppercase tracking-widest font-bold">
-                            {note.protocol === 'solo' ? 'Protocol:Solo' : `Protocol:${note.protocol.toUpperCase()}`}
-                          </span>
-                        </div>
-                        <span className="font-mono text-[9px] text-[#69767b] uppercase tracking-tighter">
-                          {new Date(note.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-sm font-serif italic text-[#e1e2e9] group-hover:text-[#e1e2e9] transition-colors leading-snug line-clamp-2">
-                          {note.prompt}
-                        </h3>
-                        <p className="text-[11px] text-[#869398] line-clamp-3 leading-relaxed mt-1 font-sans">
-                          {note.finalOutput || 'Analysis pipeline terminated.'}
-                        </p>
-                      </div>
-
-                      {/* Real Calculated Metrics display inside note card */}
-                      <div className="grid grid-cols-3 gap-1 py-1.5 border-y border-stone-800/40 text-center font-mono text-[9px] text-[#869398] bg-[#111319]/40 rounded uppercase tracking-tighter">
-                        <div className="flex flex-col border-r border-stone-800/40">
-                          <span className="font-bold text-[#bcc9ce]">{claimCount}</span>
-                          <span>Claims</span>
-                        </div>
-                        <div className="flex flex-col border-r border-stone-800/40">
-                          <span className="font-bold text-[#bcc9ce]">{sourceCount}</span>
-                          <span>Sources</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-[#bcc9ce]">{contradictionCount}</span>
-                          <span>Conflicts</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Actions Strip */}
-                    <div className="flex items-center justify-between mt-4 pt-2.5">
-                      <button
-                        type="button"
-                        onClick={() => copyCitation(note.prompt, note.protocol)}
-                        className="text-[#69767b] hover:text-[#e1e2e9] transition-colors cursor-pointer flex items-center gap-1.5"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">format_quote</span>
-                        <span className="font-mono text-[9px] uppercase tracking-widest">Cite_Reference</span>
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => saveToGoogleDocs(note)}
-                          disabled={savingDocId === note.id}
-                          className="flex items-center gap-1 text-[9px] text-[#869398] hover:text-[#e1e2e9] transition-colors cursor-pointer disabled:opacity-50"
-                          title="Append this research to the single Breezy Research Google Doc"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">{savingDocId === note.id ? 'sync' : 'description'}</span>
-                          <span>{savingDocId === note.id ? 'Saving' : 'Google Doc'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onSelectNotePrompt(note.prompt)}
-                          className="flex items-center gap-1 text-[10px] text-[#e1e2e9] hover:underline underline-offset-4 transition-all font-bold uppercase tracking-widest cursor-pointer"
-                        >
-                          <span>Inspect</span>
-                          <span className="material-symbols-outlined text-[14px]">east</span>
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-stone-800 bg-[#191c21]/10 p-12 text-center flex flex-col items-center justify-center gap-3">
-              <span className="material-symbols-outlined text-stone-700 text-4xl">folder_zip</span>
-              <div className="max-w-md">
-                <h4 className="text-[10px] font-bold text-[#869398] uppercase tracking-[0.2em]">No saved research yet</h4>
-                <p className="text-[11px] text-[#69767b] mt-2 leading-relaxed font-serif italic">
-                  Start a research run and your saved sessions will appear here.
-                </p>
-              </div>
-            </div>
-          )}
+      {/* Grid of Past Investigation Cards */}
+      {filteredSessions.length === 0 ? (
+        <div className="p-space-xl rounded-3xl bg-surface-container-low border border-outline-variant/30 text-center flex flex-col items-center justify-center my-8 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-outline mb-space-md">
+            <span className="material-symbols-outlined text-headline-lg">history_edu</span>
+          </div>
+          <h3 className="font-headline font-semibold text-headline-sm text-on-surface">
+            No completed investigations found
+          </h3>
+          <p className="font-sans text-body-sm text-on-surface-variant mt-1 max-w-sm">
+            {searchQuery
+              ? 'No sessions matched your filter criteria.'
+              : 'Launch a research run to generate grounded multi-model synthesis dossiers.'}
+          </p>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+          {filteredSessions.map((session) => {
+            const sourcesList = session.evidenceGraph?.sourcesConsulted || [];
+            const hasSources = sourcesList.length > 0;
+            return (
+              <div
+                key={session.id}
+                className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-md flex flex-col justify-between gap-space-md hover:border-primary/40 transition-all group"
+              >
+                <div className="flex flex-col gap-space-sm">
+                  <div className="flex items-center justify-between pb-1 border-b border-outline-variant/20 font-mono text-code-sm">
+                    <span className="text-primary font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      {session.protocol === 'solo' ? 'Fast Solo Scan' : 'Multi-Model Consensus'}
+                    </span>
+                    <span className="text-outline">
+                      {new Date(session.createdAt || Date.now()).toLocaleDateString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
 
-        {/* Right Telemetry Column (3 cols) */}
-        <aside className="xl:col-span-3 flex flex-col gap-4">
-          <div className="bg-[#191c21]/40 p-4 rounded-xl flex flex-col gap-3 border border-stone-800/40 font-mono backdrop-blur-sm">
-            <div className="flex items-center justify-between border-b border-stone-800/40 pb-2">
-              <span className="text-[10px] font-bold text-[#e1e2e9] uppercase tracking-widest">Backend</span>
-              <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${backendStatus === 'online' ? 'text-[#e1e2e9] bg-[#272a30] border-[#3d494d]' : backendStatus === 'checking' ? 'text-[#bcc9ce] bg-[#191c21] border-stone-800' : 'text-[#869398] bg-[#111319] border-stone-900'}`}>
-                {backendStatus === 'online' ? 'Online' : backendStatus === 'checking' ? 'Checking' : 'Offline'}
-              </span>
-            </div>
-            {(() => {
-              const roles = providerConfigService.getConfig().roles;
-              const seatLabel = (role: typeof roles.architect) => {
-                if (!role?.provider || !role?.model) return 'Not configured';
-                if (!providerConfigService.isProviderConfigured(role.provider)) return 'Key not set';
-                return role.model;
-              };
-              return (
-                <div className="flex flex-col gap-2.5 text-[10px] tracking-tight">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[#869398] uppercase">
-                      <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
-                      <span>Node_Alpha</span>
+                  <h3 className="font-headline font-semibold text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                    {session.prompt}
+                  </h3>
+
+                  {session.finalOutput && (
+                    <p className="font-sans text-body-sm text-on-surface-variant line-clamp-3 leading-relaxed">
+                      {session.finalOutput.replace(/#{1,6}\s?/g, '').slice(0, 240)}...
+                    </p>
+                  )}
+
+                  {hasSources && (
+                    <div className="flex items-center gap-1 font-mono text-[11px] text-tertiary">
+                      <span className="material-symbols-outlined text-[14px]">verified</span>
+                      <span>{sourcesList.length} verified citation references</span>
                     </div>
-                    <span className="text-[#bcc9ce] truncate max-w-[120px]">
-                      {seatLabel(roles.architect)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[#869398] uppercase">
-                      <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
-                      <span>Node_Beta</span>
-                    </div>
-                    <span className="text-[#bcc9ce] truncate max-w-[120px]">
-                      {seatLabel(roles.skeptic)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[#869398] uppercase">
-                      <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
-                      <span>Node_Gamma</span>
-                    </div>
-                    <span className="text-[#bcc9ce] truncate max-w-[120px]">
-                      {seatLabel(roles.arbiter)}
-                    </span>
+                  )}
+                </div>
+
+                <div className="pt-space-sm border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-space-xs">
+                  <button
+                    type="button"
+                    onClick={() => onSelectNotePrompt(session.prompt)}
+                    className="flex items-center gap-1 text-primary hover:underline font-headline font-semibold text-body-sm"
+                  >
+                    <span>Inspect Investigation</span>
+                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </button>
+
+                  <div className="flex items-center gap-space-xs">
+                    <button
+                      type="button"
+                      onClick={() => copyCitation(session.prompt, session.protocol)}
+                      className="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+                      title="Copy Citation Reference"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => saveToGoogleDocs(session)}
+                      disabled={savingDocId === session.id}
+                      className="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+                      title="Save to Google Docs Archive"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {savingDocId === session.id ? 'sync' : 'article'}
+                      </span>
+                    </button>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-          <div className="bg-[#191c21]/40 p-4 rounded-xl flex flex-col gap-2.5 border border-stone-800/40 font-mono text-[10px] backdrop-blur-sm">
-            <span className="font-bold text-[#e1e2e9] uppercase tracking-widest block mb-1 underline underline-offset-4 decoration-stone-800">Enclave_Assurance</span>
-            <p className="text-[#869398] leading-relaxed uppercase tracking-tighter">
-              Research sessions are stored in this browser. If cloud sync is enabled, copies may also be stored in your connected cloud account.
-            </p>
-          </div>
-        </aside>
-      </div>
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-surface-container-high border border-outline-variant/40 text-on-surface px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
