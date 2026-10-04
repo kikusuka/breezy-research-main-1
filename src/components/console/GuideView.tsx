@@ -33,7 +33,7 @@ const synthexisSections = [
   {
     id: 'start',
     title: 'Start a research run',
-    text: 'Enter a real question. Choose the research method that matches the job: Adaptive, Systematic, Evidence map, or Comparative. Synthexis builds a research plan before the evidence pass.',
+    text: 'Enter a real question. Choose the research method that matches the job: Adaptive, Systematic, Evidence map, or Comparative. Breezy Research builds a research plan before the evidence pass.',
   },
   {
     id: 'roles',
@@ -69,7 +69,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
           <h1 className={product === 'breezy'
             ? 'text-3xl sm:text-4xl font-semibold tracking-tight text-white'
             : 'text-3xl sm:text-4xl font-serif italic font-medium tracking-tight text-stone-100'}>
-            How to use {product === 'breezy' ? 'Breezy' : 'Synthexis'}
+            How to use {product === 'breezy' ? 'Breezy' : 'Breezy Research'}
           </h1>
           <p className={product === 'breezy'
             ? 'mt-3 text-sm leading-7 text-slate-400'
