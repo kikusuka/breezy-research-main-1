@@ -212,7 +212,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       {heartbeatState?.checkpoint && isDeliberating && (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-2 w-full">
           <div className="border border-amber-500/10 bg-amber-500/[0.025] px-3 py-2 rounded-md text-[10px] text-stone-500 font-mono">
-            <span className="text-amber-400">HEARTBEAT</span> · {heartbeatState.taskReminder || 'Task alignment checkpoint applied'}
+            <span className="text-amber-400">CHECKPOINT</span> · {heartbeatState.taskReminder || 'Task alignment checkpoint applied'}
           </div>
         </div>
       )}
@@ -224,11 +224,14 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
           <div className="flex-1 flex flex-col items-center justify-center py-12 sm:py-24 text-center w-full">
             {/* Elegant Serif Header Group */}
             <span className="font-serif text-4xl sm:text-5xl font-normal text-stone-100 tracking-tight mb-3">
-              Synthexis
+              Breezy Research
             </span>
-            <h1 className="text-base sm:text-lg font-serif text-stone-400 font-normal mb-8 tracking-wide">
-              What are you curious about?
+            <h1 className="text-base sm:text-lg font-serif text-stone-400 font-normal mb-3 tracking-wide">
+              What are you trying to figure out?
             </h1>
+            <p className="max-w-lg text-xs leading-6 text-stone-600 mb-8">
+              Models can challenge one another before Breezy writes the conclusion.
+            </p>
 
             {/* The Ultra-Simple Input Box */}
             <div className="w-full bg-[#161a22] border border-white/5 rounded-2xl p-4 shadow-xl text-left focus-within:border-white/10 transition-all max-w-xl relative">
@@ -619,7 +622,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 {isTrailExpanded && (
                   <div className="p-4 border-t border-white/5 flex flex-col gap-4 bg-black/10">
                     {session.steps.map((step, idx) => {
-                      const humanRole = step.role === 'architect' ? 'Baseline hypothesis' : step.role === 'skeptic' ? 'Scrutiny objections' : 'Harmonized synthesis';
+                      const humanRole = step.role === 'architect' ? 'Initial proposal' : step.role === 'skeptic' ? 'Challenges' : 'Resolution';
                       return (
                         <div key={idx} className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#141820] border border-white/5">
                           <div className="flex items-center justify-between pb-2 border-b border-white/5">
