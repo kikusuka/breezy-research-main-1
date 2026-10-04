@@ -2,7 +2,7 @@ import React from 'react';
 import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 
-export type BreezyTab = 'chat' | 'ide' | 'canvas';
+export type BreezyTab = 'chat' | 'ide' | 'canvas' | 'docs';
 
 interface BreezyChat {
   id: string;
@@ -21,6 +21,7 @@ interface BreezySidebarProps {
   onDeleteChat: (id: string, e: React.MouseEvent) => void;
   onOpenProfile: () => void;
   onSwitchToSynthexis?: () => void;
+  onOpenGuide?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
   isOpenMobile?: boolean;
@@ -37,6 +38,7 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
   onDeleteChat,
   onOpenProfile,
   onSwitchToSynthexis,
+  onOpenGuide,
   isOpen,
   onClose,
   isOpenMobile,
@@ -155,6 +157,23 @@ export const BreezySidebar: React.FC<BreezySidebarProps> = ({
               <span>Workspace Canvas</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              onOpenGuide?.();
+              onCloseMobile?.();
+            }}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
+              activeTab === 'docs'
+                ? 'bg-sky-500/10 text-sky-300 border border-sky-500/20'
+                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+            }`}
+            title="Open the Breezy guide"
+          >
+            <span className={`material-symbols-outlined text-[17px] ${activeTab === 'docs' ? 'text-sky-400' : 'text-slate-500'}`}>menu_book</span>
+            <span>Guide</span>
+          </button>
 
           {/* New Chat Action */}
           <button
