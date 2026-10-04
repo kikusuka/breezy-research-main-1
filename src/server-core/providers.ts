@@ -450,7 +450,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
   }
 
   if (provider === 'ollama') {
-    const baseUrl = (env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\\/$/, '');
+    const baseUrl = (env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
     return streamOpenAICompatible({
       endpoint: `${baseUrl}/v1/chat/completions`,
       apiKey: apiKey?.trim() || 'ollama',
