@@ -456,7 +456,6 @@ export default function App() {
               heartbeatState={heartbeatState}
               onStartDebate={startDebate}
               onSteer={handleSteerCurrentResearch}
-              researchEvents={researchEvents}
               onSaveNote={(title, content) => {
                 const newNoteSession = createNewSession(title, currentSession?.protocol as any || 'trio', [], currentSession?.tone || 'balanced');
                 newNoteSession.finalOutput = content;
