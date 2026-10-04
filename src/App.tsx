@@ -261,6 +261,9 @@ export default function App() {
     setIsDeliberating(true);
     setActiveRound(1);
     setStreamingText('');
+    setActiveRoundStartedAt(Date.now());
+    setLiveUsage(null);
+    setHeartbeatState(null);
     setResearchEvents([
       !synthexisMode 
         ? `Starting lightweight single-model query: "${promptText.slice(0, 50)}..."` 
@@ -281,6 +284,8 @@ export default function App() {
     newSession.searchEngine = searchEngine;
     newSession.enableSearchGrounding = true;
     newSession.researchMethod = config.researchMethod || 'adaptive';
+    newSession.heartbeatEnabled = config.heartbeatEnabled !== false;
+    newSession.heartbeatIntervalSec = config.heartbeatIntervalSec || 60;
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
 
@@ -298,6 +303,8 @@ export default function App() {
           autoResolve,
           selectedRound,
           researchMethod: config.researchMethod || 'adaptive',
+          heartbeatEnabled: config.heartbeatEnabled !== false,
+          heartbeatIntervalSec: config.heartbeatIntervalSec || 60,
         },
         {
           signal: controller.signal,
@@ -315,6 +322,7 @@ export default function App() {
               setActiveRound(data.round || 1);
               setStreamingText('');
               setStreamingRole(data.agentName || data.role);
+              setActiveRoundStartedAt(Date.now());
               setSessions((prev) => {
                 const currentId = activeSessionIdRef.current;
                 return prev.map((s) => {
@@ -368,6 +376,27 @@ export default function App() {
                   return { ...s, steps: updatedSteps };
                 });
               });
+            } else if (data.type === 'usage') {
+              setLiveUsage((prev: any) => {
+                const next = { ...(prev || {}), ...(data.usage || {}) };
+                if (data.round) next.round = data.round;
+                return next;
+              });
+              setSessions((prev) => {
+                const currentId = activeSessionIdRef.current;
+                return prev.map((s) => s.id === currentId ? { ...s, usage: {
+                  ...(s.usage || { inputTokens: 0, outputTokens: 0, totalTokens: 0, reasoningTokens: 0, estimated: false }),
+                  inputTokens: (s.usage?.inputTokens || 0) + (data.usage?.inputTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.inputTokens || 0),
+                  outputTokens: (s.usage?.outputTokens || 0) + (data.usage?.outputTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.outputTokens || 0),
+                  totalTokens: (s.usage?.totalTokens || 0) + (data.usage?.totalTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.totalTokens || 0),
+                  reasoningTokens: (s.usage?.reasoningTokens || 0) + (data.usage?.reasoningTokens || 0) - ((s.usage?.byRound as any)?.[String(data.round)]?.reasoningTokens || 0),
+                  estimated: false,
+                  byRound: { ...(s.usage?.byRound || {}), [String(data.round)]: data.usage },
+                } } : s);
+              });
+            } else if (data.type === 'heartbeat') {
+              setHeartbeatState(data);
+              if (data.statusText) setResearchEvents((prev) => [...prev, data.statusText]);
             } else if (data.type === 'research_plan') {
               const plan = Array.isArray(data.plan) ? data.plan : [];
               setResearchEvents((prev) => [
@@ -386,15 +415,19 @@ export default function App() {
                     finalOutput: data.finalOutput || s.finalOutput,
                     evidenceGraph: data.evidenceGraph || s.evidenceGraph,
                     researchMetrics: data.researchMetrics || s.researchMetrics,
+                    usage: data.usage || s.usage,
                     metrics: data.metrics || s.metrics,
                   };
                 });
               });
               setIsDeliberating(false);
+              setActiveRoundStartedAt(null);
+              setLiveUsage(data.usage || liveUsage);
             } else if (data.type === 'error') {
               const errorMessage = data.message || data.error || 'Research failed on server.';
               setResearchEvents((prev) => [...prev, `Error: ${errorMessage}`]);
               setIsDeliberating(false);
+              setActiveRoundStartedAt(null);
             }
           },
         }
@@ -560,6 +593,9 @@ export default function App() {
                 activeRound={activeRound}
                 streamingRoundText={streamingText}
                 streamingRole={streamingRole}
+                activeRoundStartedAt={activeRoundStartedAt}
+                liveUsage={liveUsage}
+                heartbeatState={heartbeatState}
                 onStartDebate={startDebate}
                 researchEvents={researchEvents}
                 onSaveNote={(title, content) => {
