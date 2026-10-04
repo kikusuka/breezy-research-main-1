@@ -3,8 +3,8 @@ import path from 'path';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
-import { handleBackendRequest } from './src/server-core/router';
-import type { BackendEnv } from './src/server-core/types';
+import { handleBackendRequest } from './src/server-core/router.ts';
+import type { BackendEnv } from './src/server-core/types.ts';
 
 dotenv.config();
 

@@ -3,7 +3,7 @@
  * Universal fetch-based search integration
  */
 
-import { SearchResultItem, SearchGroundingResult, SearchEngineProvider, BackendEnv } from './types';
+import type { SearchResultItem, SearchGroundingResult, SearchEngineProvider, BackendEnv } from './types.ts';
 
 export async function searchDuckDuckGoKeyless(query: string): Promise<SearchResultItem[]> {
   const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;

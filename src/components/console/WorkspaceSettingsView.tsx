@@ -22,6 +22,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
   const [activeTab, setActiveTab] = useState<'general' | 'models' | 'synthexis' | 'integrations' | 'team' | 'billing'>('integrations');
   const [selectedRound, setSelectedRound] = useState<number>(canonical.selectedRound ?? 2);
   const [autoResolve, setAutoResolve] = useState<boolean>(canonical.autoResolve ?? true);
+  const [agreementThreshold, setAgreementThreshold] = useState<number>(canonical.agreementThreshold ?? 78);
   const [webhookActive, setWebhookActive] = useState<boolean>(() => {
     const saved = localStorage.getItem('breezy_webhook_active');
     return saved !== null ? saved === 'true' : false;
@@ -38,10 +39,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     return localStorage.getItem('breezy_auto_save_drive') === 'true';
   });
   const [roles, setRoles] = useState(canonical.roles || {
-    architect: { provider: '' as any, model: '' },
-    skeptic: { provider: '' as any, model: '' },
-    verifier: { provider: '' as any, model: '' },
-    arbiter: { provider: '' as any, model: '' },
+    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    skeptic: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
   });
 
   // Key inputs
@@ -221,6 +222,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
       ...currentConfig,
       preset,
       roles,
+      agreementThreshold,
       autoResolve,
       selectedRound,
     });
@@ -243,6 +245,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     const current = providerConfigService.getConfig();
     setPreset(current.preset || 'balanced');
     setRoles(current.roles);
+    setAgreementThreshold(current.agreementThreshold ?? 78);
     setAutoResolve(current.autoResolve ?? true);
     setSelectedRound(current.selectedRound ?? 2);
 
@@ -279,10 +282,22 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     setTimeout(() => setShowToast(false), 3500);
   };
 
+  const getSpeedEstimate = (rounds: number) => {
+    const activeRoles = Object.values(roles);
+    if (activeRoles.length === 0) return `~${rounds * 2}s`;
+    const avgSeconds = activeRoles.reduce((sum, r) => {
+      if (r.provider === 'anthropic' || (r.model && r.model.includes('sonnet'))) return sum + 4.5;
+      if (r.provider === 'groq') return sum + 1.2;
+      return sum + 2.0;
+    }, 0) / activeRoles.length;
+    const totalEst = Math.max(1, Math.round(avgSeconds * rounds));
+    return `~${totalEst}s`;
+  };
+
   const roundLabels: Record<number, string> = {
-    1: '1 Round • Fast',
-    2: '2 Rounds • Balanced',
-    4: '4 Rounds • Deep Audit',
+    1: `1 Round • Fast (${getSpeedEstimate(1)})`,
+    2: `2 Rounds • Balanced (${getSpeedEstimate(2)})`,
+    4: `4 Rounds • Deep Audit (${getSpeedEstimate(4)})`,
   };
 
   const isGoogleConnected = Boolean(googleUser && googleToken);
@@ -903,9 +918,9 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                 <div className="p-4 rounded-xl bg-white/[0.02] flex flex-col gap-4 border border-white/5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className="font-sans text-xs text-stone-300 font-medium">Resolve disagreements</span>
+                      <span className="font-sans text-xs text-stone-300 font-medium">Auto-resolve Contradictions</span>
                       <span className="font-sans text-[11px] text-stone-400">
-                        Try to reconcile supported claims, but keep unresolved disagreements visible instead of forcing consensus.
+                        Automatically synthexis common ground when mutual agreement breaches synthexis threshold
                       </span>
                     </div>
                     <button
@@ -926,6 +941,23 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     </button>
                   </div>
 
+                  <div className="flex flex-col gap-2 pt-1 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-sans text-xs text-stone-300 font-medium">Agreement Threshold</span>
+                      <span className="font-mono text-xs text-stone-400 font-semibold">{agreementThreshold}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="50"
+                      max="95"
+                      value={agreementThreshold}
+                      onChange={(e) => {
+                        setAgreementThreshold(Number(e.target.value));
+                        setIsDirty(true);
+                      }}
+                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-stone-100"
+                    />
+                  </div>
                 </div>
               </section>
             </div>

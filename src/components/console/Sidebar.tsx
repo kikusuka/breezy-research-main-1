@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">psychology</span>
-                  <span>Research</span>
+                <span>Workspace</span>
               </button>
 
               <button
@@ -182,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>Docs</span>
               </button>
 
-              {/* Direct switch to the everyday chat workspace */}
+              {/* Direct Switch to Breezy Chat */}
               {onSwitchToBreezy && (
                 <button
                   type="button"
@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[17px] text-sky-400">chat</span>
-                    <span>Chat</span>
+                    <span>Breezy Chat</span>
                   </div>
                   <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                 </button>
@@ -231,13 +231,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Research History List: Editorial List */}
           <div className="flex-1 overflow-y-auto p-3 mt-4 flex flex-col gap-3">
             <span className="text-xs font-medium text-stone-300 px-3">
-              Recent research
+              Journal
             </span>
 
             <div className="flex flex-col gap-0.5">
               {sessions.length === 0 ? (
                 <p className="px-3 py-4 text-xs text-stone-400 font-sans italic">
-                  No research yet. Start a run and saved sessions will appear here.
+                  No recorded entries.
                 </p>
               ) : (
                 sessions.map((s) => {
@@ -280,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onDeleteSession(s.id, e);
                           }}
                           className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded hover:bg-stone-700 text-stone-500 hover:text-stone-200 transition-all shrink-0"
-                          title="Delete research session"
+                          title="Purge record"
                         >
                           <span className="material-symbols-outlined text-[14px]">close</span>
                         </button>

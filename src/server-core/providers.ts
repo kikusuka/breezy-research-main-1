@@ -4,7 +4,7 @@
  * Compatible across Cloudflare Workers, Deno Deploy, and Node.js
  */
 
-import { CallAgentParams, BackendEnv } from './types';
+import type { CallAgentParams, BackendEnv } from './types.ts';
 
 /**
  * Sanitize model names to valid supported versions without destructive rewriting

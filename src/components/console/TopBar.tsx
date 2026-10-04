@@ -29,7 +29,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         isSidebarOpen ? 'lg:left-64' : 'left-0'
       } right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-stone-800/80 bg-[#090d16]/90 text-stone-100 shadow-sm transition-all duration-300`}
     >
-      {/* Left: Sidebar Toggle + Seamless Unboxed Switch workspace */}
+      {/* Left: Sidebar Toggle + Seamless Unboxed Workspace Switcher */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           type="button"
@@ -52,13 +52,13 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Switch Workspace"
           >
             {productMode === 'synthexis' && (
-              <SynthexisLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 text-sky-400 group-hover:text-sky-300 drop-shadow-[0_0_12px_rgba(56,189,248,0.35)] transition-all shrink-0" />
+              <SynthexisLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400 group-hover:text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)] transition-all shrink-0" />
             )}
             {productMode === 'breezy' && (
               <BreezyLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_0_12px_rgba(56,189,248,0.35)] transition-all shrink-0" />
             )}
             <span className="font-sans font-bold text-base sm:text-lg tracking-tight text-white group-hover:text-sky-200 transition-colors">
-              {productMode === 'breezy' ? 'Breezy' : 'Research'}
+              {productMode === 'breezy' ? 'Breezy' : 'Synthexis'}
             </span>
             <span
               className={`material-symbols-outlined text-[20px] text-stone-400 group-hover:text-stone-200 transition-transform duration-200 ${
@@ -78,12 +78,12 @@ export const TopBar: React.FC<TopBarProps> = ({
               />
               <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-[#090d16]/95 backdrop-blur-2xl border border-white/[0.08] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_24px_rgba(56,189,248,0.08)] z-40 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
                     Workspaces
                   </span>
                   <span className="text-[9px] text-stone-400 bg-white/[0.05] px-2 py-0.5 rounded-full border border-white/[0.06]">
-                    Switch workspace
+                    Select View
                   </span>
                 </div>
 
@@ -102,7 +102,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src="/breezy-logo.svg"
+                      src="/breezy.png"
                       alt="Breezy"
                       className="w-[22.5px] h-[22.5px] object-contain shrink-0"
                       style={{ width: '22.5px', height: '22.5px' }}
@@ -113,11 +113,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                           Breezy
                         </span>
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          Chat
+                          AI Chat
                         </span>
                       </div>
                       <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
-                        Everyday chat, canvas and code
+                        Chat, creative canvas & code ideation
                       </span>
                     </div>
                   </div>
@@ -153,11 +153,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                           Research
                         </span>
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          Research
+                          Multi-model
                         </span>
                       </div>
                       <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
-                        Compare perspectives and check evidence
+                        Multi-model adversarial debate & verification
                       </span>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <span>
                     Current: <strong className="text-stone-200">{productMode === 'breezy' ? 'Breezy' : 'Research'}</strong>
                   </span>
-                    <span className="text-[9px] text-stone-400">One product, different rooms</span>
+                  <span className="text-[9px] text-stone-400">Select a workspace</span>
                 </div>
               </div>
             </>

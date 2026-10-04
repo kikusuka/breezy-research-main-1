@@ -98,7 +98,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-[#9d85f2]/20 hover:text-white transition-colors text-left text-xs font-medium cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px] text-[#ccbdff]">account_tree</span>
-                <span>Breezy Research</span>
+                <span>Breezy Research Council</span>
               </button>
             </div>
           )}
@@ -135,7 +135,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[#ccbdff] text-[18px]">menu_book</span>
-              <span className="font-sans text-xs font-medium">Research history</span>
+              <span className="font-sans text-xs font-medium">Dialectic Knowledge Archives</span>
             </div>
             <span className="font-mono text-[10px] text-stone-400">⌘2</span>
           </button>

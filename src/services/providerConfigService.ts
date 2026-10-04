@@ -149,7 +149,7 @@ export const providerConfigService = {
           researchMethod: parsed.researchMethod || 'adaptive',
           heartbeatEnabled: typeof parsed.heartbeatEnabled === 'boolean' ? parsed.heartbeatEnabled : true,
           heartbeatIntervalSec: typeof parsed.heartbeatIntervalSec === 'number' ? Math.min(300, Math.max(20, parsed.heartbeatIntervalSec)) : 60,
-          ollamaBaseUrl: parsed.ollamaBaseUrl || '',
+          ollamaBaseUrl: parsed.ollamaBaseUrl || 'http://localhost:11434',
           openaiCompatibleBaseUrl: parsed.openaiCompatibleBaseUrl || '',
         };
       }
@@ -176,7 +176,7 @@ export const providerConfigService = {
         researchMethod: 'adaptive',
         heartbeatEnabled: true,
         heartbeatIntervalSec: 60,
-        ollamaBaseUrl: '',
+        ollamaBaseUrl: 'http://localhost:11434',
         openaiCompatibleBaseUrl: '',
       };
 
@@ -196,7 +196,7 @@ export const providerConfigService = {
         researchMethod: 'adaptive',
         heartbeatEnabled: true,
         heartbeatIntervalSec: 60,
-        ollamaBaseUrl: '',
+        ollamaBaseUrl: 'http://localhost:11434',
         openaiCompatibleBaseUrl: '',
       };
     }

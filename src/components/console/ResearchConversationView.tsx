@@ -178,11 +178,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
   // Natural language research state tracker
   const getSubtleResearchState = () => {
-    if (activeRound === 1) return 'Researching the question and gathering perspectives';
-    if (activeRound === 2) return 'Comparing perspectives and challenging assumptions';
-    if (activeRound === 3) return 'Checking evidence and unsupported claims';
-    if (activeRound >= 4) return 'Resolving disagreements and writing the result';
-    return 'Researching';
+    if (activeRound === 1) return 'Exploring primary premises and establishing theoretical baseline...';
+    if (activeRound === 2) return 'Challenging assumptions and investigating boundary failures...';
+    if (activeRound === 3) return 'Reviewing Analyst and Critic output for unsupported claims and math errors...';
+    if (activeRound >= 4) return 'Analyzing divergent guidelines and resolving point of tension...';
+    return 'Conducting multi-model research...';
   };
 
   return (
@@ -198,17 +198,21 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
       {isDeliberating && (
         <div className="sticky top-0 z-20 border-b border-stone-800/60 bg-[#07111f]/95 px-4 py-2">
-          <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-sky-100/70">
-            <span className="text-sky-100">{getSubtleResearchState()}</span>
-            <span className="text-sky-200/45">{formatDuration(elapsedSeconds)}</span>
-            {heartbeatState?.statusText ? <span className="text-sky-200/55 truncate max-w-[280px]">{heartbeatState.statusText}</span> : null}
+          <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-mono text-stone-500 uppercase tracking-wider">
+            <span className="text-stone-300">{streamingRole || 'Research'} · {formatDuration(elapsedSeconds)}</span>
+            <span>input {formatTokens(liveUsage?.inputTokens)}</span>
+            <span>output {formatTokens(liveUsage?.outputTokens)}</span>
+            <span>total {formatTokens(liveUsage?.totalTokens)}</span>
+            {liveUsage?.reasoningTokens ? <span>reasoning {formatTokens(liveUsage.reasoningTokens)}</span> : null}
+            <span className="text-emerald-400">LIVE</span>
+            {heartbeatState?.statusText ? <span className="text-amber-400 truncate max-w-[280px]">{heartbeatState.statusText}</span> : null}
           </div>
         </div>
       )}
       {heartbeatState?.checkpoint && isDeliberating && (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-2 w-full">
           <div className="border border-amber-500/10 bg-amber-500/[0.025] px-3 py-2 rounded-md text-[10px] text-stone-500 font-mono">
-            <span className="text-sky-300">Check-in</span> · {heartbeatState.taskReminder || 'Still working from the original question'}
+            <span className="text-amber-400">PROGRESS</span> · {heartbeatState.taskReminder || 'Progress check complete'}
           </div>
         </div>
       )}
