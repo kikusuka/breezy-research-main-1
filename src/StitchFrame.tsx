@@ -7,7 +7,7 @@ type Props = {
   profile: UserProfile;
   onNavigate: (tab: string) => void;
   onResearch?: (query: string) => void;
-  onChat?: (query: string) => void;
+  onChat?: (query: string) => Promise<string>;
 };
 
 const LIVE_NAV = new Set(['landing','chat','research','history','models','docs','settings','profile','build','canvas','notes']);
@@ -107,7 +107,7 @@ export default function StitchFrame({ file, mobileFile, profile, onNavigate, onR
           if (event.key === 'Enter' && !(event as KeyboardEvent).shiftKey) {
             event.preventDefault();
             const q = chatInput.value.trim();
-            if (q) onChat(q);
+            if (q) { const result = await onChat(q); const wrap = doc.createElement('div'); wrap.className='flex justify-start mb-6'; wrap.innerHTML='<div class="max-w-2xl rounded-2xl bg-surface-container px-space-md py-space-sm text-on-surface">'+result.replace(/</g,'&lt;')+'</div>'; doc.body.appendChild(wrap); chatInput.value=''; }
           }
         });
       }
