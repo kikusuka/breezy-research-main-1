@@ -500,6 +500,7 @@ export default function App() {
 
           {(activeTab === 'history' || activeTab === 'notes') && (
             <ResearchNotesView
+              activeTab={activeTab}
               sessions={sessions}
               onSelectNotePrompt={(prompt) => {
                 if (prompt) {
