@@ -157,6 +157,9 @@ export default function App() {
   const [streamingRole, setStreamingRole] = useState('Analyst');
   const [researchEvents, setResearchEvents] = useState<string[]>([]);
   const [appToast, setAppToast] = useState<string | null>(null);
+  const [activeRoundStartedAt, setActiveRoundStartedAt] = useState<number | null>(null);
+  const [liveUsage, setLiveUsage] = useState<any>(null);
+  const [heartbeatState, setHeartbeatState] = useState<any>(null);
 
   useEffect(() => {
     const profile = userProfileService.getProfile();

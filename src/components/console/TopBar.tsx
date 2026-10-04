@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SynthexisLogoIcon } from '../icons/ProductLogos';
+import { SynthexisLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
 
 export type ProductMode = 'breezy' | 'synthexis';
 
@@ -54,6 +54,9 @@ export const TopBar: React.FC<TopBarProps> = ({
             {productMode === 'synthexis' && (
               <SynthexisLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400 group-hover:text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)] transition-all shrink-0" />
             )}
+            {productMode === 'breezy' && (
+              <BreezyLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_0_12px_rgba(56,189,248,0.35)] transition-all shrink-0" />
+            )}
             <span className="font-sans font-bold text-base sm:text-lg tracking-tight text-white group-hover:text-sky-200 transition-colors">
               {productMode === 'breezy' ? 'Breezy' : 'Synthexis'}
             </span>
@@ -98,7 +101,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="material-symbols-outlined text-[19px] text-sky-400 shrink-0">chat</span>
+                    <img
+                      src="/breezy.png"
+                      alt="Breezy"
+                      className="w-[22.5px] h-[22.5px] object-contain shrink-0"
+                      style={{ width: '22.5px', height: '22.5px' }}
+                    />
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="font-sans font-semibold text-xs text-stone-100 group-hover:text-sky-300 transition-colors">

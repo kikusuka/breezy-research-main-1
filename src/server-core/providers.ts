@@ -465,7 +465,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
   }
 
   if (provider === 'openai-compatible') {
-    const baseUrl = (env.OPENAI_COMPATIBLE_BASE_URL || '').replace(/\\/$/, '');
+    const baseUrl = (env.OPENAI_COMPATIBLE_BASE_URL || '').replace(/\/$/, '');
     if (!baseUrl) throw new Error('No OpenAI-compatible base URL configured.');
     return streamOpenAICompatible({
       endpoint: `${baseUrl}/chat/completions`,

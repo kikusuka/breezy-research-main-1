@@ -94,11 +94,11 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     const routable = effectiveProviderService.getActiveRoutableModel();
-    return routable ? routable.model : '';
+    return routable ? routable.model : 'gemini-2.5-flash';
   });
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
     const routable = effectiveProviderService.getActiveRoutableModel();
-    return routable ? routable.provider : '';
+    return routable ? routable.provider : 'gemini';
   });
 
   useEffect(() => {
@@ -451,6 +451,232 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
 
   const activeChat = getActiveChat();
 
+  const renderComposer = (isCentered: boolean = false) => (
+    <div className="w-full max-w-3xl pointer-events-auto flex flex-col items-center gap-2">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={breezyFileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv,.js,.ts,.tsx,.jsx,.py,.html,.css,.sql"
+      />
+
+      {/* Input Capsule Box */}
+      <div
+        className={`w-full rounded-2xl sm:rounded-3xl bg-[#0d1424]/95 backdrop-blur-2xl p-3.5 sm:p-4 border border-slate-700/80 shadow-[0_16px_40px_rgba(0,0,0,0.75)] flex flex-col gap-2.5 focus-within:border-sky-400/60 focus-within:shadow-[0_0_28px_rgba(56,189,248,0.22)] transition-all ${
+          isCentered ? 'shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_24px_rgba(56,189,248,0.12)]' : ''
+        }`}
+      >
+        {attachedFile && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-xs text-sky-200 self-start">
+            <span className="material-symbols-outlined text-[15px] text-sky-400">attach_file</span>
+            <span className="truncate max-w-[200px] font-medium">{attachedFile.name} ({attachedFile.size})</span>
+            <button
+              type="button"
+              onClick={() => setAttachedFile(null)}
+              className="text-slate-400 hover:text-white font-bold ml-1 cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        <textarea
+          ref={textareaRef}
+          rows={2}
+          value={inputVal}
+          onChange={(e) => {
+            setInputVal(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = `${Math.min(Math.max(e.target.scrollHeight, 52), 200)}px`;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 768) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Ask Breezy anything... (Shift+Enter for new line)"
+          className="w-full bg-transparent resize-none outline-none font-sans text-sm sm:text-base text-slate-100 placeholder:text-slate-400 min-h-[50px] sm:min-h-[56px] max-h-52 px-2 py-1 leading-relaxed"
+        />
+
+        {/* Tools row */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            {/* Web search toggle */}
+            <button
+              type="button"
+              onClick={() => setWebSearchActive(!webSearchActive)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-sans text-xs transition-all border cursor-pointer ${
+                webSearchActive
+                  ? 'bg-sky-500/20 text-sky-300 border-sky-400/40 font-semibold'
+                  : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800'
+              }`}
+              title="Enable web search grounding"
+            >
+              <span className="material-symbols-outlined text-[15px]">public</span>
+              <span>Search {webSearchActive ? 'On' : 'Off'}</span>
+            </button>
+
+            {/* Attach File button */}
+            <button
+              type="button"
+              onClick={() => breezyFileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
+              title="Attach reference document or code"
+            >
+              <span className="material-symbols-outlined text-[15px]">attach_file</span>
+              <span className="hidden sm:inline">Attach</span>
+            </button>
+
+            {/* Settings / BYOK */}
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
+              title="Configure AI API keys & models"
+            >
+              <span className="material-symbols-outlined text-[15px]">key</span>
+              <span className="hidden sm:inline">Keys</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* Model Selector Dropdown */}
+            <div className="relative">
+              {(() => {
+                const info = effectiveProviderService.getProviderInfo(selectedProvider);
+                const isConfigured = info.hasKey;
+                const displayLabel = selectedModel || 'gemini-2.5-flash';
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setIsModelPickerOpen(!isModelPickerOpen)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer shadow-xs ${
+                      isConfigured
+                        ? 'text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700/60 bg-slate-900/60'
+                        : 'text-sky-300 hover:text-white hover:bg-sky-950/40 border-sky-500/40 bg-sky-950/20'
+                    }`}
+                    title={isConfigured ? `Active Model: ${displayLabel}` : `Model: ${displayLabel} (Connect key or use server)`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400'}`} />
+                    <span className="truncate max-w-[120px] font-sans">
+                      {displayLabel}
+                    </span>
+                    <span className="material-symbols-outlined text-[16px] text-slate-400">
+                      {isModelPickerOpen ? 'expand_less' : 'expand_more'}
+                    </span>
+                  </button>
+                );
+              })()}
+
+              {isModelPickerOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setIsModelPickerOpen(false)}
+                  />
+                  <div className="absolute bottom-full mb-2 right-0 w-64 rounded-xl bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 shadow-2xl z-40 animate-in fade-in">
+                    <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1 flex items-center justify-between">
+                      <span>Select AI Model</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsModelPickerOpen(false);
+                          onOpenSettings();
+                        }}
+                        className="text-sky-400 hover:underline text-[9px] cursor-pointer"
+                      >
+                        Manage Keys
+                      </button>
+                    </div>
+                    {Object.entries(AVAILABLE_MODELS).flatMap(([prov, models]) =>
+                      models.map((m) => {
+                        const isCur = selectedModel === m.id;
+                        const pInfo = effectiveProviderService.getProviderInfo(prov);
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedProvider(prov);
+                              setSelectedModel(m.id);
+                              setIsModelPickerOpen(false);
+                              toast(`Model switched to ${m.name}`);
+                            }}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer transition-all ${
+                              isCur
+                                ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${pInfo.hasKey ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`} />
+                              <div className="truncate">
+                                <div className="font-sans truncate">{m.name}</div>
+                                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
+                                  <span>{prov}</span>
+                                  {!pInfo.hasKey ? (
+                                    <span className="text-amber-400/90 text-[9px]">· Requires Key</span>
+                                  ) : (
+                                    <span className="text-emerald-400/90 text-[9px]">· {pInfo.source === 'server' ? 'Server Connected' : 'BYOK Connected'}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {isCur && (
+                              <span className="material-symbols-outlined text-[16px] text-sky-400 shrink-0">check</span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Mic toggle */}
+            <button
+              type="button"
+              onClick={handleMicToggle}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
+                isMicActive
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                  : 'text-slate-400 hover:text-sky-400 hover:bg-slate-800/80'
+              }`}
+              title="Voice input"
+            >
+              <span className="material-symbols-outlined text-[19px] sm:text-[20px]">mic</span>
+            </button>
+
+            {/* Send Button */}
+            <button
+              type="button"
+              onClick={() => handleSend()}
+              disabled={(!inputVal.trim() && !attachedFile) || isThinking}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                (inputVal.trim() || attachedFile) && !isThinking
+                  ? 'bg-white text-slate-950 hover:bg-slate-200 shadow-md font-bold'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+              }`}
+              title="Send message"
+            >
+              <span className="material-symbols-outlined text-[19px] sm:text-[20px]">arrow_upward</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {!isCentered && (
+        <p className="font-sans text-[11px] text-slate-400 text-center">
+          Breezy · Advanced AI coding assistant & workspace.
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex-1 flex flex-col w-full relative h-[calc(100vh-4rem)] bg-[#090d16] text-slate-100 antialiased font-sans overflow-hidden">
       {/* Subtle background glow */}
@@ -487,92 +713,28 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
       <div className="flex-1 flex flex-col w-full z-10 min-h-0 overflow-hidden">
         <main
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full pt-2 sm:pt-4 pb-44 scroll-smooth"
+          className={`flex-1 overflow-y-auto w-full scroll-smooth flex flex-col ${
+            activeChat && activeChat.messages.length > 0 ? 'pt-4 sm:pt-6 pb-40' : 'py-4 sm:py-6 justify-center'
+          }`}
         >
-          <div className="w-full max-w-[920px] lg:max-w-[980px] mx-auto px-4 sm:px-6 flex flex-col gap-5">
+          <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col flex-1 gap-5">
             {!activeChat || activeChat.messages.length === 0 ? (
               /* Centered Welcome Hero */
-              <div className="pt-2 sm:pt-4 pb-2 sm:pb-3 flex flex-col items-center text-center animate-in fade-in duration-200">
-                <h1 className="font-sans text-2xl sm:text-3xl lg:text-4xl text-white font-bold tracking-tight">
+              <div className="flex-1 flex flex-col items-center justify-center py-4 sm:py-6 text-center w-full my-auto animate-in fade-in duration-200">
+                <h1 className="font-sans text-3xl sm:text-4xl text-white font-bold tracking-tight">
                   What can I help you with today?
                 </h1>
                 <p className="font-sans text-sm sm:text-base text-slate-300 mt-2 max-w-lg leading-relaxed">
                   Ask questions, draft code, brainstorm ideas, and build powerful applications.
                 </p>
 
-                {/* Prompt Cards */}
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 sm:mt-5 text-left">
-                  <button
-                    type="button"
-                    onClick={() => handleSend('Explain quantum computing with a simple, intuitive metaphor.')}
-                    className="p-3.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-sky-500/40 transition-all text-left flex items-start gap-3 cursor-pointer group shadow-xs"
-                  >
-                    <span className="material-symbols-outlined text-sky-400 text-lg mt-0.5 shrink-0">
-                      psychology
-                    </span>
-                    <div>
-                      <div className="font-semibold text-xs text-slate-100 group-hover:text-sky-300">
-                        Explain quantum computing
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Simple, intuitive everyday metaphors
-                      </div>
-                    </div>
-                  </button>
+                {/* Centered Composer Box */}
+                <div className="w-full mt-6 text-left">
+                  {renderComposer(true)}
+                </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSend('Write a React TypeScript hook for debounced search with abort controllers.')}
-                    className="p-3.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-sky-500/40 transition-all text-left flex items-start gap-3 cursor-pointer group shadow-xs"
-                  >
-                    <span className="material-symbols-outlined text-sky-400 text-lg mt-0.5 shrink-0">
-                      code
-                    </span>
-                    <div>
-                      <div className="font-semibold text-xs text-slate-100 group-hover:text-sky-300">
-                        Write React hook
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Debounced search with abort controllers
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSend('Draft an outline for a high-performance modern web application architecture.')}
-                    className="p-3.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-sky-500/40 transition-all text-left flex items-start gap-3 cursor-pointer group shadow-xs"
-                  >
-                    <span className="material-symbols-outlined text-sky-400 text-lg mt-0.5 shrink-0">
-                      architecture
-                    </span>
-                    <div>
-                      <div className="font-semibold text-xs text-slate-100 group-hover:text-sky-300">
-                        Web Architecture
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Modular frontend with resilient caching
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSend('Compare the philosophical debate between Rationalism and Empiricism.')}
-                    className="p-3.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-sky-500/40 transition-all text-left flex items-start gap-3 cursor-pointer group shadow-xs"
-                  >
-                    <span className="material-symbols-outlined text-sky-400 text-lg mt-0.5 shrink-0">
-                      balance
-                    </span>
-                    <div>
-                      <div className="font-semibold text-xs text-slate-100 group-hover:text-sky-300">
-                        Rationalism vs. Empiricism
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Core epistemological arguments compared
-                      </div>
-                    </div>
-                  </button>
+                <div className="text-[11px] text-slate-400 font-sans tracking-wide mt-5">
+                  Breezy · Advanced AI coding assistant & workspace.
                 </div>
               </div>
             ) : (
@@ -704,226 +866,12 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
           </div>
         </main>
 
-        {/* Floating Bottom Composer */}
-        <div className={`fixed bottom-0 ${isSidebarOpen ? 'lg:left-64' : 'left-0'} left-0 right-0 p-3 sm:p-4 pointer-events-none flex flex-col items-center z-30 transition-all duration-300`}>
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={breezyFileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-            accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv,.js,.ts,.tsx,.jsx,.py,.html,.css,.sql"
-          />
-
-          <div className="w-full max-w-[920px] lg:max-w-[980px] pointer-events-auto flex flex-col items-center gap-2">
-            {/* Input Capsule Box */}
-            <div className="w-full rounded-2xl sm:rounded-3xl bg-[#0d1424]/95 backdrop-blur-2xl p-3.5 sm:p-4 border border-slate-700/80 shadow-[0_16px_40px_rgba(0,0,0,0.75)] flex flex-col gap-2.5 focus-within:border-sky-400/60 focus-within:shadow-[0_0_28px_rgba(56,189,248,0.22)] transition-all">
-              {attachedFile && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-xs text-sky-200 self-start">
-                  <span className="material-symbols-outlined text-[15px] text-sky-400">attach_file</span>
-                  <span className="truncate max-w-[200px] font-medium">{attachedFile.name} ({attachedFile.size})</span>
-                  <button
-                    type="button"
-                    onClick={() => setAttachedFile(null)}
-                    className="text-slate-400 hover:text-white font-bold ml-1 cursor-pointer"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-
-              <textarea
-                ref={textareaRef}
-                rows={2}
-                value={inputVal}
-                onChange={(e) => {
-                  setInputVal(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(Math.max(e.target.scrollHeight, 60), 220)}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 768) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Ask Breezy anything... (Shift+Enter for new line)"
-                className="w-full bg-transparent resize-none outline-none font-sans text-sm sm:text-base text-slate-100 placeholder:text-slate-400 min-h-[58px] sm:min-h-[64px] max-h-56 px-2.5 py-1 leading-relaxed"
-              />
-
-              {/* Tools row */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs sm:text-sm">
-                <div className="flex items-center gap-2">
-                  {/* Web search toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setWebSearchActive(!webSearchActive)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-sans text-xs transition-all border cursor-pointer ${
-                      webSearchActive
-                        ? 'bg-sky-500/20 text-sky-300 border-sky-400/40 font-semibold'
-                        : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800'
-                    }`}
-                    title="Enable web search grounding"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">public</span>
-                    <span>Search {webSearchActive ? 'On' : 'Off'}</span>
-                  </button>
-
-                  {/* Attach File button */}
-                  <button
-                    type="button"
-                    onClick={() => breezyFileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
-                    title="Attach reference document or code"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">attach_file</span>
-                    <span className="hidden sm:inline">Attach</span>
-                  </button>
-
-                  {/* Settings / BYOK */}
-                  <button
-                    type="button"
-                    onClick={onOpenSettings}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
-                    title="Configure AI API keys & models"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">key</span>
-                    <span className="hidden sm:inline">Keys</span>
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {/* Model Selector Dropdown */}
-                  <div className="relative">
-                    {(() => {
-                      const info = effectiveProviderService.getProviderInfo(selectedProvider);
-                      const isConfigured = info.hasKey;
-                      const displayLabel = selectedModel || 'No model connected';
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => setIsModelPickerOpen(!isModelPickerOpen)}
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer shadow-xs ${
-                            isConfigured
-                              ? 'text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700/60 bg-slate-900/60'
-                              : 'text-sky-300 hover:text-white hover:bg-sky-950/40 border-sky-500/40 bg-sky-950/20'
-                          }`}
-                          title={isConfigured ? `Active Model: ${displayLabel}` : `Model: ${displayLabel} (Connect key or use server)`}
-                        >
-                          <span className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400'}`} />
-                          <span className="truncate max-w-[120px] font-sans">
-                            {displayLabel}
-                          </span>
-                          <span className="material-symbols-outlined text-[16px] text-slate-400">
-                            {isModelPickerOpen ? 'expand_less' : 'expand_more'}
-                          </span>
-                        </button>
-                      );
-                    })()}
-
-                    {isModelPickerOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-30"
-                          onClick={() => setIsModelPickerOpen(false)}
-                        />
-                        <div className="absolute bottom-full mb-2 right-0 w-64 rounded-xl bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 shadow-2xl z-40 animate-in fade-in">
-                          <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1 flex items-center justify-between">
-                            <span>Select AI Model</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsModelPickerOpen(false);
-                                onOpenSettings();
-                              }}
-                              className="text-sky-400 hover:underline text-[9px] cursor-pointer"
-                            >
-                              Manage Keys
-                            </button>
-                          </div>
-                          {Object.entries(AVAILABLE_MODELS).flatMap(([prov, models]) =>
-                            models.map((m) => {
-                              const isCur = selectedModel === m.id;
-                              const pInfo = effectiveProviderService.getProviderInfo(prov);
-                              return (
-                                <button
-                                  key={m.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedProvider(prov);
-                                    setSelectedModel(m.id);
-                                    setIsModelPickerOpen(false);
-                                    toast(`Model switched to ${m.name}`);
-                                  }}
-                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer transition-all ${
-                                    isCur
-                                      ? 'bg-sky-500/20 text-sky-300 font-semibold'
-                                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${pInfo.hasKey ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`} />
-                                    <div className="truncate">
-                                      <div className="font-sans truncate">{m.name}</div>
-                                      <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
-                                        <span>{prov}</span>
-                                        {!pInfo.hasKey ? (
-                                          <span className="text-amber-400/90 text-[9px]">· Requires Key</span>
-                                        ) : (
-                                          <span className="text-emerald-400/90 text-[9px]">· {pInfo.source === 'server' ? 'Server Connected' : 'BYOK Connected'}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {isCur && (
-                                    <span className="material-symbols-outlined text-[16px] text-sky-400 shrink-0">check</span>
-                                  )}
-                                </button>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Mic toggle */}
-                  <button
-                    type="button"
-                    onClick={handleMicToggle}
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
-                      isMicActive
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                        : 'text-slate-400 hover:text-sky-400 hover:bg-slate-800/80'
-                    }`}
-                    title="Voice input"
-                  >
-                    <span className="material-symbols-outlined text-[19px] sm:text-[20px]">mic</span>
-                  </button>
-
-                  {/* Send Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleSend()}
-                    disabled={(!inputVal.trim() && !attachedFile) || isThinking}
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                      (inputVal.trim() || attachedFile) && !isThinking
-                        ? 'bg-white text-slate-950 hover:bg-slate-200 shadow-md font-bold'
-                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                    }`}
-                    title="Send message"
-                  >
-                    <span className="material-symbols-outlined text-[19px] sm:text-[20px]">arrow_upward</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <p className="font-sans text-[11px] text-slate-400 text-center">
-              Breezy · Advanced AI coding assistant & workspace.
-            </p>
+        {/* Floating Bottom Composer (only when there are active messages) */}
+        {activeChat && activeChat.messages.length > 0 && (
+          <div className={`fixed bottom-0 ${isSidebarOpen ? 'lg:left-64' : 'left-0'} left-0 right-0 p-3 sm:p-4 pointer-events-none flex flex-col items-center z-30 transition-all duration-300`}>
+            {renderComposer(false)}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
