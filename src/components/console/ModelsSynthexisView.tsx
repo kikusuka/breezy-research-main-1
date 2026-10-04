@@ -35,6 +35,10 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
       if (ok) {
         const models = await ollamaService.getModels();
         setOllamaModels(models);
+        const next = providerConfigService.getConfig();
+        next.ollamaBaseUrl = next.ollamaBaseUrl || 'http://localhost:11434';
+        providerConfigService.saveConfig(next);
+        setConfig(next);
       } else {
         setOllamaModels([]);
       }
