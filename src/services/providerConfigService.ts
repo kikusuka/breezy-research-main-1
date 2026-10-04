@@ -255,8 +255,20 @@ export const providerConfigService = {
     const keys = this.getKeys();
     const config = this.getConfig();
     const configured = Object.keys(keys).filter((p) => Boolean(keys[p]));
-    if (config.ollamaBaseUrl && !configured.includes('ollama')) configured.push('ollama');
-    if (config.openaiCompatibleBaseUrl && !configured.includes('openai-compatible')) configured.push('openai-compatible');
+
+    const hasSelectedLocalModel = (provider: 'ollama' | 'openai-compatible') =>
+      (config.defaultProvider === provider && Boolean(config.defaultModel)) ||
+      Object.values(config.roles || {}).some(
+        (seat) => seat?.provider === provider && Boolean(seat.model)
+      );
+
+    if (hasSelectedLocalModel('ollama') && !configured.includes('ollama')) {
+      configured.push('ollama');
+    }
+    if (hasSelectedLocalModel('openai-compatible') && !configured.includes('openai-compatible')) {
+      configured.push('openai-compatible');
+    }
+
     return configured;
   },
 
