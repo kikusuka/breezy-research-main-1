@@ -538,16 +538,34 @@ export default function App() {
     }}/>;
     if(active==='research')return <StitchFrame file="research-desktop.html" mobileFile="research-mobile.html" profile={profile} researchState={researchUi} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query,depth)=>startFromLanding(query,depth || 'deep')}/>;
     if(active==='history'||active==='notes')return <History sessions={sessions} onSelect={(id)=>{setActiveSessionId(id);setActive('research')}}/>;
-    if(active==='models')return <Models serverGemini={serverGemini} onToast={showToast}/>;
-    if(active==='docs')return <StitchFrame file="docs-desktop.html" profile={profile} onNavigate={(t)=>setActive(t as Tab)}/>;
+    if(active==='models')return <StitchFrame file="models-desktop.html" profile={profile} screen="models" onNavigate={(t)=>setActive(t as Tab)}
+      onProviderKeySave={(provider,key)=>{
+        const map:Record<string,string>={Anthropic:'anthropic','Google DeepMind':'gemini',OpenAI:'openai-compatible','Local Ollama':'ollama','Custom LLM Provider / vLLM':'openai-compatible'};
+        const id=map[provider];
+        if(!id){showToast('Unknown provider. Nothing was saved.');return;}
+        const cfg=providerConfigService.getConfig();
+        if(id==='ollama'){cfg.ollamaBaseUrl=key.trim();providerConfigService.saveConfig(cfg);showToast('Local Ollama endpoint saved. Select a live model before routing.');}
+        else {providerConfigService.saveKeys({...providerConfigService.getKeys(),[id]:key.trim()});showToast(provider+' key saved locally.');}
+      }}
+      onSeatModelChange={(index,provider,model)=>{
+        const roles=['architect','skeptic','verifier','arbiter'] as const;
+        const role=roles[index];
+        if(!role)return;
+        const cfg=providerConfigService.getConfig();
+        cfg.roles={...cfg.roles,[role]:{provider:provider as any,model}};
+        providerConfigService.saveConfig(cfg);
+        showToast(role[0].toUpperCase()+role.slice(1)+' routing updated.');
+      }}
+      onModelProbe={()=>showToast('Live node probing is not implemented here; no connection claim was made.')}/>;
+    if(active==='docs')return <StitchFrame file="docs-desktop.html" profile={profile} screen="docs" onNavigate={(t)=>setActive(t as Tab)}/>;
     if(active==='settings')return <Settings serverGemini={serverGemini} onProfileSaved={(p)=>{setProfile(p);showToast('Settings saved.')}}/>;
-    if(active==='profile')return <Profile profile={profile} setProfile={(p)=>{setProfile(p);showToast('Profile saved.')}}/>;
+    if(active==='profile')return <StitchFrame file="profile-desktop.html" profile={profile} screen="profile" onNavigate={(t)=>setActive(t as Tab)}/>;
     if(active==='build')return <Build/>;
     if(active==='canvas')return <Canvas/>;
     return null;
   };
 
-  const isStitchScreen = active==='landing' || active==='chat' || active==='research' || active==='docs';
+  const isStitchScreen = active==='landing' || active==='chat' || active==='research' || active==='docs' || active==='models' || active==='profile';
 
   return <>
     <div style={{display:'none'}} aria-hidden="true">
