@@ -135,7 +135,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[#ccbdff] text-[18px]">menu_book</span>
-              <span className="font-sans text-xs font-medium">Dialectic Knowledge Archives</span>
+              <span className="font-sans text-xs font-medium">Research history</span>
             </div>
             <span className="font-mono text-[10px] text-stone-400">⌘2</span>
           </button>
