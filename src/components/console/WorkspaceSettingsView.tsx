@@ -5,6 +5,12 @@ import { workspaceService, GoogleDriveFile, GmailMessage, CalendarEvent } from '
 import { gitHubService, GitHubRepository, GitHubContent } from '../../services/gitHubService';
 import { providerConfigService } from '../../services/providerConfigService';
 
+const getSpeedEstimate = (rounds: number): string => {
+  if (rounds <= 1) return 'Fastest';
+  if (rounds === 2) return 'Balanced';
+  return 'Most thorough';
+};
+
 interface WorkspaceSettingsViewProps {
   keys: ProviderKeyConfig;
   onSaveKeys: (newKeys: ProviderKeyConfig) => void;
