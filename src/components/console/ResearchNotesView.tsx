@@ -92,15 +92,15 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-sky-200 bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
-              RESEARCH_ARCHIVE
+              Research history
             </span>
-            <span className="text-[11px] text-slate-500">Index: Local_Enclave</span>
+            <span className="text-[11px] text-slate-500">Stored in this browser</span>
           </div>
           <h1 className="text-2xl sm:text-3xl text-white tracking-[-0.03em] font-semibold">
-            Research Repositories
+            Research history
           </h1>
           <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
-            Consolidated research intelligence and cross-model verifications.
+            Your saved research runs, sources, and results.
           </p>
         </div>
 
