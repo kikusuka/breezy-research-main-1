@@ -197,7 +197,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               <h2 className="text-sm font-semibold text-stone-100">Research method</h2>
               <p className="text-xs text-stone-500 mt-1 max-w-2xl">Presets are starting points. Custom lets you decide how the investigation is assembled.</p>
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">No connection = no model</span>
+            <span className="text-[11px] text-slate-500">No connection = no model</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="flex flex-col gap-2">
@@ -316,7 +316,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
                 <div key={item.roleKey} className="p-6 rounded-xl bg-stone-900/10 border border-stone-800/40 flex flex-col gap-5 hover:border-stone-700/60 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex flex-col gap-1">
-                      <span className="font-mono text-[9px] text-stone-500 uppercase tracking-[0.2em] font-bold">{item.sub}</span>
+                      <span className="text-[11px] text-stone-500 font-medium">{item.sub}</span>
                       <h3 className="font-sans text-lg text-stone-200">{item.title}</h3>
                     </div>
                     <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-950 border border-stone-800">
