@@ -68,6 +68,7 @@ export interface CanonicalWorkspaceConfig {
   };
   keys: CanonicalProviderKeys;
   autoResolve?: boolean;
+  agreementThreshold?: number;
   selectedRound?: number;
   searchEngine?: SearchEngineProvider;
   researchMethod?: 'adaptive' | 'systematic' | 'evidence-map' | 'comparative';
@@ -144,6 +145,7 @@ export const providerConfigService = {
           fallback: parsed.fallback || { enabled: false, provider: '', model: '' },
           keys: parsed.keys || {},
           autoResolve: typeof parsed.autoResolve === 'boolean' ? parsed.autoResolve : true,
+          agreementThreshold: typeof parsed.agreementThreshold === 'number' ? Math.min(100, Math.max(0, parsed.agreementThreshold)) : 78,
           selectedRound: typeof parsed.selectedRound === 'number' ? parsed.selectedRound : 2,
           searchEngine: parsed.searchEngine || 'duckduckgo',
           researchMethod: parsed.researchMethod || 'adaptive',
@@ -171,6 +173,7 @@ export const providerConfigService = {
         fallback: { enabled: false, provider: '' as any, model: '' },
         keys,
         autoResolve: true,
+        agreementThreshold: 78,
         selectedRound: 2,
         searchEngine: 'duckduckgo',
         researchMethod: 'adaptive',
