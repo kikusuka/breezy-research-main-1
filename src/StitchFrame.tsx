@@ -136,7 +136,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.preventDefault();
           event.stopImmediatePropagation();
           onNavigate(path);
-        });
+        }, true);
       });
 
       const name = profile.displayName.trim() || 'Breezy user';
@@ -205,7 +205,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.stopImmediatePropagation();
           const q = landingInput.value.trim();
           if (q) onResearch?.(q, 'standard');
-        });
+        }, true);
       }
 
       const researchInput = doc.getElementById('inquiry-input') as HTMLTextAreaElement | null;
@@ -222,7 +222,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           const depthValue = (doc.getElementById('depth-select') as HTMLSelectElement | null)?.value;
           const depth = depthValue === 'standard' ? 'standard' : depthValue === 'exhaustive' ? 'deep' : 'deep';
           onResearch?.(q, depth);
-        });
+        }, true);
       }
 
       const chatInput = doc.getElementById('inquiryInput') as HTMLInputElement | HTMLTextAreaElement | null;
@@ -246,7 +246,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             scrollHost.insertBefore(wrap, scrollHost.lastElementChild || null);
             chatInput.value = '';
           })();
-        });
+        }, true);
       }
 
       const sample = doc.getElementById('sampleBtn');
@@ -255,7 +255,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.preventDefault();
           event.stopImmediatePropagation();
           landingInput.value = 'Compare the evidence for a research question you care about';
-        });
+        }, true);
       }
 
       applyResearchState(doc, researchState);
