@@ -200,7 +200,7 @@ export const providerConfigService = {
         researchMethod: 'adaptive',
         heartbeatEnabled: true,
         heartbeatIntervalSec: 60,
-        ollamaBaseUrl: 'http://localhost:11434',
+        ollamaBaseUrl: '',
         openaiCompatibleBaseUrl: '',
       };
     }
