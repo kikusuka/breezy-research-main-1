@@ -26,9 +26,10 @@ export async function streamGeminiREST(opts: {
   temperature?: number;
   enableSearchGrounding?: boolean;
   onChunk: (chunk: string) => void;
+  onUsage?: (usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; cachedInputTokens?: number }) => void;
   signal?: AbortSignal;
 }): Promise<string> {
-  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, signal } = opts;
+  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, onUsage, signal } = opts;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
 
@@ -101,6 +102,15 @@ export async function streamGeminiREST(opts: {
 
       try {
         const json = JSON.parse(dataStr);
+        if (json.usageMetadata && onUsage) {
+          onUsage({
+            inputTokens: json.usageMetadata.promptTokenCount,
+            outputTokens: json.usageMetadata.candidatesTokenCount,
+            totalTokens: json.usageMetadata.totalTokenCount,
+            reasoningTokens: json.usageMetadata.thoughtsTokenCount,
+            cachedInputTokens: json.usageMetadata.cachedContentTokenCount,
+          });
+        }
         const candidates = json.candidates || [];
         for (const candidate of candidates) {
           const parts = candidate.content?.parts || [];
@@ -131,9 +141,10 @@ export async function streamOpenAICompatible(opts: {
   userPrompt: string;
   temperature?: number;
   onChunk: (chunk: string) => void;
+  onUsage?: (usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; cachedInputTokens?: number }) => void;
   signal?: AbortSignal;
 }): Promise<string> {
-  const { endpoint, apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk, signal } = opts;
+  const { endpoint, apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk, onUsage, signal } = opts;
 
   const messages: any[] = [];
   if (systemInstruction) {
@@ -152,6 +163,7 @@ export async function streamOpenAICompatible(opts: {
       stream: true,
       temperature,
       messages,
+      stream_options: { include_usage: true },
     }),
     signal,
   });
@@ -186,6 +198,15 @@ export async function streamOpenAICompatible(opts: {
       if (trimmed.startsWith('data: ')) {
         try {
           const json = JSON.parse(trimmed.slice(6));
+          if (json.usage && onUsage) {
+            onUsage({
+              inputTokens: json.usage.prompt_tokens,
+              outputTokens: json.usage.completion_tokens,
+              totalTokens: json.usage.total_tokens,
+              reasoningTokens: json.usage.completion_tokens_details?.reasoning_tokens,
+              cachedInputTokens: json.usage.prompt_tokens_details?.cached_tokens,
+            });
+          }
           const delta = json.choices?.[0]?.delta?.content;
           if (delta) {
             fullContent += delta;
@@ -211,9 +232,10 @@ export async function streamAnthropicREST(opts: {
   userPrompt: string;
   temperature?: number;
   onChunk: (chunk: string) => void;
+  onUsage?: (usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number }) => void;
   signal?: AbortSignal;
 }): Promise<string> {
-  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk, signal } = opts;
+  const { apiKey, model, systemInstruction, userPrompt, temperature = 0.7, onChunk, onUsage, signal } = opts;
   const targetModel = model?.trim() || 'claude-3-5-sonnet-20241022';
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -264,6 +286,12 @@ export async function streamAnthropicREST(opts: {
 
       try {
         const json = JSON.parse(dataStr);
+        if (json.type === 'message_start' && json.message?.usage && onUsage) {
+          onUsage({ inputTokens: json.message.usage.input_tokens, outputTokens: json.message.usage.output_tokens, totalTokens: (json.message.usage.input_tokens || 0) + (json.message.usage.output_tokens || 0) });
+        }
+        if (json.type === 'message_delta' && json.usage && onUsage) {
+          onUsage({ outputTokens: json.usage.output_tokens });
+        }
         if (json.type === 'content_block_delta' && json.delta?.text) {
           fullContent += json.delta.text;
           onChunk(json.delta.text);
@@ -281,7 +309,7 @@ export async function streamAnthropicREST(opts: {
  * Universal agent caller with graceful model cascades
  */
 export async function callAgentWithStream(params: CallAgentParams): Promise<string> {
-  const { provider, model, apiKey, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, env = {}, signal } = params;
+  const { provider, model, apiKey, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, onUsage, env = {}, signal } = params;
 
   // 1. Google Gemini
   if (provider === 'gemini') {
@@ -323,6 +351,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
               }
               fullText += chunk;
             },
+            onUsage,
             signal,
           });
 
@@ -358,6 +387,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
       userPrompt,
       temperature,
       onChunk,
+      onUsage,
       signal,
     });
   }
@@ -376,6 +406,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
       userPrompt,
       temperature,
       onChunk,
+      onUsage,
       signal,
     });
   }
@@ -394,6 +425,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
       userPrompt,
       temperature,
       onChunk,
+      onUsage,
       signal,
     });
   }
@@ -412,6 +444,38 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
       userPrompt,
       temperature,
       onChunk,
+      onUsage,
+      signal,
+    });
+  }
+
+  if (provider === 'ollama') {
+    const baseUrl = (env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\\/$/, '');
+    return streamOpenAICompatible({
+      endpoint: `${baseUrl}/v1/chat/completions`,
+      apiKey: apiKey?.trim() || 'ollama',
+      model: model || 'llama3.2',
+      systemInstruction,
+      userPrompt,
+      temperature,
+      onChunk,
+      onUsage,
+      signal,
+    });
+  }
+
+  if (provider === 'openai-compatible') {
+    const baseUrl = (env.OPENAI_COMPATIBLE_BASE_URL || '').replace(/\\/$/, '');
+    if (!baseUrl) throw new Error('No OpenAI-compatible base URL configured.');
+    return streamOpenAICompatible({
+      endpoint: `${baseUrl}/chat/completions`,
+      apiKey: apiKey?.trim() || 'none',
+      model: model || '',
+      systemInstruction,
+      userPrompt,
+      temperature,
+      onChunk,
+      onUsage,
       signal,
     });
   }
