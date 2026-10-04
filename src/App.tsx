@@ -547,7 +547,9 @@ export default function App() {
     return null;
   };
 
-  return <div className="app">
+  const isStitchScreen = active==='landing' || active==='chat' || active==='research' || active==='docs';
+
+  return <>
     <div style={{display:'none'}} aria-hidden="true">
       <Research
         sessions={sessions}
@@ -561,12 +563,17 @@ export default function App() {
         onStateChange={setResearchUi}
       />
     </div>
-    <Sidebar active={active} onChange={setActive} profile={profile} open={sidebarOpen} setOpen={setSidebarOpen}/>
-    <div className="main">
-      <Topbar serverGemini={serverGemini} onMenu={()=>setSidebarOpen(!sidebarOpen)} onNewResearch={()=>setActive('research')}/>
-      {render()}
-    </div>
-    <nav className="mobile-nav">{NAV.slice(0,6).map((n)=><button key={n.id} className={active===n.id?'active':''} onClick={()=>setActive(n.id)}><Icon name={n.icon}/><span>{n.label}</span></button>)}</nav>
-    {toast&&<div className="toast">{toast}</div>}
-  </div>;
+    {isStitchScreen ? render() : (
+      <div className="app">
+        <Sidebar active={active} onChange={setActive} profile={profile} open={sidebarOpen} setOpen={setSidebarOpen}/>
+        <div className="main">
+          <Topbar serverGemini={serverGemini} onMenu={()=>setSidebarOpen(!sidebarOpen)} onNewResearch={()=>setActive('research')}/>
+          {render()}
+        </div>
+        <nav className="mobile-nav">{NAV.slice(0,6).map((n)=><button key={n.id} className={active===n.id?'active':''} onClick={()=>setActive(n.id)}><Icon name={n.icon}/><span>{n.label}</span></button>)}</nav>
+        {toast&&<div className="toast">{toast}</div>}
+      </div>
+    )}
+    {toast && isStitchScreen && <div className="toast" style={{zIndex:100}}> {toast} </div>}
+  </>;
 }
