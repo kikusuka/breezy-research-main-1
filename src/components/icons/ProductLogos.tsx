@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const BreezyLogoIcon: React.FC<{ className?: string }> = ({ className = 'w-6 h-6' }) => (
-  <img src="/breezy.png" alt="Breezy" className={`${className} object-contain shrink-0`} />
+  <img src="/breezy-logo.svg" alt="Breezy" className={`${className} object-contain shrink-0`} />
 );
 
 export const SynthexisLogoIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
