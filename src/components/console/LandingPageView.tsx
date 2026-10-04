@@ -97,113 +97,104 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   };
 
   return (
-    <div className="breezy-landing min-h-[calc(100vh-4rem)] overflow-hidden text-slate-100">
+    <div className="breezy-landing min-h-[calc(100vh-4rem)] overflow-y-auto text-slate-100">
       <input ref={fileInputRef} type="file" onChange={handleFileChange} className="hidden" accept=".txt,.md,.json,.csv,.log,.ts,.tsx,.js,.jsx,.py,.java,.kt,.html,.css" />
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-[1380px] grid-cols-1 gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(260px,0.7fr)_minmax(520px,1.35fr)] lg:gap-16 lg:px-12 lg:py-12 xl:grid-cols-[340px_minmax(620px,760px)]">
-        <aside className="flex flex-col justify-between lg:py-5">
-          <div>
-            <div className="mb-14 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-300 text-slate-950 shadow-[0_8px_24px_rgba(102,199,244,.2)]">
-                <span className="material-symbols-outlined text-[21px]">air</span>
-              </div>
-              <div>
-                <div className="text-sm font-semibold tracking-tight text-white">Breezy</div>
-                <div className="text-[11px] text-sky-200/55">A calmer way to research</div>
-              </div>
+
+      <div className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+        <section className="grid min-h-[calc(100vh-9rem)] items-center gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
+          <div className="relative">
+            <div className="mb-8 flex items-center gap-3 lg:hidden">
+              <img src="/breezy.png" alt="Breezy" className="h-9 w-9 object-contain" />
+              <span className="text-sm font-semibold text-white">Breezy</span>
             </div>
 
-            <div className="breezy-mark-frame mb-10 hidden max-w-[270px] overflow-hidden rounded-2xl border border-sky-200/15 bg-[#0a1c31] sm:block">
-              <div className="relative aspect-square overflow-hidden">
-                <img src="/breezy-mark-reference.png" alt="Breezy mark" className="h-full w-full object-cover opacity-90 mix-blend-screen" />
-                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,21,37,0)_45%,rgba(8,21,37,.78)_100%)]" />
-              </div>
-              <div className="flex items-center justify-between border-t border-sky-200/10 px-3 py-2 text-[10px] text-sky-100/45">
-                <span>Breezy / Playground</span>
-                <span className="font-mono text-sky-200/30">01</span>
-              </div>
+            <div className="mb-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.16em] text-sky-300/70">
+              <span className="h-px w-8 bg-sky-300/50" />
+              Research, without the noise
             </div>
 
-            <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200/45">Start here</div>
-            <h1 className="max-w-sm text-4xl font-semibold leading-[1.05] tracking-[-0.055em] text-white sm:text-5xl">
-              Bring the hard question.
-              <span className="mt-2 block text-sky-300">Keep the calm.</span>
+            <h1 className="max-w-xl text-5xl font-semibold leading-[0.96] tracking-[-0.065em] text-white sm:text-6xl lg:text-[76px]">
+              Hard questions.
+              <span className="block text-sky-300">Better thinking.</span>
             </h1>
-            <p className="mt-5 max-w-sm text-sm leading-7 text-slate-400">
-              Breezy gives your question more than one pass: perspectives, pushback, evidence, then a clear result.
+
+            <p className="mt-7 max-w-lg text-base leading-7 text-slate-400 sm:text-lg">
+              Breezy lets different perspectives examine the same question, challenge weak reasoning, check evidence, and give you a result you can actually use.
             </p>
 
-            <div className="mt-10 flex items-center gap-3 border-t border-white/[0.08] pt-5 text-xs text-slate-400">
-              <span className={`h-2 w-2 rounded-full ${hasConnectedProvider ? 'bg-emerald-400' : 'bg-amber-300'}`} />
-              <span>{hasConnectedProvider ? 'Ready to research' : 'No model connected yet'}</span>
-              {!hasConnectedProvider && <button type="button" onClick={onOpenModels} className="font-medium text-sky-300 hover:text-sky-200">Connect one</button>}
+            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${hasConnectedProvider ? 'bg-emerald-400' : 'bg-amber-300'}`} />{hasConnectedProvider ? 'Model connected' : 'No model connected'}</span>
+              <button type="button" onClick={onOpenModels} className="text-sky-300 transition hover:text-sky-200">{hasConnectedProvider ? 'Change model' : 'Connect a model'}</button>
+              {sessionCount > 0 && <span>{sessionCount} saved {sessionCount === 1 ? 'research session' : 'research sessions'}</span>}
+            </div>
+
+            <div className="mt-12 hidden max-w-[300px] overflow-hidden border border-white/[0.08] bg-[#0a1c31] shadow-[0_30px_80px_rgba(0,20,45,.35)] sm:block">
+              <div className="relative aspect-square overflow-hidden">
+                <img src="/breezy-mark-reference.png" alt="Breezy mark" className="h-full w-full object-cover opacity-85 mix-blend-screen" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07111f] via-transparent to-transparent" />
+              </div>
+              <div className="border-t border-white/[0.07] px-4 py-3 text-[10px] uppercase tracking-[0.14em] text-slate-600">Breezy</div>
             </div>
           </div>
 
-          <div className="mt-12 border-t border-white/[0.08] pt-5 lg:mt-8">
-            <div className="text-[11px] text-slate-500">{sessionCount ? `${sessionCount} saved research ${sessionCount === 1 ? 'session' : 'sessions'}` : 'No saved research yet'}</div>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
-              <button type="button" onClick={onOpenNotes} className="hover:text-white">Open history</button>
-              <button type="button" onClick={onOpenModels} className="hover:text-sky-200">Research setup</button>
-            </div>
-          </div>
-        </aside>
-
-        <main className="flex min-w-0 flex-col justify-center lg:py-5">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold text-white">What are you working through?</div>
-              <div className="mt-1 text-xs text-slate-500">Ask a question, add context, and choose how much challenge you want.</div>
-            </div>
-            <div className="hidden items-center gap-2 text-[11px] text-slate-500 sm:flex"><span className="material-symbols-outlined text-[15px] text-sky-300">keyboard_return</span> Enter to start</div>
-          </div>
-
-          <section className="question-desk overflow-hidden rounded-[1.6rem] border border-sky-200/15 bg-[#0a1c31] shadow-[0_24px_70px_rgba(0,24,48,.35)]">
-            <div className="p-5 sm:p-7">
-              <textarea
-                ref={textareaRef}
-                value={inputText}
-                onChange={(event) => setInputText(event.target.value)}
-                onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleSend(); } }}
-                placeholder="Ask Breezy something difficult…"
-                rows={6}
-                className="min-h-[150px] w-full resize-none border-0 bg-transparent text-lg leading-8 text-white outline-none placeholder:text-slate-600 sm:min-h-[190px] sm:text-xl"
-              />
-              {attachedFile && (
-                <div className="mt-4 flex max-w-full items-center gap-2 rounded-lg border border-sky-300/15 bg-sky-300/[0.06] px-3 py-2 text-xs text-sky-100">
-                  <span className="material-symbols-outlined text-[16px] text-sky-300">description</span><span className="truncate">{attachedFile.name}</span><span className="text-sky-100/45">{attachedFile.size}</span>
-                  <button type="button" onClick={() => { setAttachedFile(null); setFileContent(''); }} className="ml-auto text-sky-100/45 hover:text-white" aria-label="Remove attachment">close</button>
-                </div>
-              )}
+          <div className="min-w-0">
+            <div className="mb-3 flex items-end justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold text-white">Start with the question</div>
+                <div className="mt-1 text-xs text-slate-500">Choose the amount of thinking you want. You can change it later.</div>
+              </div>
+              <div className="hidden text-[11px] text-slate-600 sm:block">⌘ Enter</div>
             </div>
 
-            <div className="border-t border-white/[0.08] bg-[#08182a] px-5 py-4 sm:px-7">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="min-w-0">
-                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Research depth</div>
-                  <div className="flex flex-wrap gap-2">
+            <section className="overflow-hidden border border-sky-200/15 bg-[#0a1c31] shadow-[0_30px_90px_rgba(0,24,48,.38)]">
+              <div className="p-5 sm:p-7 lg:p-8">
+                <textarea
+                  ref={textareaRef}
+                  value={inputText}
+                  onChange={(event) => setInputText(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleSend(); } }}
+                  placeholder="What are you trying to figure out?"
+                  rows={7}
+                  className="min-h-[180px] w-full resize-none border-0 bg-transparent text-xl leading-8 text-white outline-none placeholder:text-slate-600 sm:min-h-[230px] sm:text-2xl"
+                />
+                {attachedFile && <div className="mt-4 flex items-center gap-2 border border-sky-300/15 bg-sky-300/[0.05] px-3 py-2 text-xs text-sky-100"><span className="material-symbols-outlined text-[16px] text-sky-300">description</span><span className="truncate">{attachedFile.name}</span><span className="text-sky-100/40">{attachedFile.size}</span><button type="button" onClick={() => { setAttachedFile(null); setFileContent(''); }} className="ml-auto text-slate-500 hover:text-white" aria-label="Remove attachment">close</button></div>}
+              </div>
+
+              <div className="border-t border-white/[0.07] bg-[#08182a] px-5 py-4 sm:px-7">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-wrap gap-1.5">
                     {depthOptions.map((option) => {
                       const active = researchDepth === option.id;
-                      return <button key={option.id} type="button" title={option.helper} onClick={() => chooseWorkflow(option.id)} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition ${active ? 'border-sky-300/45 bg-sky-300/[0.12] text-sky-100' : 'border-white/[0.08] text-slate-400 hover:border-sky-300/25 hover:text-slate-200'}`}><span className={`material-symbols-outlined text-[16px] ${active ? 'text-sky-300' : 'text-slate-500'}`}>{option.icon}</span><span><span className="block text-xs font-medium">{option.label}</span><span className="hidden text-[10px] text-slate-500 sm:block">{option.helper}</span></span></button>;
+                      return <button key={option.id} type="button" title={option.helper} onClick={() => chooseWorkflow(option.id)} className={`flex items-center gap-2 border px-3 py-2 text-left transition ${active ? 'border-sky-300/35 bg-sky-300/[0.10] text-sky-100' : 'border-white/[0.07] text-slate-500 hover:border-sky-300/20 hover:text-slate-300'}`}><span className={`material-symbols-outlined text-[16px] ${active ? 'text-sky-300' : 'text-slate-600'}`}>{option.icon}</span><span className="text-xs font-medium">{option.label}</span></button>;
                     })}
                   </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-10 items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-xs text-slate-400 hover:border-sky-300/25 hover:text-sky-200"><span className="material-symbols-outlined text-[17px]">attach_file</span><span className="hidden sm:inline">Add context</span></button>
-                  <button type="button" onClick={handleSend} disabled={!inputText.trim() && !fileContent} className={`flex h-10 items-center gap-2 rounded-lg px-5 text-xs font-semibold transition ${inputText.trim() || fileContent ? 'bg-sky-300 text-slate-950 hover:bg-sky-200' : 'bg-white/[0.06] text-slate-600'}`}><span>Start research</span><span className="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-10 items-center gap-2 border border-white/[0.07] px-3 text-xs text-slate-500 transition hover:border-sky-300/20 hover:text-sky-200"><span className="material-symbols-outlined text-[17px]">attach_file</span>Context</button>
+                    <button type="button" onClick={handleSend} disabled={!inputText.trim() && !fileContent} className={`flex h-10 items-center gap-2 px-5 text-xs font-semibold transition ${inputText.trim() || fileContent ? 'bg-sky-300 text-slate-950 hover:bg-sky-200' : 'bg-white/[0.06] text-slate-600'}`}><span>Start</span><span className="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="mt-12">
-            <div className="flex items-end justify-between gap-4"><div><div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-200/45">Useful starting points</div><p className="mt-2 text-sm text-slate-500">Choose a shape if you know how you want the question handled.</p></div><span className="hidden text-[11px] text-slate-600 sm:block">Change it later</span></div>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {workflows.map((workflow, index) => <button key={workflow.title} type="button" onClick={() => chooseWorkflow(workflow.depth, workflow.method)} className="group rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition hover:-translate-y-0.5 hover:border-sky-300/30 hover:bg-sky-300/[0.05]"><div className="flex items-start justify-between gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-300/[0.08] text-sky-300"><span className="material-symbols-outlined text-[17px]">{workflow.icon}</span></span><span className="text-[10px] text-slate-600">0{index + 1}</span></div><div className="mt-5 text-sm font-medium text-slate-200 group-hover:text-white">{workflow.title}</div><p className="mt-2 text-xs leading-5 text-slate-500">{workflow.description}</p></button>)}
+            <div className="mt-10 grid gap-px border border-white/[0.07] bg-white/[0.07] sm:grid-cols-3">
+              {[
+                ['01', 'Propose', 'Independent perspectives form an initial view.'],
+                ['02', 'Challenge', 'Those perspectives test assumptions and each other.'],
+                ['03', 'Resolve', 'Evidence and disagreement shape the final answer.'],
+              ].map(([num, title, body]) => <div key={num} className="bg-[#07111f] p-4 sm:p-5"><div className="text-[10px] font-mono text-sky-300/45">{num}</div><div className="mt-5 text-sm font-medium text-slate-200">{title}</div><p className="mt-2 text-xs leading-5 text-slate-600">{body}</p></div>)}
             </div>
-          </section>
-        </main>
+
+            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-600">
+              <button type="button" onClick={() => chooseWorkflow('standard', 'adaptive')} className="hover:text-sky-300">Investigate something</button>
+              <button type="button" onClick={() => chooseWorkflow('deep', 'comparative')} className="hover:text-sky-300">Compare options</button>
+              <button type="button" onClick={() => chooseWorkflow('deep', 'evidence-map')} className="hover:text-sky-300">Stress-test an idea</button>
+              <button type="button" onClick={onOpenNotes} className="hover:text-sky-300">Open history</button>
+            </div>
+          </div>
+        </section>
       </div>
-      {toastMessage && <div className="fixed bottom-5 right-5 z-50 max-w-sm rounded-lg border border-sky-300/20 bg-[#0a1c31] px-4 py-3 text-xs text-sky-50 shadow-2xl">{toastMessage}</div>}
+
+      {toastMessage && <div className="fixed bottom-5 right-5 z-50 max-w-sm border border-sky-300/20 bg-[#0a1c31] px-4 py-3 text-xs text-sky-50 shadow-2xl">{toastMessage}</div>}
     </div>
   );
 };
