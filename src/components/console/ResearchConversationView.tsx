@@ -186,7 +186,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   };
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] bg-stone-950 text-stone-200">
+    <div className="flex flex-col w-full min-h-[calc(100vh-3.5rem)] bg-[#07111f] text-slate-100">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -197,7 +197,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       />
 
       {isDeliberating && (
-        <div className="sticky top-0 z-20 border-b border-stone-800/60 bg-stone-950/95 px-4 py-2">
+        <div className="sticky top-0 z-20 border-b border-stone-800/60 bg-[#07111f]/95 px-4 py-2">
           <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-mono text-stone-500 uppercase tracking-wider">
             <span className="text-stone-300">{streamingRole || 'Research'} · {formatDuration(elapsedSeconds)}</span>
             <span>input {formatTokens(liveUsage?.inputTokens)}</span>
