@@ -654,6 +654,8 @@ Analyze this deliberation and output the JSON object.`;
       autoResolve = true,
       selectedRound = 2,
       researchMethod = 'adaptive',
+      heartbeatEnabled = true,
+      heartbeatIntervalSec = 60,
     } = body;
 
     const effectiveProtocol = (selectedRound === 1) ? 'solo' : (selectedRound === 4) ? 'quad' : (selectedRound === 2 && (protocol === 'quad' || protocol === 'deep')) ? 'trio' : protocol;
@@ -670,6 +672,78 @@ Analyze this deliberation and output the JSON object.`;
       try {
         await writer.write(encoder.encode(`data: ${JSON.stringify({ type, ...payload })}\n\n`));
       } catch {}
+    };
+
+    const usageByRound: Record<string, any> = {};
+    let lastHeartbeatAt = 0;
+    let heartbeatContext = '';
+    const safeHeartbeatInterval = Math.min(300, Math.max(20, Number(heartbeatIntervalSec) || 60));
+
+    const emitUsage = (round: number | string, usage: any) => {
+      const key = String(round);
+      const previous = usageByRound[key] || {};
+      const next = {
+        inputTokens: usage?.inputTokens ?? previous.inputTokens,
+        outputTokens: usage?.outputTokens ?? previous.outputTokens,
+        totalTokens: usage?.totalTokens ?? previous.totalTokens,
+        reasoningTokens: usage?.reasoningTokens ?? previous.reasoningTokens,
+        cachedInputTokens: usage?.cachedInputTokens ?? previous.cachedInputTokens,
+      };
+      usageByRound[key] = next;
+      void sendEvent('usage', { round: Number(round) || 0, usage: next });
+    };
+
+    // Re-anchor the research model between long stages so a long session does not silently drift.
+    const runHeartbeat = async (round: number, config: any, roleName: string, taskReminder: string, currentContext: string) => {
+      if (!heartbeatEnabled) return;
+      const now = Date.now();
+      if (now - lastHeartbeatAt < safeHeartbeatInterval * 1000) return;
+      lastHeartbeatAt = now;
+      await sendEvent('heartbeat', {
+        round,
+        role: roleName,
+        agentName: roleName,
+        bpm: Math.round(60 / safeHeartbeatInterval),
+        taskReminder,
+        statusText: `Heartbeat: re-checking scope, evidence, and task alignment before continuing.`,
+        timestamp: now,
+      });
+      try {
+        const checkpoint = await callAgentWithStream({
+          provider: config.provider,
+          model: config.model,
+          apiKey: keys[config.provider],
+          systemInstruction: 'You are the research heartbeat. Do not solve the user question. Return a compact checkpoint that keeps the next generation aligned with the original task, scope, evidence standard, and unresolved uncertainty. Explicitly flag drift or hallucination risk.',
+          userPrompt: `ORIGINAL TASK:\n${prompt}\n\nTASK REMINDER:\n${taskReminder}\n\nCURRENT RESEARCH CONTEXT:\n${currentContext.slice(-12000)}`,
+          temperature: 0.1,
+          enableSearchGrounding: false,
+          onChunk: () => {},
+          onUsage: (usage) => emitUsage(`heartbeat-${round}`, usage),
+          env,
+          signal: req.signal,
+        });
+        heartbeatContext = checkpoint.trim().slice(0, 5000);
+        await sendEvent('heartbeat', {
+          round,
+          role: roleName,
+          agentName: roleName,
+          bpm: Math.round(60 / safeHeartbeatInterval),
+          taskReminder,
+          statusText: 'Heartbeat checkpoint applied to the next research stage.',
+          checkpoint: heartbeatContext,
+          timestamp: Date.now(),
+        });
+      } catch (error: any) {
+        await sendEvent('heartbeat', {
+          round,
+          role: roleName,
+          agentName: roleName,
+          bpm: Math.round(60 / safeHeartbeatInterval),
+          taskReminder,
+          statusText: 'Heartbeat reminder sent; checkpoint model was unavailable, so the pipeline continued.',
+          timestamp: Date.now(),
+        });
+      }
     };
 
     // Execute streaming pipeline asynchronously
@@ -807,6 +881,7 @@ Create a compact research plan before evidence retrieval. Return ONLY valid JSON
             temperature: 0.2,
             enableSearchGrounding: false,
             onChunk: () => {},
+            onUsage: (usage) => emitUsage('planner', usage),
             env,
             signal: req.signal,
           });
@@ -898,7 +973,7 @@ Ground your technical architecture, critique, and trade-off claims in the above 
           }
         }
 
-        const groundedPrompt = `${prompt}${researchPlanContext}${groundingContext}${methodInstruction}`;
+        const groundedPrompt = `${prompt}${researchPlanContext}${groundingContext}${methodInstruction}${heartbeatContext ? `\n\n--- HEARTBEAT CHECKPOINT ---\n${heartbeatContext}\n--- END HEARTBEAT ---` : ''}`;
 
         if (effectiveProtocol === 'solo') {
           await sendEvent('round_start', {
@@ -933,6 +1008,7 @@ Structure your response in clean Markdown with clear headings.`;
             onChunk: (chunk) => {
               sendEvent('token', { round: 1, token: chunk });
             },
+            onUsage: (usage) => emitUsage(1, usage),
             env,
           });
 
@@ -962,6 +1038,15 @@ Structure your response in clean Markdown with clear headings.`;
             finalOutput: soloContent,
             evidenceGraph,
             researchMetrics,
+            usage: {
+              inputTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.inputTokens || 0), 0),
+              outputTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.outputTokens || 0), 0),
+              totalTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.totalTokens || 0), 0),
+              reasoningTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.reasoningTokens || 0), 0),
+              estimated: false,
+              byRound: usageByRound,
+            },
+
             metrics: {
               durationMs: totalDurationMs,
               synthexisRate: null,
@@ -986,6 +1071,7 @@ Structure your response in clean Markdown with clear headings.`;
         });
 
         emitStatus('architect', 'Analyst', 'Drafting initial solution proposal');
+        await runHeartbeat(1, architectConfig, 'Analyst', 'Frame the question, stay inside scope, distinguish evidence from inference, and do not invent facts.', prompt);
 
         const architectSystemPrompt = `You are the **Lead Analyst** in a rigorous multi-model dialectical review pipeline.
 Your objective is to propose a robust, production-grade technical solution or analysis for the user inquiry.
@@ -1045,6 +1131,7 @@ Structure in clean Markdown with clear headings.`;
         });
 
         emitStatus('skeptic', 'Critic', 'Auditing proposal for edge cases and failure modes');
+        await runHeartbeat(2, skepticConfig, 'Critic', 'Challenge the proposal, search for unsupported claims, contradictions, and edge cases.', proposalContent);
 
         const skepticSystemPrompt = `You are the **Lead Critic** in a multi-model dialectical review pipeline.
 Your objective is to stress-test the Analyst proposal for correctness, scaling limits, edge cases, and hidden assumptions.
@@ -1073,6 +1160,8 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
           enableSearchGrounding: false,
           onChunk: (chunk) => {
             sendEvent('token', { round: 2, token: chunk });
+          },
+          onUsage: (usage) => emitUsage(2, usage),
           },
           env,
           signal: req.signal,
@@ -1113,6 +1202,7 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
           });
 
           emitStatus('verifier', 'Verifier', 'Verifying facts, math, and constraints across proposal and critique');
+          await runHeartbeat(verifierRoundNum, verifierConfig, 'Verifier', 'Verify important claims and constraints; mark uncertainty instead of guessing.', `${proposalSummary}\n${critiqueSummary}`);
 
           const verifierSystemPrompt = `You are the **Lead Verifier** in a multi-model dialectical review pipeline.
 Your objective is to independently verify claims, math, benchmarks, and constraint assumptions across the Analyst proposal and Critic review.
@@ -1143,6 +1233,8 @@ Perform rigorous empirical and constraint verification on these analyses.`;
               enableSearchGrounding: false,
               onChunk: (chunk) => {
                 sendEvent('token', { round: verifierRoundNum, token: chunk });
+              },
+              onUsage: (usage) => emitUsage(verifierRoundNum, usage),
               },
               env,
               signal: req.signal,
@@ -1190,6 +1282,7 @@ Perform rigorous empirical and constraint verification on these analyses.`;
         });
 
         emitStatus('arbiter', 'Synthesizer', 'Synthesizing final executive resolution');
+        await runHeartbeat(finalRoundNum, arbiterConfig, 'Synthesizer', 'Resolve the evidence without forcing agreement; preserve contradictions and uncertainty.', `${proposalSummary}\n${critiqueSummary}\n${verifierSummary}`);
 
         const arbiterSystemPrompt = `You are the **Lead Synthesizer** in a multi-model dialectical review pipeline.
 Your objective is to produce the final, definitive synthesized response for the user inquiry.
@@ -1229,6 +1322,8 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
           onChunk: (chunk) => {
             sendEvent('token', { round: finalRoundNum, token: chunk });
           },
+          onUsage: (usage) => emitUsage(finalRoundNum, usage),
+          },
           env,
           signal: req.signal,
         });
@@ -1261,6 +1356,14 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
           finalOutput: finalSynthexis,
           evidenceGraph,
           researchMetrics,
+          usage: {
+            inputTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.inputTokens || 0), 0),
+            outputTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.outputTokens || 0), 0),
+            totalTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.totalTokens || 0), 0),
+            reasoningTokens: Object.values(usageByRound).reduce((sum: number, u: any) => sum + (u.reasoningTokens || 0), 0),
+            estimated: false,
+            byRound: usageByRound,
+          },
           metrics: {
             durationMs: totalDurationMs,
             synthexisRate: researchMetrics.synthexisRate,
