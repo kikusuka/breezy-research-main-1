@@ -250,14 +250,14 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           </div>
           <div className="flex flex-col">
             <span className="font-headline font-semibold text-headline-sm text-on-surface">
-              Ollama Daemon
+              Local Ollama
             </span>
             <span className="font-mono text-code-sm text-outline">127.0.0.1:11434</span>
           </div>
           <div className="flex items-center gap-space-xs font-mono text-code-sm">
             <span className={`w-2 h-2 rounded-full ${ollamaConnected ? 'bg-tertiary' : 'bg-outline'}`} />
             <span className={ollamaConnected ? 'text-tertiary' : 'text-outline'}>
-              {ollamaChecking ? 'Checking...' : ollamaConnected ? 'Listening · 0ms auth' : 'Unconnected'}
+              {ollamaChecking ? 'Checking...' : ollamaConnected ? 'Listening' : 'Unconnected'}
             </span>
           </div>
         </div>
