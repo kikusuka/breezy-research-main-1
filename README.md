@@ -1,8 +1,8 @@
-# Synthexis Workspace
+# Breezy Playground
 
-> **Premium Multi-Model Research Workspace, Interactive Dialectic Audits & Sourced Synthexis Playground**
+> **A multi-model workspace for difficult questions, research, and code.**
 
-Synthexis Workspace is a unified, multi-mode developer and researcher platform. It brings conversational AI, multi-perspective technical inquiry, ephemeral code execution, and grounded knowledge analysis into a cohesive, responsive browser interface.
+Breezy Playground is the main Breezy workspace: conversational AI, model-to-model research, evidence review, and code in one browser application.
 
 ---
 
@@ -12,17 +12,17 @@ Breezy and Synthexis are proprietary software owned by Kikusuka. The beta servic
 
 ## 🏛️ Architecture & Unified Workspaces
 
-Synthexis Workspace is structured as a single platform shell hosting specialized workspaces:
+Breezy Playground is structured as one product with focused workspaces:
 
 ```text
-                             SYNTHEXIS WORKSPACE
+                             BREEZY PLAYGROUND
                                       │
                       ┌───────────────┼───────────────┐
                       │               │               │
-                    Breezy        Synthexis         Build
-               (Conversational   (Technical      (Cloud IDE &
-                  Workspace)     Research &       Ephemeral
-                                  Evidence)        Runner)
+                    Chat         Research          Build
+               (Everyday chat)   (Multi-model   (Cloud IDE &
+                                research &       Ephemeral
+                              evidence)        Runner)
 ```
 
 ### 1. Breezy (Core Interactive Workspace)
@@ -30,7 +30,7 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 * **Canvas Prototype**: Interactive layout for authoring and outlining presentations, tasks, and coursework. *(Clearly designated in preview mode while live Google Workspace OAuth sync is in active development).*
 * **Design & Theme**: High-contrast, accessibility-checked Dark and Light mode support with smooth palette transitions.
 
-### 2. Synthexis (Deep Technical Research)
+### 2. Research (Synthexis engine)
 * **Multi-Perspective Synthesis**: Reconciles thesis arguments, critical counter-arguments, and synthesis findings from top-tier LLMs.
 * **Search Grounding Abstraction**: Pluggable provider interface supporting:
   * **SearXNG** (Self-hostable privacy-first metasearch)
@@ -40,7 +40,7 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 * **Truthful Evidence Graph**: Maps claims directly to retrieved sources, explicitly reporting whether evidence currently supports each claim without inflated verification claims.
 * **Structured Export**: Markdown export with complete citation trails and inquiry parameters.
 
-### 3. Build (Synthexis IDE)
+### 3. Build (Breezy IDE)
 * **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
 * **Local Output & Preview**: The Build workspace shows output from real browser-local Python runs and the sandboxed HTML preview. It does not pretend to provision remote compute.
 
@@ -48,10 +48,10 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 
 ## 🛠️ Technology Stack & Deployment Architecture
 
-Synthexis Workspace consists of a static React frontend with multi-tier edge backend failover:
+Breezy Playground consists of a static React frontend with a primary edge backend and optional failover:
 
 ```text
-                             BREEZY / SYNTHEXIS
+                             BREEZY PLAYGROUND
                                     │
                          Static Frontend (Vite)
                          Cloudflare Pages / Assets
