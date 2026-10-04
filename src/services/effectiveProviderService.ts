@@ -75,7 +75,15 @@ class EffectiveProviderService {
     const byokKey = providerConfigService.getKey(provider);
     const hasByok = Boolean(byokKey);
     const config = providerConfigService.getConfig();
-    const hasLocalRuntime = (provider === 'ollama' && Boolean(config.ollamaBaseUrl)) || (provider === 'openai-compatible' && Boolean(config.openaiCompatibleBaseUrl));
+    const hasSelectedLocalModel =
+      (config.defaultProvider === provider && Boolean(config.defaultModel)) ||
+      Object.values(config.roles || {}).some(
+        (seat) => seat?.provider === provider && Boolean(seat.model)
+      ) ||
+      Boolean(providerConfigService.getKey(provider));
+
+    const hasLocalRuntime =
+      (provider === 'ollama' || provider === 'openai-compatible') && hasSelectedLocalModel;
     const hasServer = provider === 'gemini' && this.serverGeminiConfigured;
     const hasKey = hasByok || hasServer || hasLocalRuntime;
 
