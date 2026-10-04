@@ -1,4 +1,4 @@
-export type ProviderId = 'gemini' | 'anthropic' | 'groq' | 'sambanova' | 'openrouter' | 'ollama';
+export type ProviderId = 'gemini' | 'anthropic' | 'groq' | 'sambanova' | 'openrouter' | 'ollama' | 'openai-compatible';
 
 export type SearchEngineProvider = 'google' | 'tavily' | 'serper' | 'brave' | 'duckduckgo' | 'searxng';
 
@@ -18,6 +18,24 @@ export interface OllamaConfig {
   enabled: boolean;
   baseUrl: string;
   model: string;
+}
+
+export interface ModelUsageStats {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  reasoningTokens?: number;
+  cachedInputTokens?: number;
+  estimated?: boolean;
+}
+
+export interface DebateUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  reasoningTokens: number;
+  estimated: boolean;
+  byRound?: Record<string, ModelUsageStats>;
 }
 
 export type AgentRole = 'architect' | 'skeptic' | 'verifier' | 'arbiter' | 'synthesizer' | 'solo';
@@ -47,6 +65,7 @@ export interface DebateStep {
   summary?: string;
   agreedPoints?: string[];
   disputedPoints?: string[];
+  usage?: ModelUsageStats;
 }
 
 export type DebateTone = 'diplomatic' | 'balanced' | 'rigorous' | 'aggressive';
@@ -112,6 +131,8 @@ export interface DebateSession {
   searchEngine?: SearchEngineProvider;
   enableSearchGrounding?: boolean;
   researchMethod?: 'adaptive' | 'systematic' | 'evidence-map' | 'comparative';
+  heartbeatEnabled?: boolean;
+  heartbeatIntervalSec?: number;
   createdAt: number;
   updatedAt?: number;
   status: 'idle' | 'running' | 'completed' | 'error';
@@ -119,6 +140,7 @@ export interface DebateSession {
   finalOutput?: string;
   evidenceGraph?: EvidenceGraph;
   researchMetrics?: ResearchMetrics;
+  usage?: DebateUsage;
   metrics?: {
     durationMs: number;
     synthexisRate: number; // 0 - 100%
