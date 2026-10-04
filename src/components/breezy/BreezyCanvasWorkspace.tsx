@@ -152,7 +152,7 @@ export const BreezyCanvasWorkspace: React.FC<BreezyCanvasWorkspaceProps> = ({ on
             ? {
                 ...c,
                 content: c.content
-                  ? `${c.content}\n\n---\n**AI Synthexis:**\n${expansionText}`
+                  ? `${c.content}\n\n---\n**AI Research:**\n${expansionText}`
                   : expansionText,
               }
             : c
