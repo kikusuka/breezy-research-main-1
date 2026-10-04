@@ -4,7 +4,7 @@ import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 import { PWAInstallButton } from './PWAInstallButton';
 
-export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing';
+export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing' | 'docs';
 
 interface SidebarProps {
   activeTab: ConsoleTab;
@@ -20,6 +20,7 @@ interface SidebarProps {
   onOpenProfile?: () => void;
   onDeleteSession?: (id: string, e: React.MouseEvent) => void;
   onSwitchToBreezy?: () => void;
+  onOpenGuide?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfile,
   onDeleteSession,
   onSwitchToBreezy,
+  onOpenGuide,
   isOpen,
   onClose,
 }) => {
@@ -161,6 +163,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <span className="material-symbols-outlined text-[18px]">hub</span>
                 <span>Topology</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenGuide?.();
+                  onCloseMobile?.();
+                }}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
+                  activeTab === 'docs'
+                    ? 'bg-stone-800 text-stone-100 font-bold'
+                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
+                }`}
+                title="Open the Synthexis guide"
+              >
+                <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                <span>Guide</span>
               </button>
 
               {/* Direct Switch to Breezy Chat */}
