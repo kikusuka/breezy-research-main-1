@@ -406,7 +406,7 @@ export default function App() {
       />
 
       {/* Main Content Layout with Fixed TopBar */}
-      <div className={`flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-[260px]' : 'pl-0'}`}>
         <TopBar
           onOpenSearch={() => setIsCommandPaletteOpen(true)}
           isSidebarOpen={isSidebarOpen}
