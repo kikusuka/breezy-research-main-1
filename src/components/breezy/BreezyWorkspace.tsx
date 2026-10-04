@@ -820,7 +820,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
                         ) : null}
                       </div>
 
-                      {/* Action Bar (Copy, Speak, Regenerate, Synthexis) */}
+                      {/* Action Bar (Copy, Speak, Regenerate, Research) */}
                       {!m.pending && m.content && (
                         <div className="flex items-center gap-1 pl-1 text-slate-400">
                           <button
