@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Main Stitch Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col justify-between bg-surface-container-low/95 backdrop-blur-xl border-r border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.2)] transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col justify-between bg-surface-container-low/95 backdrop-blur-xl border-r border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.2)] transition-transform duration-300 ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full'
         } ${isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'}`}
       >
@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onSelectTab('research');
                 handleClose?.();
               }}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-medium text-body-sm shadow-[0_0_12px_rgba(76,214,251,0.2)] hover:bg-secondary transition-all active:scale-[0.99]"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-on-primary font-medium text-body-sm hover:bg-secondary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
               <span>New Investigation</span>
@@ -155,10 +155,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }
                       handleClose?.();
                     }}
-                    className={`flex items-center justify-between px-space-md py-space-sm rounded-xl transition-all ${
+                    className={`flex items-center justify-between px-space-md py-space-sm rounded-md transition-colors ${
                       active
-                        ? 'bg-surface-container-high text-primary font-medium shadow-sm border border-primary/20'
-                        : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-transparent'
+                        ? 'bg-surface-container-high text-primary font-medium border-l-2 border-primary'
+                        : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface border-l-2 border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-space-md min-w-0">
@@ -197,10 +197,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onSelectTab(item.id);
                         handleClose?.();
                       }}
-                      className={`flex items-center gap-space-md px-space-md py-space-sm rounded-xl transition-all ${
+                      className={`flex items-center gap-space-md px-space-md py-space-sm rounded-md transition-colors ${
                         active
-                          ? 'bg-surface-container-high text-primary font-medium shadow-sm border border-primary/20'
-                          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-transparent'
+                          ? 'bg-surface-container-high text-primary font-medium border-l-2 border-primary'
+                          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface border-l-2 border-transparent'
                       }`}
                     >
                       <span
@@ -294,9 +294,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onOpenProfile) onOpenProfile();
               handleClose?.();
             }}
-            className="flex items-center gap-space-md p-space-sm rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors w-full text-left group border border-outline-variant/30"
+            className="flex items-center gap-space-md p-space-sm rounded-md bg-surface-container hover:bg-surface-container-high transition-colors w-full text-left group border border-outline-variant/30"
           >
-            <div className="w-8 h-8 rounded-full bg-surface-container-high group-hover:bg-primary/20 flex items-center justify-center text-primary font-mono text-code-md font-semibold shrink-0 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-surface-container-high group-hover:bg-primary/20 flex items-center justify-center text-primary font-mono text-code-md font-semibold shrink-0 transition-colors">
               {initials}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
