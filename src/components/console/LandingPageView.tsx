@@ -112,6 +112,17 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
             </div>
 
+            <div className="breezy-mark-frame mb-10 hidden max-w-[270px] overflow-hidden rounded-2xl border border-sky-200/15 bg-[#0a1c31] sm:block">
+              <div className="relative aspect-square overflow-hidden">
+                <img src="/breezy-mark-reference.png" alt="Breezy mark" className="h-full w-full object-cover opacity-90 mix-blend-screen" />
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,21,37,0)_45%,rgba(8,21,37,.78)_100%)]" />
+              </div>
+              <div className="flex items-center justify-between border-t border-sky-200/10 px-3 py-2 text-[10px] text-sky-100/45">
+                <span>Breezy / Playground</span>
+                <span className="font-mono text-sky-200/30">01</span>
+              </div>
+            </div>
+
             <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200/45">Start here</div>
             <h1 className="max-w-sm text-4xl font-semibold leading-[1.05] tracking-[-0.055em] text-white sm:text-5xl">
               Bring the hard question.
