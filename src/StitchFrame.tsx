@@ -1,23 +1,125 @@
 import React, { useEffect, useRef } from 'react';
 import { UserProfile } from './services/userProfileService';
+import { providerConfigService } from './services/providerConfigService';
+
+export type ResearchUiState = {
+  running: boolean;
+  activeStep: number;
+  status: string;
+  query: string;
+  output: string;
+};
 
 type Props = {
   file: string;
   mobileFile?: string;
   profile: UserProfile;
+  researchState?: ResearchUiState;
   onNavigate: (tab: string) => void;
-  onResearch?: (query: string) => void;
+  onResearch?: (query: string, depth?: 'solo' | 'standard' | 'deep') => void;
   onChat?: (query: string) => Promise<string>;
 };
 
 const LIVE_NAV = new Set(['landing','chat','research','history','models','docs','settings','profile','build','canvas','notes']);
 
-export default function StitchFrame({ file, mobileFile, profile, onNavigate, onResearch, onChat }: Props) {
+function replaceLeafText(doc: Document, replacements: Array<[string,string]>) {
+  doc.querySelectorAll<HTMLElement>('body *').forEach((el) => {
+    if (el.children.length !== 0 || !el.textContent) return;
+    let t = el.textContent;
+    for (const [from, to] of replacements) {
+      if (t.includes(from)) t = t.replace(from, to);
+    }
+    if (t !== el.textContent) el.textContent = t;
+  });
+}
+
+function applyTruthfulResearchLabels(doc: Document) {
+  const config = providerConfigService.getConfig();
+  const active = providerConfigService.getActiveRoutableModel();
+  const model = active ? active.model : 'No model assigned';
+  const search = config.searchEngine || 'No search configured';
+
+  replaceLeafText(doc, [
+    ['Cluster Active', 'BREEZY WORKSPACE'],
+    ['Ready for Inquiry', active ? 'Model available' : 'No model connected'],
+    ['H100 x 8 Idle', 'No live compute'],
+    ['Claude 3.7 Sonnet', model],
+    ['DeepSeek-R1', model],
+    ['arXiv + PubMed', search],
+    ['Lean 4 Sandbox', 'Not connected'],
+    ['Auto-Ensemble (Claude 3.7 + o3-mini)', active ? 'Configured model' : 'No model connected'],
+    ['Valid', 'Not verified'],
+    ['Connected', 'Not verified'],
+    ['All Nodes Reachable', 'Connectivity not verified'],
+    ['Pinging 4 Nodes...', 'Checking connectivity...'],
+    ['Matrix Committed', 'Routing saved locally'],
+  ]);
+}
+
+function applyResearchState(doc: Document, state?: ResearchUiState) {
+  if (!state) return;
+
+  const input = doc.getElementById('inquiry-input') as HTMLTextAreaElement | null;
+  const hint = doc.getElementById('char-hint');
+  if (input && state.query && input.value !== state.query) input.value = state.query;
+  if (hint) hint.textContent = state.query ? state.query.length + ' characters staged' : 'Awaiting statement formulation';
+
+  const button = doc.getElementById('btn-initiate') as HTMLButtonElement | null;
+  if (button) {
+    button.disabled = state.running;
+    button.innerHTML = state.running
+      ? '<span class="material-symbols-outlined text-headline-sm animate-spin">progress_activity</span><span>Running…</span>'
+      : state.status === 'completed'
+        ? '<span class="material-symbols-outlined text-headline-sm">check_circle</span><span>Run again</span>'
+        : '<span>Initiate Synthesis</span><span class="material-symbols-outlined text-headline-sm">arrow_forward</span>';
+  }
+
+  const title = Array.from(doc.querySelectorAll<HTMLElement>('h1,h2,h3')).find((el) => el.textContent?.trim() === 'No active synthesis in progress');
+  const copy = title?.parentElement?.querySelector<HTMLElement>('p');
+  if (title) {
+    title.textContent =
+      state.status === 'completed' ? 'Synthesis complete'
+      : state.status === 'error' ? 'Synthesis stopped'
+      : state.running ? 'Synthesis in progress'
+      : 'Ready for inquiry';
+  }
+  if (copy) {
+    copy.textContent =
+      state.status === 'completed' ? (state.output ? 'The investigation completed. Your result is preserved in History.' : 'The investigation completed and is preserved in History.')
+      : state.status === 'error' ? 'The run stopped with an error. Correct the connection or prompt and try again.'
+      : state.running ? 'Breezy is coordinating the configured research pipeline. You can watch the session in History as it evolves.'
+      : 'Submit an inquiry above to coordinate multi-model exploration, challenge, verification, and synthesis.';
+  }
+
+  const labels=['Question','Exploration','Proposals','Challenge','Evidence','Synthesis'];
+  const step=Math.max(0,Math.min(5,state.activeStep));
+  labels.forEach((label,idx)=>{
+    const textEl=Array.from(doc.querySelectorAll<HTMLElement>('span')).find((el)=>el.textContent?.trim()===label);
+    const block=textEl?.parentElement;
+    const marker=block?.querySelector<HTMLElement>('div.w-9.h-9');
+    if(!block || !marker || !textEl) return;
+    const reached=idx<=step && (state.running || state.status==='completed');
+    marker.classList.remove('bg-surface-container','bg-surface-container-high','bg-primary','text-primary','text-on-primary','text-outline');
+    textEl.classList.remove('text-primary','text-outline');
+    if(reached){
+      marker.classList.add('bg-primary','text-on-primary');
+      textEl.classList.add('text-primary');
+      const icon=marker.querySelector<HTMLElement>('.material-symbols-outlined');
+      if(icon && idx<step) icon.textContent='check';
+    } else {
+      marker.classList.add(idx===0 ? 'bg-surface-container-high' : 'bg-surface-container','text-outline');
+      textEl.classList.add(idx===0 ? 'text-primary' : 'text-outline');
+    }
+  });
+}
+
+export default function StitchFrame({ file, mobileFile, profile, researchState, onNavigate, onResearch, onChat }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const frame = ref.current;
     if (!frame) return;
+
     const handleLoad = () => {
       const doc = frame.contentDocument;
       if (!doc) return;
@@ -27,6 +129,7 @@ export default function StitchFrame({ file, mobileFile, profile, onNavigate, onR
           const path = el.getAttribute('data-path') || '';
           if (!LIVE_NAV.has(path)) return;
           event.preventDefault();
+          event.stopImmediatePropagation();
           onNavigate(path);
         });
       });
@@ -35,23 +138,21 @@ export default function StitchFrame({ file, mobileFile, profile, onNavigate, onR
       const role = profile.roleTitle.trim() || 'No role set';
       const email = profile.email.trim();
       const initials = name.split(/\s+/).slice(0, 2).map((x) => x[0] || '').join('').toUpperCase() || 'B';
+      replaceLeafText(doc, [
+        ['Dr. Aris Vance', name],
+        ['Dr. Elena Rostova', name],
+        ['Lead Analyst', role],
+        ['Principal Synthesis Architect', role],
+        ['AV', initials],
+        ['L9', initials],
+        ...(email ? [['Workspace namespace','' + email] as [string,string]] : []),
+      ]);
 
-      doc.querySelectorAll<HTMLElement>('body *').forEach((el) => {
-        if (el.children.length !== 0 || !el.textContent) return;
-        const t = el.textContent.trim();
-        if (t === 'Dr. Aris Vance' || t === 'Dr. Elena Rostova') el.textContent = name;
-        else if (t === 'Lead Analyst' || t.includes('Principal Synthesis Architect')) el.textContent = role;
-        else if (t === 'AV' || t === 'L9') el.textContent = initials;
-        else if (t.includes('Workspace namespace') && email) el.textContent = t.replace('Workspace namespace', email);
-      });
-
-      // Remove generated claims that could be mistaken for live telemetry, credentials, or connected infrastructure.
-      const replacements: Array<[string,string]> = [
+      replaceLeafText(doc, [
         ['94.8% CONCORDANT', 'ILLUSTRATIVE PREVIEW'],
         ['99.4%', 'PREVIEW'],
         ['99.2%', 'PREVIEW'],
         ['3 MODELS VERIFIED', 'NO LIVE RUN'],
-        ['4 Nodes', 'No live nodes'],
         ['4 Nodes', 'No live nodes'],
         ['H100 x 8 Idle', 'No live compute connected'],
         ['Daemon Listening • 0ms auth', 'No local daemon verified'],
@@ -71,23 +172,18 @@ export default function StitchFrame({ file, mobileFile, profile, onNavigate, onR
         ['127.0.0.1:11434', 'Local endpoint not verified'],
         ['enclave.breezy.internal', 'No enclave configured'],
         ['SYNTHESIS COMMITTED', 'PREVIEW ONLY'],
-        ['3 MODELS VERIFIED', 'NO LIVE RUN'],
         ['No credit card required • Dual-engine verifiable logs • Local Ollama bridge ready', 'Connect a model to run a live investigation'],
-      ];
-      doc.querySelectorAll<HTMLElement>('body *').forEach((el) => {
-        if (el.children.length !== 0 || !el.textContent) return;
-        let t = el.textContent;
-        for (const [from, to] of replacements) if (t.includes(from)) t = t.replace(from, to);
-        el.textContent = t;
-      });
+      ]);
+      applyTruthfulResearchLabels(doc);
 
       const landingForm = doc.getElementById('inquiryForm') as HTMLFormElement | null;
       const landingInput = doc.getElementById('userInquiry') as HTMLInputElement | null;
       if (landingForm && landingInput) {
         landingForm.addEventListener('submit', (event) => {
           event.preventDefault();
+          event.stopImmediatePropagation();
           const q = landingInput.value.trim();
-          if (q) onResearch?.(q);
+          if (q) onResearch?.(q, 'standard');
         });
       }
 
@@ -96,33 +192,63 @@ export default function StitchFrame({ file, mobileFile, profile, onNavigate, onR
       if (researchButton && researchInput) {
         researchButton.addEventListener('click', (event) => {
           event.preventDefault();
+          event.stopImmediatePropagation();
           const q = researchInput.value.trim();
-          if (q) onResearch?.(q);
+          if (!q) {
+            researchInput.focus();
+            return;
+          }
+          const depthValue = (doc.getElementById('depth-select') as HTMLSelectElement | null)?.value;
+          const depth = depthValue === 'standard' ? 'standard' : depthValue === 'exhaustive' ? 'deep' : 'deep';
+          onResearch?.(q, depth);
         });
       }
 
       const chatInput = doc.getElementById('inquiryInput') as HTMLInputElement | HTMLTextAreaElement | null;
       if (chatInput && onChat) {
         chatInput.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' && !(event as KeyboardEvent).shiftKey) {
-            event.preventDefault();
-            const q = chatInput.value.trim();
-            if (q) { const result = await onChat(q); const wrap = doc.createElement('div'); wrap.className='flex justify-start mb-6'; wrap.innerHTML='<div class="max-w-2xl rounded-2xl bg-surface-container px-space-md py-space-sm text-on-surface">'+result.replace(/</g,'&lt;')+'</div>'; doc.body.appendChild(wrap); chatInput.value=''; }
-          }
+          if (event.key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const q = chatInput.value.trim();
+          if (!q) return;
+
+          void (async () => {
+            const result = await onChat(q);
+            const wrap = doc.createElement('div');
+            wrap.className = 'flex justify-start mb-6';
+            const bubble = doc.createElement('div');
+            bubble.className = 'max-w-2xl rounded-2xl bg-surface-container px-space-md py-space-sm text-on-surface whitespace-pre-wrap';
+            bubble.textContent = result;
+            wrap.appendChild(bubble);
+            const scrollHost = chatInput.closest('.flex-1.overflow-y-auto') || chatInput.closest('main') || doc.body;
+            scrollHost.insertBefore(wrap, scrollHost.lastElementChild || null);
+            chatInput.value = '';
+          })();
         });
       }
 
       const sample = doc.getElementById('sampleBtn');
       if (sample && landingInput) {
-        sample.addEventListener('click', () => {
+        sample.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
           landingInput.value = 'Compare the evidence for a research question you care about';
         });
       }
+
+      applyResearchState(doc, researchState);
     };
 
     frame.addEventListener('load', handleLoad);
     return () => frame.removeEventListener('load', handleLoad);
-  }, [file, profile, onNavigate, onResearch, onChat]);
+  }, [file, profile, onNavigate, onResearch, onChat, researchState]);
+
+  useEffect(() => {
+    if (!researchState) return;
+    const doc = ref.current?.contentDocument;
+    if (doc) applyResearchState(doc, researchState);
+  }, [researchState]);
 
   const src = mobileFile && typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches ? mobileFile : file;
   return (
