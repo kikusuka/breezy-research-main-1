@@ -232,11 +232,11 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             <span className="material-symbols-outlined text-headline-sm text-outline">memory</span>
           </div>
           <div className="flex items-baseline gap-space-xs">
-            <span className="font-headline font-bold text-headline-xl text-on-surface">12</span>
+            <span className="font-headline font-bold text-headline-xl text-on-surface">{Object.values(AVAILABLE_MODELS).reduce((total, models) => total + models.length, 0) + ollamaModels.length}</span>
             <span className="font-mono text-code-sm text-outline">models available</span>
           </div>
           <div className="flex items-center gap-space-xs font-mono text-code-sm text-on-surface-variant">
-            <span className="text-primary font-medium">4 assigned</span>
+            <span className="text-primary font-medium">{Object.values(config.roles || {}).filter((role) => Boolean(role?.provider && role?.model)).length} assigned</span>
             <span>in active pipeline</span>
           </div>
         </div>
@@ -296,7 +296,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           {(() => {
             const hasKey = Boolean(config.keys?.anthropic);
             return (
-              <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-md flex flex-col justify-between gap-space-md">
+              <div className="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between gap-space-md">
                 <div className="flex flex-col gap-space-md">
                   <div className="flex items-start justify-between gap-space-sm">
                     <div className="flex items-center gap-space-md">
@@ -368,7 +368,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           {(() => {
             const hasKey = Boolean(config.keys?.gemini || serverGeminiActive);
             return (
-              <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-md flex flex-col justify-between gap-space-md">
+              <div className="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between gap-space-md">
                 <div className="flex flex-col gap-space-md">
                   <div className="flex items-start justify-between gap-space-sm">
                     <div className="flex items-center gap-space-md">
@@ -443,7 +443,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           })()}
 
           {/* Local Ollama Card */}
-          <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-md flex flex-col justify-between gap-space-md">
+          <div className="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between gap-space-md">
             <div className="flex flex-col gap-space-md">
               <div className="flex items-start justify-between gap-space-sm">
                 <div className="flex items-center gap-space-md">
@@ -526,7 +526,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           {(() => {
             const hasKey = Boolean(config.keys?.groq);
             return (
-              <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-md flex flex-col justify-between gap-space-md">
+              <div className="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between gap-space-md">
                 <div className="flex flex-col gap-space-md">
                   <div className="flex items-start justify-between gap-space-sm">
                     <div className="flex items-center gap-space-md">
@@ -597,7 +597,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
       </div>
 
       {/* Pipeline Role Assignment Matrix */}
-      <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-md flex flex-col gap-space-md">
+      <div className="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col gap-space-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant/20">
           <div className="flex flex-col gap-space-xs">
             <div className="flex items-center gap-space-sm text-primary">
@@ -640,13 +640,13 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             <div className="flex flex-col gap-1">
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
-                value={config.roles?.architect?.model || 'gemini-2.5-flash'}
+                value={config.roles?.architect?.model || ''}
                 onChange={(e) => handleRoleChange('architect', e.target.value)}
                 className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
               >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                <option value="">No model assigned</option>\n                <option value="">No model assigned</option>\n                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="">No model assigned</option>\n                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="">No model assigned</option>\n                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
                 <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
               </select>
             </div>
@@ -671,7 +671,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             <div className="flex flex-col gap-1">
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
-                value={config.roles?.skeptic?.model || 'claude-3-5-sonnet-20241022'}
+                value={config.roles?.skeptic?.model || ''}
                 onChange={(e) => handleRoleChange('skeptic', e.target.value)}
                 className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
               >
@@ -702,7 +702,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             <div className="flex flex-col gap-1">
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
-                value={config.roles?.verifier?.model || 'gemini-2.5-flash'}
+                value={config.roles?.verifier?.model || ''}
                 onChange={(e) => handleRoleChange('verifier', e.target.value)}
                 className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
               >
@@ -732,7 +732,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             <div className="flex flex-col gap-1">
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
-                value={config.roles?.arbiter?.model || 'gemini-2.5-pro'}
+                value={config.roles?.arbiter?.model || ''}
                 onChange={(e) => handleRoleChange('arbiter', e.target.value)}
                 className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
               >
