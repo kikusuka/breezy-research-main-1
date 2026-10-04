@@ -10,7 +10,7 @@ const breezySections = [
   {
     id: 'start',
     title: 'Start here',
-    text: 'Breezy is the everyday workspace. Ask questions, keep conversations, move work into the IDE, or switch to Synthexis when you need a deeper research process.',
+    text: 'Breezy is the everyday workspace. Ask questions, keep conversations, move work into the IDE, or open Research when you need models to challenge and verify an answer.',
   },
   {
     id: 'models',
@@ -48,7 +48,7 @@ const synthexisSections = [
   {
     id: 'integrity',
     title: 'Understand the output',
-    text: 'Watch sources, claims, conflicts, uncertainty, elapsed time, token usage, and Heartbeat checkpoints. A missing provider or failed verification should be visible rather than replaced with fake data.',
+    text: 'Watch sources, claims, conflicts, uncertainty, elapsed time, token usage, and progress checkpoints. A missing provider or failed verification should be visible rather than replaced with fake data.',
   },
 ];
 
@@ -64,7 +64,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 sm:py-12">
         <div className="max-w-3xl">
           <div className="text-[10px] uppercase tracking-[0.22em] font-mono text-slate-500 mb-3">
-            {product === 'breezy' ? 'Breezy guide' : 'Synthexis guide'}
+            {product === 'breezy' ? 'Breezy guide' : 'Breezy Research guide'}
           </div>
           <h1 className={product === 'breezy'
             ? 'text-3xl sm:text-4xl font-semibold tracking-tight text-white'
@@ -74,7 +74,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
           <p className={product === 'breezy'
             ? 'mt-3 text-sm leading-7 text-slate-400'
             : 'mt-3 text-sm leading-7 text-stone-500'}>
-            A practical guide. No demo account, fake model, or imaginary setup is required.
+            A practical guide to using Breezy's real chat, research, model setup, and code workflows.
           </p>
         </div>
 
