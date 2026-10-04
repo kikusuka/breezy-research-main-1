@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResearchLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
+import { SynthexisLogoIcon, BreezyLogoIcon } from '../icons/ProductLogos';
 
 export type ProductMode = 'breezy' | 'synthexis';
 
