@@ -123,9 +123,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab('chat');
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'chat'
-                    ? 'bg-stone-800 text-stone-100 font-bold'
+                    ? 'bg-sky-400/10 text-sky-200 font-semibold border border-sky-400/10'
                     : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
                 }`}
               >
@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab('notes');
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'notes'
                     ? 'bg-stone-800 text-stone-100 font-bold'
                     : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
@@ -155,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab('models');
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'models'
                     ? 'bg-stone-800 text-stone-100 font-bold'
                     : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
@@ -171,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onOpenGuide?.();
                   onCloseMobile?.();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'docs'
                     ? 'bg-stone-800 text-stone-100 font-bold'
                     : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
@@ -206,22 +206,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Breezy Research Mode Toggle: Minimal */}
           <div className="mx-3 mt-4 mb-2 px-3 py-3 rounded-xl bg-stone-900/60 border border-stone-800/60 flex flex-col gap-2 shrink-0 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">Research mode</span>
+              <span className="text-[11px] font-medium text-stone-400 tracking-tight">Research mode</span>
               <button
                 type="button"
                 onClick={onToggleSynthexisMode}
                 className={`w-9 h-5 rounded p-0.5 transition-colors cursor-pointer ${
-                  synthexisMode ? 'bg-stone-100' : 'bg-stone-800'
+                  synthexisMode ? 'bg-sky-300' : 'bg-stone-800'
                 }`}
               >
                 <div
-                  className={`w-4 h-4 rounded-sm bg-stone-950 shadow-xs transition-transform duration-200 ${
+                  className={`w-4 h-4 rounded-sm bg-slate-950 shadow-xs transition-transform duration-200 ${
                     synthexisMode ? 'translate-x-4' : 'translate-x-0'
                   }`}
                 />
               </button>
             </div>
-            <p className="text-[10px] text-stone-600 leading-relaxed font-mono uppercase tracking-tighter">
+            <p className="text-[11px] text-stone-500 leading-relaxed">
               {synthexisMode 
                 ? 'Multi-model research' 
                 : 'Single-model chat'}
@@ -230,7 +230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Research History List: Editorial List */}
           <div className="flex-1 overflow-y-auto p-3 mt-4 flex flex-col gap-3">
-            <span className="text-xs font-sans text-stone-300 uppercase tracking-wider px-3 font-bold">
+            <span className="text-xs font-medium text-stone-300 px-3">
               Journal
             </span>
 
