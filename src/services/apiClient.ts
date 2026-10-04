@@ -51,7 +51,7 @@ class ApiClient {
         id: 'cloudflare',
         name: 'Cloudflare Worker',
         url: primaryUrl, // empty string means same-origin relative '/api/...'
-        tierInfo: 'Primary Edge (100k req/day)',
+        tierInfo: 'Primary edge backend',
       },
       ...(secondaryUrl
         ? [
@@ -59,7 +59,7 @@ class ApiClient {
               id: 'deno' as const,
               name: 'Deno Deploy',
               url: secondaryUrl,
-              tierInfo: 'Secondary Backup (1M req/mo)',
+              tierInfo: 'Secondary backup backend',
             },
           ]
         : []),
@@ -69,7 +69,7 @@ class ApiClient {
               id: 'render' as const,
               name: 'Render Node',
               url: fallbackUrl,
-              tierInfo: 'Emergency Fallback',
+              tierInfo: 'Emergency fallback backend',
             },
           ]
         : []),
