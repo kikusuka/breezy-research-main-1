@@ -134,16 +134,16 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
         <div className="flex flex-col gap-2 max-w-2xl">
           <div className="flex items-center gap-3">
             <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500 font-bold">
-              MODEL CONTROL
+              RESEARCH SETUP
             </span>
             <span aria-hidden="true" className="text-stone-700">·</span>
-            <span className="font-mono text-[10px] text-stone-600 uppercase tracking-widest font-bold font-mono">USER-DEFINED STACK</span>
+            <span className="font-mono text-[10px] text-stone-600 uppercase tracking-widest font-bold font-mono">YOUR MODELS</span>
           </div>
           <h1 className="text-3xl font-serif italic font-medium text-stone-100 tracking-tight">
-            Model & Research Control
+            How Breezy researches
           </h1>
           <p className="text-[12px] text-stone-500 leading-relaxed font-sans max-w-xl">
-            Choose exactly how Breezy researches: which models do what, where evidence comes from, and how much structure the investigation uses.
+            Choose the models, research method, search layer, and depth. The research pipeline is still explicit so testers can inspect every stage.
           </p>
         </div>
 
@@ -171,13 +171,33 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
       </div>
 
       <div className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto w-full">
+        <section className="rounded-xl border border-sky-400/15 bg-sky-400/[0.035] p-5">
+          <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-sky-300/80">How a research run talks</div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              ['01', 'Propose', 'Build the first position'],
+              ['02', 'Challenge', 'Try to break it'],
+              ['03', 'Verify', 'Check facts and constraints'],
+              ['04', 'Resolve', 'Write the strongest conclusion'],
+            ].map(([step, title, description]) => (
+              <div key={step} className="rounded-lg border border-white/[0.06] bg-black/10 p-3">
+                <div className="text-[9px] font-mono text-sky-300/70">{step}</div>
+                <div className="mt-1 text-xs font-semibold text-stone-100">{title}</div>
+                <div className="mt-1 text-[10px] leading-5 text-stone-500">{description}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto w-full">
         <section className="border border-stone-800/60 bg-stone-900/10 rounded-lg p-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-sm font-semibold text-stone-100">Research controls</h2>
-              <p className="text-xs text-stone-500 mt-1 max-w-2xl">This is the part that makes Breezy yours. Presets are starting points; Custom lets you decide the research method and search layer.</p>
+              <h2 className="text-sm font-semibold text-stone-100">Research method</h2>
+              <p className="text-xs text-stone-500 mt-1 max-w-2xl">Presets are starting points. Custom lets you decide how the investigation is assembled.</p>
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">No provider = no model</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">No connection = no model</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="flex flex-col gap-2">
@@ -223,7 +243,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="px-2.5 py-1.5 rounded-md border border-stone-800 text-[10px] font-mono text-stone-400">BYOK · Synthexis</span>
+              <span className="px-2.5 py-1.5 rounded-md border border-stone-800 text-[10px] font-mono text-stone-400">BYOK · Research</span>
               <span className="px-2.5 py-1.5 rounded-md border border-stone-800 text-[10px] font-mono text-stone-400">Puter.js · IDE Agent</span>
             </div>
           </div>
@@ -232,8 +252,8 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
         <section className="border border-stone-800/60 bg-stone-900/10 rounded-lg p-5 mt-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-stone-100">Heartbeat</h2>
-              <p className="text-xs text-stone-500 mt-1">Periodic task reminders keep long research runs aligned with the original question and evidence rules.</p>
+              <h2 className="text-sm font-semibold text-stone-100">Progress checks</h2>
+              <p className="text-xs text-stone-500 mt-1">Periodic alignment checks keep long runs attached to the original question and evidence standard.</p>
             </div>
             <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-stone-400">
               <input type="checkbox" checked={config.heartbeatEnabled !== false} onChange={(e) => {
@@ -247,7 +267,7 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             </label>
           </div>
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">Interval</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">Check interval</span>
             <select value={config.heartbeatIntervalSec || 60} onChange={(e) => {
               const next = providerConfigService.getConfig();
               next.heartbeatIntervalSec = Number(e.target.value);
@@ -272,11 +292,11 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-stone-500 text-[20px]">hub</span>
               <h2 className="font-sans text-sm text-stone-100">
-                Compute Allocations
+                Research team
               </h2>
             </div>
             <div className="flex items-center gap-3 text-[10px] font-mono text-stone-500 uppercase tracking-widest">
-              <span>Preset Mode</span>
+              <span>Preset</span>
               <span className="text-stone-100 font-bold">{config.preset || 'Balanced'}</span>
             </div>
           </div>
