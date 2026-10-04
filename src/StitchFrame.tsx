@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { UserProfile } from './services/userProfileService';
-import { providerConfigService } from './services/providerConfigService';
+import { AVAILABLE_MODELS, providerConfigService } from './services/providerConfigService';
 
 export type ResearchUiState = {
   running: boolean;
@@ -15,9 +15,13 @@ type Props = {
   mobileFile?: string;
   profile: UserProfile;
   researchState?: ResearchUiState;
+  screen?: 'landing' | 'chat' | 'research' | 'docs' | 'models' | 'profile';
   onNavigate: (tab: string) => void;
   onResearch?: (query: string, depth?: 'solo' | 'standard' | 'deep') => void;
   onChat?: (query: string) => Promise<string>;
+  onProviderKeySave?: (provider: string, key: string) => void;
+  onSeatModelChange?: (index: number, provider: string, model: string) => void;
+  onModelProbe?: () => void;
 };
 
 const LIVE_NAV = new Set(['landing','chat','research','history','models','docs','settings','profile','build','canvas','notes']);
@@ -59,6 +63,52 @@ function applyTruthfulResearchLabels(doc: Document) {
     ['Pinging 4 Nodes...', 'Checking connectivity...'],
     ['Matrix Committed', 'Routing saved locally'],
   ]);
+}
+
+function providerDisplayName(id: string) {
+  const names: Record<string,string> = {
+    gemini:'Gemini',
+    anthropic:'Anthropic',
+    groq:'Groq',
+    sambanova:'SambaNova',
+    openrouter:'OpenRouter',
+    ollama:'Ollama',
+    'openai-compatible':'OpenAI-compatible',
+  };
+  return names[id] || id;
+}
+
+function applyTruthfulModelSurface(doc: Document) {
+  const cfg = providerConfigService.getConfig();
+  const selects = Array.from(doc.querySelectorAll<HTMLSelectElement>('select')).slice(0, 4);
+  const roles = ['architect','skeptic','verifier','arbiter'] as const;
+  const catalog = Object.entries(providerConfigService.getConfig().roles || {}).length
+    ? Object.entries(providerConfigService.getConfig())
+    : [];
+  void catalog;
+
+  selects.forEach((select, index) => {
+    const role = roles[index];
+    if (!role) return;
+    const current = cfg.roles[role];
+    const liveOptions: Array<{provider:string;model:string;name:string}> = [];
+    Object.entries(AVAILABLE_MODELS).forEach(([provider,items]) => {
+      items.forEach((item) => liveOptions.push({provider,model:item.id,name:item.name}));
+    });
+    select.innerHTML = '';
+    const none = doc.createElement('option');
+    none.value = '';
+    none.textContent = 'No model assigned';
+    select.appendChild(none);
+    liveOptions.forEach((item) => {
+      const opt = doc.createElement('option');
+      opt.value = item.provider + ':' + item.model;
+      opt.textContent = providerDisplayName(item.provider) + ': ' + item.name;
+      select.appendChild(opt);
+    });
+    const value = current.provider && current.model ? current.provider + ':' + current.model : '';
+    select.value = value;
+  });
 }
 
 function applyResearchState(doc: Document, state?: ResearchUiState) {
@@ -118,7 +168,7 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
   });
 }
 
-export default function StitchFrame({ file, mobileFile, profile, researchState, onNavigate, onResearch, onChat }: Props) {
+export default function StitchFrame({ file, mobileFile, profile, researchState, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -249,6 +299,85 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
         }, true);
       }
 
+      if (screen === 'models') {
+        applyTruthfulModelSurface(doc);
+        const saveBtn = doc.getElementById('modalSaveBtn') as HTMLButtonElement | null;
+        if (saveBtn) {
+          saveBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const title = doc.getElementById('modalProviderTitle')?.textContent?.trim() || '';
+            const provider = title.replace(/^Configure\\s*/, '');
+            const key = (doc.getElementById('modalKeyInput') as HTMLInputElement | null)?.value || '';
+            if (!key.trim()) return;
+            onProviderKeySave?.(provider, key);
+            const modal = doc.getElementById('credentialModal');
+            modal?.classList.add('hidden');
+          }, true);
+        }
+
+        const testBtn = doc.getElementById('modalTestBtn') as HTMLButtonElement | null;
+        if (testBtn) {
+          testBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            testBtn.textContent = 'Verification unavailable';
+            onModelProbe?.();
+          }, true);
+        }
+
+        const pingBtn = doc.getElementById('testConnectionsBtn') as HTMLButtonElement | null;
+        if (pingBtn) {
+          pingBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            pingBtn.textContent = 'No live node check';
+            onModelProbe?.();
+          }, true);
+        }
+
+        const routingBtn = doc.getElementById('saveRoutingBtn') as HTMLButtonElement | null;
+        if (routingBtn) {
+          routingBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            routingBtn.textContent = 'Routing saved locally';
+          }, true);
+        }
+
+        Array.from(doc.querySelectorAll<HTMLSelectElement>('select')).slice(0,4).forEach((select,index) => {
+          select.addEventListener('change', (event) => {
+            event.stopImmediatePropagation();
+            const value = select.value;
+            if (!value) {
+              onSeatModelChange?.(index,'','');
+              return;
+            }
+            const split = value.indexOf(':');
+            if (split < 0) {
+              onSeatModelChange?.(index,'','');
+              return;
+            }
+            onSeatModelChange?.(index,value.slice(0,split),value.slice(split+1));
+          }, true);
+        });
+
+        replaceLeafText(doc, [
+          ['Claude 3.7 Sonnet', 'Catalog model — choose from live catalog'],
+          ['OpenAI GPT-4.5 Preview', 'Catalog entry'],
+          ['OpenAI: GPT-4.5 Preview', 'Catalog entry'],
+          ['Google DeepMind: Gemini 2.0 Pro', 'Catalog entry'],
+          ['o3-mini', 'Catalog entry'],
+          ['Zero-Log Confidentiality Guarantee', 'Provider connection storage'],
+          ['All remote API payloads utilize ephemeral stateless contexts with zero data retention parameters.', 'Provider privacy behavior depends on the configured service.'],
+          ['Local Storage: Encrypted AES-256', 'Local storage'],
+          ['CONNECTED', 'NOT VERIFIED'],
+          ['ACTIVE', 'NOT VERIFIED'],
+          ['All Nodes Reachable', 'Connectivity not verified'],
+          ['Pinging 4 Nodes...', 'Checking connectivity...'],
+        ]);
+      }
+
       const sample = doc.getElementById('sampleBtn');
       if (sample && landingInput) {
         sample.addEventListener('click', (event) => {
@@ -263,7 +392,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
 
     frame.addEventListener('load', handleLoad);
     return () => frame.removeEventListener('load', handleLoad);
-  }, [file, profile, onNavigate, onResearch, onChat, researchState]);
+  }, [file, profile, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe, researchState]);
 
   useEffect(() => {
     if (!researchState) return;
