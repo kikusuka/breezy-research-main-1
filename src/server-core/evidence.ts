@@ -1,7 +1,7 @@
 /**
  * Structured Evidence Graph & Summarizer
  * Runtime-agnostic evidence graph extraction
- * Strict Truthfulness: No fabricated metrics or artificial synthexis clamping.
+ * Strict Truthfulness: Metrics come from recorded evidence and execution state.
  */
 
 import { callAgentWithStream } from './providers';
@@ -74,7 +74,6 @@ export async function generateRealEvidenceGraph(opts: {
     researchPlan: suppliedResearchPlan = [],
   } = opts;
 
-  // In solo mode, there is no multi-agent debate synthexis rate
   if (isSolo) {
     return {
       evidenceGraph: {
@@ -216,10 +215,6 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
     const claimsUnresolved = claims.filter((c: any) => c.status === 'unresolved').length;
     const sourcesConsulted = discoveredSources.length;
 
-    // Real, unclamped calculation: only compute rate when claims were actually identified
-    const synthexisRate = claimsIdentified > 0
-      ? Math.round(((claimsSupported + 0.5 * (claimsIdentified - claimsContradicted - claimsUnresolved)) / claimsIdentified) * 100)
-      : null;
 
     const preferredDomainsRegex = /(\.gov|\.edu|\.org|github\.com|arxiv\.org|apache\.org|ietf\.org|w3\.org|docs?\.)/i;
     const preferredDomainSourcesCount = discoveredSources.filter((s: any) => {
@@ -236,7 +231,6 @@ OUTPUT ONLY A VALID JSON OBJECT WITH THIS EXACT STRUCTURE (no backticks, no mark
       sourcesConsulted,
       primarySourcesCount: preferredDomainSourcesCount,
       preferredDomainSourcesCount,
-      synthexisRate,
     };
 
     const evidenceGraph = {
