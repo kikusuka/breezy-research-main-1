@@ -224,7 +224,7 @@ function Chat({serverGemini}:{serverGemini:boolean}) {
 function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToast,pendingResearch,onConsumed}:{sessions:DebateSession[];setSessions:React.Dispatch<React.SetStateAction<DebateSession[]>>;activeId:string|null;setActiveId:(v:string|null)=>void;serverGemini:boolean;onToast:(s:string)=>void;pendingResearch:{q:string;d:Depth}|null;onConsumed:()=>void}) {
   const current=sessions.find((s)=>s.id===activeId) || sessions[0] || null;
   const [query,setQuery]=useState(current?.prompt || '');
-  const [depth,setDepth]=useState<Depth>(current?.protocol==='solo'?'solo':current?.protocol==='deep'?'deep':'standard');
+  const [depth,setDepth]=useState<Depth>(current?.protocol==='solo'?'solo':current?.protocol==='quad'?'deep':'standard');
   const [running,setRunning]=useState(false);
   const [activeStep,setActiveStep]=useState(0);
   const [events,setEvents]=useState<string[]>([]);
@@ -327,7 +327,7 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
           <textarea className="input" style={{minHeight:120,resize:'vertical'}} value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Enter a question worth investigating…" />
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,marginTop:10}}>
             <div className="segmented">{([['solo','Solo'],['standard','Standard'],['deep','Deep']] as Array<[Depth,string]>).map(([id,label])=><button key={id} className={depth===id?'active':''} onClick={()=>setDepth(id)}>{label}</button>)}</div>
-            <button className="primary-btn" disabled={!query.trim()||running} onClick={start}><Icon name={running?'hourglass_top':'play_arrow'}/>{running?'Running…':'Initiate Synthesis'}</button>
+            <button className="primary-btn" disabled={!query.trim()||running} onClick={()=>void start()}><Icon name={running?'hourglass_top':'play_arrow'}/>{running?'Running…':'Initiate Synthesis'}</button>
           </div>
         </div>
         {current && <div className="grid grid-2">
@@ -489,6 +489,7 @@ export default function App() {
   const [profile,setProfile]=useState<UserProfile>(()=>userProfileService.getProfile());
   const [serverGemini,setServerGemini]=useState(false);
   const [toast,setToast]=useState<string|null>(null);
+  const [pendingResearch,setPendingResearch]=useState<{q:string;d:Depth}|null>(null);
 
   const current=sessions.find((s)=>s.id===activeSessionId)||sessions[0]||null;
   useEffect(()=>{window.location.hash=active;setSidebarOpen(false)},[active]);
