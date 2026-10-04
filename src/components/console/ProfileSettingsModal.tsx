@@ -118,6 +118,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         }
         setProvider(canonical.defaultProvider || '');
         setModel(canonical.defaultModel || '');
+        setBaseUrl(canonical.defaultProvider === 'ollama' ? (canonical.ollamaBaseUrl || '') : (canonical.openaiCompatibleBaseUrl || ''));
         setTavilyKey(activeKeys.tavily || '');
         setSerperKey(activeKeys.serper || '');
         setBraveKey(activeKeys.brave || '');
@@ -174,13 +175,17 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         updatedKeys.sambanova = key.trim() || undefined;
       } else if (provider === 'openrouter') {
         updatedKeys.openrouter = key.trim() || undefined;
+      } else if (provider === 'openai-compatible') {
+        updatedKeys.openaiCompatible = key.trim() || undefined;
       }
 
       const currentConfig = providerConfigService.getConfig();
       providerConfigService.saveConfig({
         ...currentConfig,
-        defaultProvider: (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) && key.trim()) ? provider as any : currentConfig.defaultProvider || '' as any,
-        defaultModel: key.trim() ? model.trim() : currentConfig.defaultModel || '',
+        defaultProvider: (['ollama', 'openai-compatible'].includes(provider) ? (baseUrl.trim() && model.trim() ? provider as any : currentConfig.defaultProvider || '' as any) : (['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) && key.trim()) ? provider as any : currentConfig.defaultProvider || '' as any),
+        defaultModel: model.trim() || currentConfig.defaultModel || '',
+        ollamaBaseUrl: provider === 'ollama' ? baseUrl.trim() : currentConfig.ollamaBaseUrl || '',
+        openaiCompatibleBaseUrl: provider === 'openai-compatible' ? baseUrl.trim() : currentConfig.openaiCompatibleBaseUrl || '',
         preset,
         roles: roles as any,
         keys: updatedKeys,
@@ -576,12 +581,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-stone-100 outline-none focus:border-[#9d85f2] cursor-pointer"
                 >
                   <option value="gemini">Google Gemini (Native/Default)</option>
-                  <option value="openai">OpenAI-Compatible (Groq / Together / OpenRouter)</option>
+                  <option value="openai-compatible">OpenAI-compatible / Custom endpoint</option>
+                  <option value="ollama">Ollama (local)</option>
                   <option value="anthropic">Anthropic Claude</option>
                 </select>
               </div>
 
-              {provider === 'openai' && (
+              {(provider === 'openai-compatible' || provider === 'ollama') && (
                 <div className="flex flex-col gap-1">
                   <label className="font-mono text-[10px] text-[#cac4d4] uppercase tracking-wider font-semibold">
                     Base URL Endpoint
@@ -590,7 +596,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     type="text"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder="https://api.groq.com/openai/v1"
+                    placeholder={provider === "ollama" ? "http://localhost:11434" : "https://your-endpoint.example.com/v1"}
                     className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
                   />
                 </div>
@@ -633,7 +639,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     setKey(e.target.value);
                     setKeyVerifyResult(null);
                   }}
-                  placeholder="Paste your personal key credentials (sk-... / AIza...)"
+                  placeholder={provider === "ollama" ? "No API key required for Ollama" : "Paste your personal key credentials (sk-... / AIza...)"}
+                  disabled={provider === "ollama"}
                   className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-stone-100 outline-none focus:border-[#9d85f2]"
                 />
                 {keyVerifyResult && (
