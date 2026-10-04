@@ -136,6 +136,16 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
 
   const handleRoleChange = (roleKey: 'architect' | 'skeptic' | 'verifier' | 'arbiter', modelId: string) => {
     const next = { ...config };
+
+    if (!modelId) {
+      next.roles = {
+        ...next.roles,
+        [roleKey]: { provider: '', model: '' },
+      };
+      setConfig(next);
+      return;
+    }
+
     let prov = 'gemini';
     if (modelId.includes('claude')) prov = 'anthropic';
     else if (modelId.includes('llama') || modelId.includes('mixtral')) prov = 'groq';
@@ -641,13 +651,14 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
                 value={config.roles?.architect?.model || ''}
-                onChange={(e) => handleRoleChange('architect', e.target.value)}
-                className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
-              >
-                <option value="">No model assigned</option>\n                <option value="">No model assigned</option>\n                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="">No model assigned</option>\n                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="">No model assigned</option>\n                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                onChange={(e) =>
+                <option value="">No model assigned</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
                 <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                <option value="Meta-Llama-3.3-70B-Instruct">Meta Llama 3.3 70B</option>
+                <option value="deepseek/deepseek-r1">DeepSeek R1</option>
               </select>
             </div>
           </div>
@@ -672,13 +683,14 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
                 value={config.roles?.skeptic?.model || ''}
-                onChange={(e) => handleRoleChange('skeptic', e.target.value)}
-                className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
-              >
-                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                onChange={(e) =>
+                <option value="">No model assigned</option>
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                <option value="Meta-Llama-3.3-70B-Instruct">Meta Llama 3.3 70B</option>
+                <option value="deepseek/deepseek-r1">DeepSeek R1</option>
               </select>
             </div>
           </div>
@@ -703,12 +715,14 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
                 value={config.roles?.verifier?.model || ''}
-                onChange={(e) => handleRoleChange('verifier', e.target.value)}
-                className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
-              >
+                onChange={(e) =>
+                <option value="">No model assigned</option>
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="Meta-Llama-3.3-70B-Instruct">Meta Llama 3.3 70B</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                 <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                <option value="Meta-Llama-3.3-70B-Instruct">Meta Llama 3.3 70B</option>
+                <option value="deepseek/deepseek-r1">DeepSeek R1</option>
               </select>
             </div>
           </div>
@@ -733,12 +747,14 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
               <label className="font-mono text-label-sm uppercase text-outline">Assigned Engine</label>
               <select
                 value={config.roles?.arbiter?.model || ''}
-                onChange={(e) => handleRoleChange('arbiter', e.target.value)}
-                className="w-full bg-surface-container-low text-on-surface text-body-sm font-sans rounded-lg px-space-sm py-1.5 border border-outline-variant/30 focus:outline-none focus:border-primary"
-              >
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                onChange={(e) =>
+                <option value="">No model assigned</option>
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                 <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                <option value="Meta-Llama-3.3-70B-Instruct">Meta Llama 3.3 70B</option>
+                <option value="deepseek/deepseek-r1">DeepSeek R1</option>
               </select>
             </div>
           </div>
@@ -753,16 +769,16 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
           </div>
           <div className="flex flex-col">
             <span className="font-headline font-semibold text-headline-sm text-on-surface">
-              Zero-Log Confidentiality Guarantee
+              Provider State
             </span>
             <span className="font-sans text-body-sm text-on-surface-variant">
-              All remote API requests enforce client-side encryption and zero-data retention headers.
+              Provider connection state is shown from actual saved configuration or live connection checks. Unconfigured models remain unassigned.
             </span>
           </div>
         </div>
         <div className="font-mono text-code-sm text-tertiary flex items-center gap-1 shrink-0">
           <span className="w-2 h-2 rounded-full bg-tertiary" />
-          <span>Local Storage: AES-256-GCM</span>
+          <span>No fabricated connection state</span>
         </div>
       </div>
 
