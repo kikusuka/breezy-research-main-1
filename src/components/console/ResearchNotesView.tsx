@@ -81,25 +81,25 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
     <div className="relative w-full px-4 sm:px-8 py-6 flex flex-col gap-6 font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-stone-900 text-stone-100 px-4 py-2.5 rounded-lg shadow-xl border border-stone-800 animate-in fade-in slide-in-from-bottom-2 backdrop-blur-md">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0d1727]/95 text-slate-100 px-4 py-2.5 rounded-xl shadow-2xl border border-sky-400/15 animate-in fade-in slide-in-from-bottom-2 backdrop-blur-md">
           <span className="material-symbols-outlined text-stone-400 text-[18px]">check_circle</span>
-          <span className="font-mono text-xs">{toastMessage}</span>
+          <span className="text-xs">{toastMessage}</span>
         </div>
       )}
 
       {/* Header Strip & Command Deck */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-900/40 p-5 rounded-xl border border-stone-800/40 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800/70 backdrop-blur-sm">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] uppercase text-stone-100 bg-stone-800 px-2.5 py-0.5 rounded font-bold tracking-widest">
+            <span className="text-xs font-medium text-sky-200 bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
               RESEARCH_ARCHIVE
             </span>
-            <span className="font-mono text-[10px] text-stone-500 font-medium uppercase tracking-tight">Index: Local_Enclave</span>
+            <span className="text-[11px] text-slate-500">Index: Local_Enclave</span>
           </div>
-          <h1 className="text-xl sm:text-2xl text-stone-100 tracking-tight font-semibold font-serif italic">
+          <h1 className="text-2xl sm:text-3xl text-white tracking-[-0.03em] font-semibold">
             Research Repositories
           </h1>
-          <p className="text-[11px] text-stone-500 max-w-2xl leading-relaxed uppercase tracking-wider">
+          <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
             Consolidated research intelligence and cross-model verifications.
           </p>
         </div>
@@ -112,10 +112,10 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               if (url) window.open(url, '_blank', 'noopener,noreferrer');
               else showToast('Save a research result first to create the Google Doc.');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 hover:bg-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all border border-stone-800/60 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-sky-500/10 text-slate-400 hover:text-sky-200 text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">description</span>
-            <span>Open_Google_Doc</span>
+            <span>Open Google Doc</span>
           </button>
           <button
             type="button"
@@ -123,7 +123,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               onSync?.();
               showToast('Research archive refreshed');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/40 hover:bg-stone-800 text-stone-400 hover:text-stone-100 text-[10px] font-bold uppercase tracking-widest transition-all border border-stone-800/60 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-sky-500/10 text-slate-400 hover:text-sky-200 text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">sync</span>
             <span>Refresh</span>
