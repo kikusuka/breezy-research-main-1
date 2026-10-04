@@ -94,11 +94,11 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     const routable = effectiveProviderService.getActiveRoutableModel();
-    return routable ? routable.model : 'gemini-2.5-flash';
+    return routable ? routable.model : '';
   });
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
     const routable = effectiveProviderService.getActiveRoutableModel();
-    return routable ? routable.provider : 'gemini';
+    return routable ? routable.provider : '';
   });
 
   useEffect(() => {
@@ -548,7 +548,7 @@ export const BreezyWorkspace: React.FC<BreezyWorkspaceProps> = ({
               {(() => {
                 const info = effectiveProviderService.getProviderInfo(selectedProvider);
                 const isConfigured = info.hasKey;
-                const displayLabel = selectedModel || 'gemini-2.5-flash';
+                const displayLabel = selectedModel || 'No model connected';
                 return (
                   <button
                     type="button"
