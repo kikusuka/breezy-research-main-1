@@ -148,7 +148,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
               {(() => {
                 const hasAnyKey = Object.keys(config.keys || {}).some((k) => Boolean(config.keys[k]));
-                if (!hasAnyKey) {
+                const hasLocalRuntime = Boolean(config.ollamaBaseUrl) || Boolean(config.openaiCompatibleBaseUrl);
+                const hasAnyProvider = hasAnyKey || hasLocalRuntime;
+                if (!hasAnyProvider) {
                   return (
                     <button
                       type="button"
@@ -163,7 +165,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 return (
                   <div className="mt-1 inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] uppercase tracking-widest font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>Provider Key Configured</span>
+                    <span>{hasAnyKey ? 'Provider Connected' : 'Local Runtime Configured'}</span>
                   </div>
                 );
               })()}
