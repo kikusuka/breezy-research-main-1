@@ -74,8 +74,10 @@ class EffectiveProviderService {
 
     const byokKey = providerConfigService.getKey(provider);
     const hasByok = Boolean(byokKey);
+    const config = providerConfigService.getConfig();
+    const hasLocalRuntime = (provider === 'ollama' && Boolean(config.ollamaBaseUrl)) || (provider === 'openai-compatible' && Boolean(config.openaiCompatibleBaseUrl));
     const hasServer = provider === 'gemini' && this.serverGeminiConfigured;
-    const hasKey = hasByok || hasServer;
+    const hasKey = hasByok || hasServer || hasLocalRuntime;
 
     if (!hasKey) {
       return {
@@ -91,7 +93,7 @@ class EffectiveProviderService {
       return {
         provider,
         status: cached.status,
-        source: hasByok ? 'byok' : 'server',
+        source: hasByok ? 'byok' : hasServer ? 'server' : 'none',
         hasKey: true,
         latencyMs: cached.latencyMs,
         errorMessage: cached.msg,
@@ -176,7 +178,7 @@ class EffectiveProviderService {
     }
 
     // Check fallback routables
-    const allProviders = ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'];
+    const allProviders = ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter', 'ollama', 'openai-compatible'];
     for (const p of allProviders) {
       if (this.isRoutable(p)) {
         const models = AVAILABLE_MODELS[p];
