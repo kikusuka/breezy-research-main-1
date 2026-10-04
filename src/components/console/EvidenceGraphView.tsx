@@ -96,7 +96,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
               {contradictedClaims}
             </span>
             <span className="text-[11px] text-stone-400">
-              {contradictedClaims > 0 ? 'reconciled' : 'none'}
+              {contradictedClaims > 0 ? 'flagged' : 'none'}
             </span>
           </div>
         </div>
@@ -110,7 +110,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
               {unresolvedClaims}
             </span>
             <span className="text-[11px] text-stone-400">
-              {unresolvedClaims === 0 ? 'evidence currently supports this' : 'open questions'}
+              {unresolvedClaims === 0 ? 'no open claim flags' : 'open questions'}
             </span>
           </div>
         </div>
@@ -240,7 +240,7 @@ export const EvidenceGraphView: React.FC<EvidenceGraphViewProps> = ({
                     </div>
                   ) : (
                     <p className="text-xs text-stone-400 italic">
-                      Derived from model reasoning and verified production conventions.
+                      No linked source for this claim.
                     </p>
                   )}
                 </div>
