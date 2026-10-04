@@ -507,7 +507,7 @@ export default function App() {
     if(active==='research')return <Research sessions={sessions} setSessions={setSessions} activeId={activeSessionId} setActiveId={setActiveSessionId} serverGemini={serverGemini} onToast={showToast} pendingResearch={pendingResearch} onConsumed={()=>setPendingResearch(null)}/>;
     if(active==='history'||active==='notes')return <History sessions={sessions} onSelect={(id)=>{setActiveSessionId(id);setActive('research')}}/>;
     if(active==='models')return <Models serverGemini={serverGemini} onToast={showToast}/>;
-    if(active==='docs')return <Docs/>;
+    if(active==='docs')return <StitchFrame file="docs-desktop.html" profile={profile} onNavigate={(t)=>setActive(t as Tab)}/>;
     if(active==='settings')return <Settings serverGemini={serverGemini} onProfileSaved={(p)=>{setProfile(p);showToast('Settings saved.')}}/>;
     if(active==='profile')return <Profile profile={profile} setProfile={(p)=>{setProfile(p);showToast('Profile saved.')}}/>;
     if(active==='build')return <Build/>;
