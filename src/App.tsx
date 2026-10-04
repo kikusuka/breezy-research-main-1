@@ -27,6 +27,13 @@ import { gitHubService, GitHubRepository, GitHubContent } from './services/gitHu
 type Tab = 'landing'|'chat'|'research'|'history'|'models'|'docs'|'settings'|'profile'|'build'|'canvas'|'notes';
 type Depth = 'solo'|'standard'|'deep';
 type ChatItem = { role:'user'|'assistant'; content:string };
+export type ResearchUiState = {
+  running: boolean;
+  activeStep: number;
+  status: string;
+  query: string;
+  output: string;
+};
 
 const NAV: Array<{id:Tab;label:string;icon:string;group:string}> = [
   {id:'chat',label:'Chat',icon:'chat_bubble',group:'Workspace'},
@@ -222,7 +229,7 @@ function Chat({serverGemini}:{serverGemini:boolean}) {
   </div>;
 }
 
-function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToast,pendingResearch,onConsumed}:{sessions:DebateSession[];setSessions:React.Dispatch<React.SetStateAction<DebateSession[]>>;activeId:string|null;setActiveId:(v:string|null)=>void;serverGemini:boolean;onToast:(s:string)=>void;pendingResearch:{q:string;d:Depth}|null;onConsumed:()=>void}) {
+function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToast,pendingResearch,onConsumed,onStateChange}:{sessions:DebateSession[];setSessions:React.Dispatch<React.SetStateAction<DebateSession[]>>;activeId:string|null;setActiveId:(v:string|null)=>void;serverGemini:boolean;onToast:(s:string)=>void;pendingResearch:{q:string;d:Depth}|null;onConsumed:()=>void;onStateChange?:(state:ResearchUiState)=>void}) {
   const current=sessions.find((s)=>s.id===activeId) || sessions[0] || null;
   const [query,setQuery]=useState(current?.prompt || '');
   const [depth,setDepth]=useState<Depth>(current?.protocol==='solo'?'solo':current?.protocol==='quad'?'deep':'standard');
@@ -230,6 +237,16 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
   const [activeStep,setActiveStep]=useState(0);
   const [events,setEvents]=useState<string[]>([]);
   const controller=useRef<AbortController|null>(null);
+
+  useEffect(()=>{
+    onStateChange?.({
+      running,
+      activeStep: current?.status === 'completed' ? 5 : activeStep,
+      status: current?.status || 'idle',
+      query: query || current?.prompt || '',
+      output: current?.finalOutput || '',
+    });
+  },[running,activeStep,current?.id,current?.status,current?.updatedAt,current?.finalOutput,query,onStateChange]);
 
   useEffect(()=>{if(current?.prompt)setQuery(current.prompt)},[current?.id]);
 
@@ -256,7 +273,7 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
     controller.current?.abort();
     const c=new AbortController(); controller.current=c;
     const protocol = chosenDepth==='solo'?'solo':'trio';
-    const session=createNewSession(prompt,protocol,makeInitialSteps(cfg,depth), 'balanced');
+    const session=createNewSession(prompt,protocol,makeInitialSteps(cfg,chosenDepth), 'balanced');
     session.status='running';
     session.searchEngine=(cfg.searchEngine || 'duckduckgo') as SearchEngineProvider;
     session.enableSearchGrounding=true;
@@ -309,7 +326,7 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
       );
     } catch(e:any) {
       if(e?.name!=='AbortError'){setSessions((prev)=>prev.map((s)=>s.id===session.id?{...s,status:'error',error:e?.message||'Research failed'}:s));setEvents((ev)=>[...ev,'Error: '+(e?.message||'Research failed')]);}
-    } finally {setRunning(false);controller.current=null;saveSessions(sessions);}
+    } finally {setRunning(false);controller.current=null;}
   };
 
   return <div className="page">
@@ -491,6 +508,13 @@ export default function App() {
   const [serverGemini,setServerGemini]=useState(false);
   const [toast,setToast]=useState<string|null>(null);
   const [pendingResearch,setPendingResearch]=useState<{q:string;d:Depth}|null>(null);
+  const [researchUi,setResearchUi]=useState<ResearchUiState>({
+    running:false,
+    activeStep:0,
+    status:'idle',
+    query:'',
+    output:'',
+  });
 
   const current=sessions.find((s)=>s.id===activeSessionId)||sessions[0]||null;
   useEffect(()=>{window.location.hash=active;setSidebarOpen(false)},[active]);
@@ -502,7 +526,7 @@ export default function App() {
   const startFromLanding=(q:string,d:Depth)=>{setPendingResearch({q,d});setActive('research')};
 
   const render=()=>{
-    if(active==='landing')return <StitchFrame file="landing-desktop.html" mobileFile="landing-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query)=>startFromLanding(query,'standard')}/>;
+    if(active==='landing')return <StitchFrame file="landing-desktop.html" mobileFile="landing-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query,depth)=>startFromLanding(query,depth || 'standard')}/>;
     if(active==='chat')return <StitchFrame file="chat-desktop.html" mobileFile="chat-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onChat={async(query)=>{
       if(!serverGemini && !providerConfigService.getActiveRoutableModel()) return 'No model connected. Open Models and configure a provider first.';
       try {
@@ -512,7 +536,7 @@ export default function App() {
         return result.text || 'The model returned an empty response.';
       } catch(e:any) { return 'Chat failed: '+(e?.message || 'Unknown error'); }
     }}/>;
-    if(active==='research')return <StitchFrame file="research-desktop.html" mobileFile="research-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query)=>startFromLanding(query,'deep')}/>;
+    if(active==='research')return <StitchFrame file="research-desktop.html" mobileFile="research-mobile.html" profile={profile} researchState={researchUi} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query,depth)=>startFromLanding(query,depth || 'deep')}/>;
     if(active==='history'||active==='notes')return <History sessions={sessions} onSelect={(id)=>{setActiveSessionId(id);setActive('research')}}/>;
     if(active==='models')return <Models serverGemini={serverGemini} onToast={showToast}/>;
     if(active==='docs')return <StitchFrame file="docs-desktop.html" profile={profile} onNavigate={(t)=>setActive(t as Tab)}/>;
@@ -524,6 +548,19 @@ export default function App() {
   };
 
   return <div className="app">
+    <div style={{display:'none'}} aria-hidden="true">
+      <Research
+        sessions={sessions}
+        setSessions={setSessions}
+        activeId={activeSessionId}
+        setActiveId={setActiveSessionId}
+        serverGemini={serverGemini}
+        onToast={showToast}
+        pendingResearch={pendingResearch}
+        onConsumed={()=>setPendingResearch(null)}
+        onStateChange={setResearchUi}
+      />
+    </div>
     <Sidebar active={active} onChange={setActive} profile={profile} open={sidebarOpen} setOpen={setSidebarOpen}/>
     <div className="main">
       <Topbar serverGemini={serverGemini} onMenu={()=>setSidebarOpen(!sidebarOpen)} onNewResearch={()=>setActive('research')}/>
