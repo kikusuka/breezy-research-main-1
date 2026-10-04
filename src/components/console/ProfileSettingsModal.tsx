@@ -69,7 +69,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       if (res.valid) {
         setKeyVerifyResult({
           ok: true,
-          msg: `Valid credentials! Response latency: ${res.latencyMs || 250}ms.`,
+          msg: typeof res.latencyMs === 'number' ? `Valid credentials. Response latency: ${res.latencyMs}ms.` : 'Valid credentials.' ,
         });
       } else {
         setKeyVerifyResult({
