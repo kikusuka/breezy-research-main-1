@@ -47,31 +47,33 @@ Synthexis Workspace is structured as a single platform shell hosting specialized
 Synthexis Workspace consists of a static React frontend with multi-tier edge backend failover:
 
 ```text
-                             SYNTHEXIS WORKSPACE
+                             BREEZY / SYNTHEXIS
                                     │
-                          Static Frontend (Vite)
-                      (Cloudflare Pages / Vercel)
+                         Static Frontend (Vite)
+                         Cloudflare Pages / Assets
                                     │
-                           ┌─────────┴─────────┐
-                           │                   │
-                      Cloudflare             Deno
-                       Worker               Deploy
-                      [PRIMARY]          [SECONDARY]
-                    100k req/day          1M req/mo
-                           │                   │
-                           └─────────┬─────────┘
-                                     │
-                                  Render
-                                [EMERGENCY]
+                                    ▼
+                           Cloudflare Worker
+                       [PRIMARY EDGE API]
+                                    │
+                           ┌────────┴────────┐
+                           │                 │
+                      Provider APIs      Render Node
+                       + search        [FALLBACK / NODE]
+                           │                 │
+                           └────────┬────────┘
+                                    │
+                             R2 / D1 / KV
 ```
 
 | Layer | Technologies & Runtime |
 | :--- | :--- |
 | **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Prism.js |
-| **Primary Backend** | Cloudflare Workers (`workers/index.ts`) - V8 edge isolate, 100k req/day free |
-| **Secondary Backend** | Deno Deploy (`deno/main.ts`) - 1M req/month free backup |
-| **Emergency Fallback** | Node.js Express (`server.ts`) - Render Web Service / local dev |
-| **AI Integration** | Google Gemini (`gemini-2.5-flash`), Groq, SambaNova, OpenRouter |
+| **Static Frontend** | Cloudflare Pages / Workers Static Assets |
+| **Primary API** | Cloudflare Workers (`workers/index.ts`) - edge routing, auth checks, rate limits, SSE |
+| **Fallback / Node API** | Node.js Express (`server.ts`) - Render Web Service / local dev |
+| **Optional Runtime Target** | Deno Deploy (`deno/main.ts`) |
+| **AI Integration** | Gemini, Anthropic, Groq, SambaNova, OpenRouter, Ollama, OpenAI-compatible runtimes |
 | **Persistence** | IndexedDB, LocalStorage, optional Firebase / Google Drive sync |
 
 ---
