@@ -491,9 +491,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     { key: 'verifier', title: 'Verifier', desc: 'Checks facts & constraints' },
                     { key: 'arbiter', title: 'Synthesizer', desc: 'Produces final answer' },
                   ].map((role) => {
-                    const currentSeat = roles[role.key as keyof typeof roles] || { provider: 'gemini', model: 'gemini-2.5-flash' };
-                    const currentProvider = currentSeat.provider || 'gemini';
-                    const currentModel = currentSeat.model || 'gemini-2.5-flash';
+                    const currentSeat = roles[role.key as keyof typeof roles] || { provider: '', model: '' };
+                    const currentProvider = currentSeat.provider || '';
+                    const currentModel = currentSeat.model || '';
                     const activeKey = providerConfigService.getKey(currentProvider);
                     const hasKey = Boolean(activeKey) || (currentProvider === 'gemini' && serverGeminiActive);
                     const modelsList = AVAILABLE_MODELS[currentProvider] || [];
