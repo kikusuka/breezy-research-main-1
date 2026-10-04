@@ -63,7 +63,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
        : 'min-h-[calc(100vh-4rem)] bg-[#07111f] text-slate-100'}>
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 sm:py-12">
         <div className="max-w-3xl">
-          <div className="text-[10px] uppercase tracking-[0.22em] font-mono text-slate-500 mb-3">
+          <div className="text-xs font-medium text-slate-500 mb-3">
             {product === 'breezy' ? 'Breezy guide' : 'Breezy Research guide'}
           </div>
           <h1 className={product === 'breezy'
