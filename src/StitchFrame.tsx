@@ -36,7 +36,7 @@ export default function StitchFrame({ file, profile, onNavigate, onResearch }: P
         if (el.children.length === 0) {
           if (el.textContent?.trim() === 'Dr. Aris Vance') el.textContent = name;
           if (el.textContent?.trim() === 'Lead Analyst') el.textContent = role;
-          if (el.textContent?.trim() === 'AV') el.textContent = name.split(/\\s+/).slice(0,2).map((x) => x[0] || '').join('').toUpperCase() || 'B';
+          if (el.textContent?.trim() === 'AV') el.textContent = name.split(/\s+/).slice(0,2).map((x) => x[0] || '').join('').toUpperCase() || 'B';
         }
       });
 
