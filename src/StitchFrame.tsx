@@ -221,7 +221,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
       const chatInput = doc.getElementById('inquiryInput') as HTMLInputElement | HTMLTextAreaElement | null;
       if (chatInput && onChat) {
         chatInput.addEventListener('keydown', (event) => {
-          if (event.key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
+          if ((event as KeyboardEvent).key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
           event.preventDefault();
           event.stopImmediatePropagation();
           const q = chatInput.value.trim();
