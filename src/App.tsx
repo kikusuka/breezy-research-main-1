@@ -502,9 +502,17 @@ export default function App() {
   const startFromLanding=(q:string,d:Depth)=>{setPendingResearch({q,d});setActive('research')};
 
   const render=()=>{
-    if(active==='landing')return <StitchFrame file="landing-desktop.html" mobileFile="landing-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query)=>startFromLanding(query,'standard')}/>;;
-    if(active==='chat')return <Chat serverGemini={serverGemini}/>;
-    if(active==='research')return <Research sessions={sessions} setSessions={setSessions} activeId={activeSessionId} setActiveId={setActiveSessionId} serverGemini={serverGemini} onToast={showToast} pendingResearch={pendingResearch} onConsumed={()=>setPendingResearch(null)}/>;
+    if(active==='landing')return <StitchFrame file="landing-desktop.html" mobileFile="landing-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query)=>startFromLanding(query,'standard')}/>;
+    if(active==='chat')return <StitchFrame file="chat-desktop.html" mobileFile="chat-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onChat={async(query)=>{
+      if(!serverGemini && !providerConfigService.getActiveRoutableModel()) return 'No model connected. Open Models and configure a provider first.';
+      try {
+        const activeModel=providerConfigService.getActiveRoutableModel();
+        const key=activeModel ? providerConfigService.getKey(activeModel.provider) : undefined;
+        const result=await apiClient.chatBreezy({prompt:query,history:[],provider:activeModel?.provider,model:activeModel?.model,apiKey:key});
+        return result.text || 'The model returned an empty response.';
+      } catch(e:any) { return 'Chat failed: '+(e?.message || 'Unknown error'); }
+    }}/>;
+    if(active==='research')return <StitchFrame file="research-desktop.html" mobileFile="research-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query)=>startFromLanding(query,'deep')}/>;
     if(active==='history'||active==='notes')return <History sessions={sessions} onSelect={(id)=>{setActiveSessionId(id);setActive('research')}}/>;
     if(active==='models')return <Models serverGemini={serverGemini} onToast={showToast}/>;
     if(active==='docs')return <StitchFrame file="docs-desktop.html" profile={profile} onNavigate={(t)=>setActive(t as Tab)}/>;
