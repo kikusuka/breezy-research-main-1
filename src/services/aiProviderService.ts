@@ -10,7 +10,7 @@
 import { ProviderKeyConfig } from '../types';
 import { apiClient } from './apiClient';
 import { effectiveProviderService } from './effectiveProviderService';
-import { providerConfigService } from './providerConfigService';
+import { providerConfigService, AVAILABLE_MODELS } from './providerConfigService';
 
 export const aiProviderService = {
   /**
@@ -59,7 +59,7 @@ export const aiProviderService = {
         const activeBackend = apiClient.getActiveEndpoint().name;
         return {
           text: res.text,
-          providerUsed: `${activeModel.provider.toUpperCase()} (${activeModel.source === 'byok' ? 'BYOK via ' : ''}${activeBackend})`,
+          providerUsed: `${activeModel.provider.toUpperCase()} (${activeModel.source === 'byok' ? 'BYOK via ' : activeModel.source === 'local' ? 'Local · ' : ''}${activeBackend})`,
           modelUsed: activeModel.model,
         };
       }
@@ -68,18 +68,28 @@ export const aiProviderService = {
     }
 
     // 2. Try secondary configured providers if available
-    const configured = ['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic'].filter(
+    const configured = ['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic', 'ollama', 'openai-compatible'].filter(
       (p) => p !== activeModel.provider && effectiveProviderService.isRoutable(p)
     );
 
     for (const p of configured) {
       try {
         const apiKey = keys[p] || undefined;
+        const config = providerConfigService.getConfig();
+        const configuredModel = p === config.defaultProvider ? config.defaultModel : '';
+        const catalogModel = AVAILABLE_MODELS[p]?.[0]?.id || '';
+        const localModel = p === 'ollama' ? (config.defaultProvider === 'ollama' ? config.defaultModel : '') : '';
+        const model = configuredModel || localModel || catalogModel;
+        if (!model) {
+          errors.push(`[object Object]: no model configured`);
+          continue;
+        }
+
         const res = await apiClient.chatBreezy({
           prompt,
           history: [],
           provider: p,
-          model: p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-2.5-flash',
+          model,
           apiKey,
         });
 
@@ -87,7 +97,7 @@ export const aiProviderService = {
           const activeBackend = apiClient.getActiveEndpoint().name;
           return {
             text: res.text,
-            providerUsed: `${p.toUpperCase()} (BYOK via ${activeBackend})`,
+            providerUsed: `${p.toUpperCase()} (${apiKey ? 'BYOK via ' : p === 'ollama' || p === 'openai-compatible' ? 'Local · ' : ''}${activeBackend})`,
             modelUsed: p,
           };
         }
