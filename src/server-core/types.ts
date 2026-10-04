@@ -13,6 +13,8 @@ export interface BackendEnv {
   SERPER_API_KEY?: string;
   BRAVE_API_KEY?: string;
   SEARXNG_URL?: string;
+  OLLAMA_BASE_URL?: string;
+  OPENAI_COMPATIBLE_BASE_URL?: string;
   ALLOWED_ORIGINS?: string;
   [key: string]: string | undefined;
 }
@@ -35,7 +37,7 @@ export interface SearchGroundingResult {
 }
 
 export interface CallAgentParams {
-  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic';
+  provider: 'gemini' | 'groq' | 'sambanova' | 'openrouter' | 'anthropic' | 'ollama' | 'openai-compatible';
   model?: string;
   apiKey?: string;
   systemInstruction: string;
@@ -43,6 +45,7 @@ export interface CallAgentParams {
   temperature?: number;
   enableSearchGrounding?: boolean;
   onChunk: (chunk: string) => void;
+  onUsage?: (usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; cachedInputTokens?: number }) => void;
   env?: BackendEnv;
   signal?: AbortSignal;
 }
