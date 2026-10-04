@@ -104,7 +104,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           )}
 
           {/* Navigation Section */}
-          <div className="px-3 pt-2 pb-1 font-mono text-[10px] uppercase text-stone-400 font-semibold border-t border-white/5">
+          <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-stone-400 font-semibold border-t border-white/5">
             Quick Navigation
           </div>
 
@@ -119,7 +119,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[#ccbdff] text-[18px]">forum</span>
-              <span className="font-sans text-xs font-medium">Research & Dialectic Chat</span>
+              <span className="font-sans text-xs font-medium">Research workspace</span>
             </div>
             <span className="font-mono text-[10px] text-stone-400">⌘1</span>
           </button>
@@ -140,9 +140,9 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
             <span className="font-mono text-[10px] text-stone-400">⌘2</span>
           </button>
 
-          {/* Dialectic Sessions */}
-          <div className="px-3 pt-2 pb-1 font-mono text-[10px] uppercase text-stone-400 font-semibold border-t border-white/5 mt-1">
-            Dialectic Sessions
+          {/* Research sessions */}
+          <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-stone-400 font-semibold border-t border-white/5 mt-1">
+            Research sessions
           </div>
 
           <button
@@ -157,7 +157,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[18px]">add_circle</span>
-              <span className="font-sans text-xs font-medium">Start New Dialectic Inquiry</span>
+              <span className="font-sans text-xs font-medium">Start new research</span>
             </div>
             <span className="font-mono text-[10px]">⌘N</span>
           </button>
