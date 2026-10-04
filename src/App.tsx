@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import StitchFrame from './StitchFrame';
 import {
   DebateSession,
   DebateStep,
@@ -501,7 +502,7 @@ export default function App() {
   const startFromLanding=(q:string,d:Depth)=>{setPendingResearch({q,d});setActive('research')};
 
   const render=()=>{
-    if(active==='landing')return <Landing serverGemini={serverGemini} onStart={startFromLanding} onGo={setActive}/>;
+    if(active==='landing')return <StitchFrame file="landing-desktop.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query)=>startFromLanding(query,'standard')}/>;;
     if(active==='chat')return <Chat serverGemini={serverGemini}/>;
     if(active==='research')return <Research sessions={sessions} setSessions={setSessions} activeId={activeSessionId} setActiveId={setActiveSessionId} serverGemini={serverGemini} onToast={showToast} pendingResearch={pendingResearch} onConsumed={()=>setPendingResearch(null)}/>;
     if(active==='history'||active==='notes')return <History sessions={sessions} onSelect={(id)=>{setActiveSessionId(id);setActive('research')}}/>;
