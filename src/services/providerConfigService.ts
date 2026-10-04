@@ -67,7 +67,6 @@ export interface CanonicalWorkspaceConfig {
     model: string;
   };
   keys: CanonicalProviderKeys;
-  agreementThreshold?: number;
   autoResolve?: boolean;
   selectedRound?: number;
   searchEngine?: SearchEngineProvider;
@@ -144,7 +143,6 @@ export const providerConfigService = {
           roles: parsed.roles || (hasKeys ? DEFAULT_ROLES : UNCONFIGURED_ROLES),
           fallback: parsed.fallback || { enabled: false, provider: '', model: '' },
           keys: parsed.keys || {},
-          agreementThreshold: typeof parsed.agreementThreshold === 'number' ? parsed.agreementThreshold : 78,
           autoResolve: typeof parsed.autoResolve === 'boolean' ? parsed.autoResolve : true,
           selectedRound: typeof parsed.selectedRound === 'number' ? parsed.selectedRound : 2,
           searchEngine: parsed.searchEngine || 'duckduckgo',
@@ -172,7 +170,6 @@ export const providerConfigService = {
         roles: hasAnyKey ? DEFAULT_ROLES : UNCONFIGURED_ROLES,
         fallback: { enabled: false, provider: '' as any, model: '' },
         keys,
-        agreementThreshold: 78,
         autoResolve: true,
         selectedRound: 2,
         searchEngine: 'duckduckgo',
@@ -193,7 +190,6 @@ export const providerConfigService = {
         roles: UNCONFIGURED_ROLES,
         fallback: { enabled: false, provider: '' as any, model: '' },
         keys: {},
-        agreementThreshold: 78,
         autoResolve: true,
         selectedRound: 2,
         searchEngine: 'duckduckgo',
