@@ -239,7 +239,7 @@ function sanitizeFilename(prompt: string): string {
     .replace(/(^-|-$)/g, '')
     .slice(0, 32);
   const dateTag = new Date().toISOString().slice(0, 10);
-  return `iris-synthexis-${clean || 'resolution'}-${dateTag}`;
+  return `synthexis-${clean || 'resolution'}-${dateTag}`;
 }
 
 /**
@@ -256,7 +256,7 @@ export function exportSynthexisAsMarkdown(debate: ExportableDebate): void {
  */
 export function exportTranscriptAsMarkdown(debate: ExportableDebate): void {
   const content = generateMarkdownTranscript(debate);
-  const filename = `iris-transcript-${sanitizeFilename(debate.prompt)}.md`;
+  const filename = `synthexis-transcript-${sanitizeFilename(debate.prompt)}.md`;
   downloadBlob(content, filename, 'text/markdown;charset=utf-8');
 }
 
@@ -265,7 +265,7 @@ export function exportTranscriptAsMarkdown(debate: ExportableDebate): void {
  */
 export function exportTranscriptAsText(debate: ExportableDebate): void {
   const content = generatePlainTextTranscript(debate);
-  const filename = `iris-transcript-${sanitizeFilename(debate.prompt)}.txt`;
+  const filename = `synthexis-transcript-${sanitizeFilename(debate.prompt)}.txt`;
   downloadBlob(content, filename, 'text/plain;charset=utf-8');
 }
 
@@ -613,7 +613,7 @@ export function exportSynthexisAsPdf(debate: ExportableDebate): void {
 
   const bodyHtml = `
     <div class="header-seal">
-      <div class="seal-brand">IRIS AI COUNCIL</div>
+      <div class="seal-brand">Synthexis Research</div>
       <div class="seal-tag">Synthexis Resolution • Archival Record</div>
     </div>
 
@@ -631,7 +631,7 @@ export function exportSynthexisAsPdf(debate: ExportableDebate): void {
 
     <div class="footer-seal">
       <div>Protocol: ${debate.protocol.toUpperCase()} Synthexis Architecture</div>
-      <div>Ratified on ${humanDate} • IRIS Chamber</div>
+      <div>Ratified on ${humanDate} • Synthexis Archive</div>
     </div>
   `;
 
@@ -696,7 +696,7 @@ export function exportFullTranscriptAsPdf(debate: ExportableDebate): void {
 
   const bodyHtml = `
     <div class="header-seal">
-      <div class="seal-brand">IRIS AI COUNCIL</div>
+      <div class="seal-brand">Synthexis Research</div>
       <div class="seal-tag">Complete Dialectic Proceedings • Transcript</div>
     </div>
 
@@ -707,14 +707,14 @@ export function exportFullTranscriptAsPdf(debate: ExportableDebate): void {
 
     ${metricsHtml}
 
-    <h1>Dialectic Council Proceedings</h1>
+    <h1>Synthexis Research Record</h1>
     ${stepsHtml}
 
     ${finalSynthexisHtml}
 
     <div class="footer-seal">
       <div>Protocol: ${debate.protocol.toUpperCase()} Synthexis Architecture</div>
-      <div>Archived on ${humanDate} • IRIS Chamber</div>
+      <div>Archived on ${humanDate} • Synthexis Archive</div>
     </div>
   `;
 
