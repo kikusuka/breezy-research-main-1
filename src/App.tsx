@@ -597,7 +597,7 @@ export default function App() {
           onToggleMobileMenu={handleToggleSidebar}
         />
 
-        <main className="relative pt-16 bg-stone-950 min-h-screen flex-1 flex flex-col">
+        <main className="relative pt-16 bg-[#07111f] min-h-screen flex-1 flex flex-col">
           {activeTab === 'chat' && (
             currentSession ? (
               <ResearchConversationView
