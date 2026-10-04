@@ -82,7 +82,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0d1727]/95 text-slate-100 px-4 py-2.5 rounded-xl shadow-2xl border border-sky-400/15 animate-in fade-in slide-in-from-bottom-2 backdrop-blur-md">
-          <span className="material-symbols-outlined text-stone-400 text-[18px]">check_circle</span>
+          <span className="material-symbols-outlined text-[#bcc9ce] text-[18px]">check_circle</span>
           <span className="text-xs">{toastMessage}</span>
         </div>
       )}
@@ -91,7 +91,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800/70 backdrop-blur-sm">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-sky-200 bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/15">
+            <span className="text-xs font-medium text-[#b3ebff] bg-[#4cd6fb]/10 px-2.5 py-1 rounded-md border border-[#4cd6fb]/20">
               Research history
             </span>
             <span className="text-[11px] text-slate-500">Stored in this browser</span>
@@ -112,7 +112,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               if (url) window.open(url, '_blank', 'noopener,noreferrer');
               else showToast('Save a research result first to create the Google Doc.');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-sky-500/10 text-slate-400 hover:text-sky-200 text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-[#4cd6fb]/10 text-slate-400 hover:text-[#b3ebff] text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">description</span>
             <span>Open Google Doc</span>
@@ -123,7 +123,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               onSync?.();
               showToast('Research archive refreshed');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-sky-500/10 text-slate-400 hover:text-sky-200 text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-[#4cd6fb]/10 text-slate-400 hover:text-[#b3ebff] text-xs font-medium transition-all border border-stone-800/60 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">sync</span>
             <span>Refresh</span>
@@ -145,14 +145,14 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
           { label: 'Research sessions', value: completedSessions.length, icon: 'library_books' },
           { label: 'Multi-model', value: completedSessions.filter((s) => s.protocol !== 'solo').length, icon: 'account_tree' },
           { label: 'Single-model', value: completedSessions.filter((s) => s.protocol === 'solo').length, icon: 'bolt' },
-          { label: 'Sources used', value: completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0), icon: 'verified_user', color: 'text-stone-400' },
+          { label: 'Sources used', value: completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0), icon: 'verified_user', color: 'text-[#bcc9ce]' },
         ].map((stat, idx) => (
-          <div key={idx} className="bg-stone-900/40 p-4 rounded-xl flex items-center justify-between border border-stone-800/40 backdrop-blur-sm">
+          <div key={idx} className="bg-[#191c21]/40 p-4 rounded-xl flex items-center justify-between border border-stone-800/40 backdrop-blur-sm">
             <div className="flex flex-col">
-              <span className="text-[9px] uppercase text-stone-500 font-bold font-mono tracking-widest">{stat.label}</span>
-              <span className={`text-xl text-stone-100 font-semibold mt-0.5 tabular-nums ${stat.color || ''}`}>{stat.value}</span>
+              <span className="text-[9px] uppercase text-[#869398] font-bold font-mono tracking-widest">{stat.label}</span>
+              <span className={`text-xl text-[#e1e2e9] font-semibold mt-0.5 tabular-nums ${stat.color || ''}`}>{stat.value}</span>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-stone-800/60 flex items-center justify-center text-stone-400 border border-stone-700/40">
+            <div className="w-9 h-9 rounded-lg bg-[#272a30]/60 flex items-center justify-center text-[#bcc9ce] border border-[#3d494d]/40">
               <span className="material-symbols-outlined text-[18px]">{stat.icon}</span>
             </div>
           </div>
@@ -160,16 +160,16 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
       </div>
 
       {/* Filter, View & Search Command Toolbar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-stone-900/40 p-2 rounded-xl border border-stone-800/40 backdrop-blur-sm">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#191c21]/40 p-2 rounded-xl border border-stone-800/40 backdrop-blur-sm">
         {/* Search Field */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-950/60 text-stone-600 focus-within:text-stone-300 flex-1 max-w-md border border-stone-800/60">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#111319]/60 text-[#69767b] focus-within:text-[#bcc9ce] flex-1 max-w-md border border-stone-800/60">
           <span className="material-symbols-outlined text-[16px]">search</span>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search verified inquiries..."
-            className="bg-transparent border-0 outline-none font-mono text-[10px] text-stone-200 placeholder:text-stone-700 w-full uppercase tracking-widest"
+            className="bg-transparent border-0 outline-none font-mono text-[10px] text-[#e1e2e9] placeholder:text-stone-700 w-full uppercase tracking-widest"
           />
         </div>
 
@@ -182,8 +182,8 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               onClick={() => setActiveCategory(cat)}
               className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer ${
                 activeCategory === cat
-                  ? 'bg-stone-800 text-stone-100 shadow-sm'
-                  : 'bg-transparent text-stone-500 hover:text-stone-200'
+                  ? 'bg-[#272a30] text-[#e1e2e9] shadow-sm'
+                  : 'bg-transparent text-[#869398] hover:text-[#e1e2e9]'
               }`}
             >
               {cat === 'all'
@@ -197,13 +197,13 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
 
         {/* View Switcher */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-stone-950/40 p-0.5 rounded-lg border border-stone-800/60">
+          <div className="flex items-center bg-[#111319]/40 p-0.5 rounded-lg border border-stone-800/60">
             <button
               type="button"
               aria-label="Grid View"
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded cursor-pointer ${
-                viewMode === 'grid' ? 'bg-stone-800 text-stone-200' : 'text-stone-600'
+                viewMode === 'grid' ? 'bg-[#272a30] text-[#e1e2e9]' : 'text-[#69767b]'
               }`}
             >
               <span className="material-symbols-outlined text-[16px]">grid_view</span>
@@ -213,7 +213,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               aria-label="List View"
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded cursor-pointer ${
-                viewMode === 'list' ? 'bg-stone-800 text-stone-200' : 'text-stone-600'
+                viewMode === 'list' ? 'bg-[#272a30] text-[#e1e2e9]' : 'text-[#69767b]'
               }`}
             >
               <span className="material-symbols-outlined text-[16px]">view_list</span>
@@ -243,42 +243,42 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                 return (
                   <article
                     key={note.id}
-                    className="flex flex-col justify-between bg-stone-900/20 hover:bg-stone-900/40 p-5 rounded-xl transition-all duration-300 border border-stone-800/40 hover:border-stone-700/60 group relative backdrop-blur-sm"
+                    className="flex flex-col justify-between bg-[#191c21]/20 hover:bg-[#191c21]/40 p-5 rounded-xl transition-all duration-300 border border-stone-800/40 hover:border-[#3d494d]/60 group relative backdrop-blur-sm"
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between pt-0.5">
                         <div className="flex items-center gap-2">
                           <span className={`w-1.5 h-1.5 rounded-full ${note.protocol === 'solo' ? 'bg-stone-600' : 'bg-stone-100'}`}></span>
-                          <span className="font-mono text-[9px] text-stone-500 uppercase tracking-widest font-bold">
+                          <span className="font-mono text-[9px] text-[#869398] uppercase tracking-widest font-bold">
                             {note.protocol === 'solo' ? 'Protocol:Solo' : `Protocol:${note.protocol.toUpperCase()}`}
                           </span>
                         </div>
-                        <span className="font-mono text-[9px] text-stone-600 uppercase tracking-tighter">
+                        <span className="font-mono text-[9px] text-[#69767b] uppercase tracking-tighter">
                           {new Date(note.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <h3 className="text-sm font-serif italic text-stone-200 group-hover:text-stone-100 transition-colors leading-snug line-clamp-2">
+                        <h3 className="text-sm font-serif italic text-[#e1e2e9] group-hover:text-[#e1e2e9] transition-colors leading-snug line-clamp-2">
                           {note.prompt}
                         </h3>
-                        <p className="text-[11px] text-stone-500 line-clamp-3 leading-relaxed mt-1 font-sans">
+                        <p className="text-[11px] text-[#869398] line-clamp-3 leading-relaxed mt-1 font-sans">
                           {note.finalOutput || 'Analysis pipeline terminated.'}
                         </p>
                       </div>
 
                       {/* Real Calculated Metrics display inside note card */}
-                      <div className="grid grid-cols-3 gap-1 py-1.5 border-y border-stone-800/40 text-center font-mono text-[9px] text-stone-500 bg-stone-950/40 rounded uppercase tracking-tighter">
+                      <div className="grid grid-cols-3 gap-1 py-1.5 border-y border-stone-800/40 text-center font-mono text-[9px] text-[#869398] bg-[#111319]/40 rounded uppercase tracking-tighter">
                         <div className="flex flex-col border-r border-stone-800/40">
-                          <span className="font-bold text-stone-300">{claimCount}</span>
+                          <span className="font-bold text-[#bcc9ce]">{claimCount}</span>
                           <span>Claims</span>
                         </div>
                         <div className="flex flex-col border-r border-stone-800/40">
-                          <span className="font-bold text-stone-300">{sourceCount}</span>
+                          <span className="font-bold text-[#bcc9ce]">{sourceCount}</span>
                           <span>Sources</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-stone-400">{contradictionCount}</span>
+                          <span className="font-bold text-[#bcc9ce]">{contradictionCount}</span>
                           <span>Conflicts</span>
                         </div>
                       </div>
@@ -289,7 +289,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                       <button
                         type="button"
                         onClick={() => copyCitation(note.prompt, note.protocol)}
-                        className="text-stone-600 hover:text-stone-200 transition-colors cursor-pointer flex items-center gap-1.5"
+                        className="text-[#69767b] hover:text-[#e1e2e9] transition-colors cursor-pointer flex items-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-[14px]">format_quote</span>
                         <span className="font-mono text-[9px] uppercase tracking-widest">Cite_Reference</span>
@@ -299,7 +299,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                           type="button"
                           onClick={() => saveToGoogleDocs(note)}
                           disabled={savingDocId === note.id}
-                          className="flex items-center gap-1 text-[9px] text-stone-500 hover:text-stone-200 transition-colors cursor-pointer disabled:opacity-50"
+                          className="flex items-center gap-1 text-[9px] text-[#869398] hover:text-[#e1e2e9] transition-colors cursor-pointer disabled:opacity-50"
                           title="Append this research to the single Breezy Research Google Doc"
                         >
                           <span className="material-symbols-outlined text-[13px]">{savingDocId === note.id ? 'sync' : 'description'}</span>
@@ -308,7 +308,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
                         <button
                           type="button"
                           onClick={() => onSelectNotePrompt(note.prompt)}
-                          className="flex items-center gap-1 text-[10px] text-stone-100 hover:underline underline-offset-4 transition-all font-bold uppercase tracking-widest cursor-pointer"
+                          className="flex items-center gap-1 text-[10px] text-[#e1e2e9] hover:underline underline-offset-4 transition-all font-bold uppercase tracking-widest cursor-pointer"
                         >
                           <span>Inspect</span>
                           <span className="material-symbols-outlined text-[14px]">east</span>
@@ -320,11 +320,11 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               })}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-stone-800 bg-stone-900/10 p-12 text-center flex flex-col items-center justify-center gap-3">
+            <div className="rounded-xl border border-dashed border-stone-800 bg-[#191c21]/10 p-12 text-center flex flex-col items-center justify-center gap-3">
               <span className="material-symbols-outlined text-stone-700 text-4xl">folder_zip</span>
               <div className="max-w-md">
-                <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">No saved research yet</h4>
-                <p className="text-[11px] text-stone-600 mt-2 leading-relaxed font-serif italic">
+                <h4 className="text-[10px] font-bold text-[#869398] uppercase tracking-[0.2em]">No saved research yet</h4>
+                <p className="text-[11px] text-[#69767b] mt-2 leading-relaxed font-serif italic">
                   Start a research run and your saved sessions will appear here.
                 </p>
               </div>
@@ -334,10 +334,10 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
 
         {/* Right Telemetry Column (3 cols) */}
         <aside className="xl:col-span-3 flex flex-col gap-4">
-          <div className="bg-stone-900/40 p-4 rounded-xl flex flex-col gap-3 border border-stone-800/40 font-mono backdrop-blur-sm">
+          <div className="bg-[#191c21]/40 p-4 rounded-xl flex flex-col gap-3 border border-stone-800/40 font-mono backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-stone-800/40 pb-2">
-              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">Backend</span>
-              <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${backendStatus === 'online' ? 'text-stone-200 bg-stone-800 border-stone-700' : backendStatus === 'checking' ? 'text-stone-400 bg-stone-900 border-stone-800' : 'text-stone-500 bg-stone-950 border-stone-900'}`}>
+              <span className="text-[10px] font-bold text-[#e1e2e9] uppercase tracking-widest">Backend</span>
+              <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${backendStatus === 'online' ? 'text-[#e1e2e9] bg-[#272a30] border-[#3d494d]' : backendStatus === 'checking' ? 'text-[#bcc9ce] bg-[#191c21] border-stone-800' : 'text-[#869398] bg-[#111319] border-stone-900'}`}>
                 {backendStatus === 'online' ? 'Online' : backendStatus === 'checking' ? 'Checking' : 'Offline'}
               </span>
             </div>
@@ -351,29 +351,29 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
               return (
                 <div className="flex flex-col gap-2.5 text-[10px] tracking-tight">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-stone-500 uppercase">
+                    <div className="flex items-center gap-1.5 text-[#869398] uppercase">
                       <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
                       <span>Node_Alpha</span>
                     </div>
-                    <span className="text-stone-300 truncate max-w-[120px]">
+                    <span className="text-[#bcc9ce] truncate max-w-[120px]">
                       {seatLabel(roles.architect)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-stone-500 uppercase">
+                    <div className="flex items-center gap-1.5 text-[#869398] uppercase">
                       <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
                       <span>Node_Beta</span>
                     </div>
-                    <span className="text-stone-300 truncate max-w-[120px]">
+                    <span className="text-[#bcc9ce] truncate max-w-[120px]">
                       {seatLabel(roles.skeptic)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-stone-500 uppercase">
+                    <div className="flex items-center gap-1.5 text-[#869398] uppercase">
                       <span className={`w-1 h-1 rounded-full ${backendStatus === 'online' ? 'bg-stone-100' : 'bg-stone-700'}`}></span>
                       <span>Node_Gamma</span>
                     </div>
-                    <span className="text-stone-300 truncate max-w-[120px]">
+                    <span className="text-[#bcc9ce] truncate max-w-[120px]">
                       {seatLabel(roles.arbiter)}
                     </span>
                   </div>
@@ -382,9 +382,9 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
             })()}
           </div>
 
-          <div className="bg-stone-900/40 p-4 rounded-xl flex flex-col gap-2.5 border border-stone-800/40 font-mono text-[10px] backdrop-blur-sm">
-            <span className="font-bold text-stone-200 uppercase tracking-widest block mb-1 underline underline-offset-4 decoration-stone-800">Enclave_Assurance</span>
-            <p className="text-stone-500 leading-relaxed uppercase tracking-tighter">
+          <div className="bg-[#191c21]/40 p-4 rounded-xl flex flex-col gap-2.5 border border-stone-800/40 font-mono text-[10px] backdrop-blur-sm">
+            <span className="font-bold text-[#e1e2e9] uppercase tracking-widest block mb-1 underline underline-offset-4 decoration-stone-800">Enclave_Assurance</span>
+            <p className="text-[#869398] leading-relaxed uppercase tracking-tighter">
               Research sessions are stored in this browser. If cloud sync is enabled, copies may also be stored in your connected cloud account.
             </p>
           </div>
