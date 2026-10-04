@@ -167,14 +167,14 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       />
 
       {/* Atmospheric Ambient Glows */}
-      <div className="pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 w-[760px] h-[340px] bg-primary/10 rounded-full blur-[140px] -z-10" />
+      
 
       <div className="w-full max-w-5xl mx-auto px-space-md sm:px-space-lg pt-space-md flex flex-col gap-space-lg">
         {/* Workspace Subheader & Operational Status */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-xs border-b border-outline-variant/20">
           <div className="flex flex-col gap-space-xs">
             <div className="flex items-center gap-space-sm font-mono text-code-sm uppercase tracking-wider text-outline">
-              <span>Workspace / Cognitive Nexus</span>
+              <span>Workspace / Research</span>
               <span className="text-outline-variant">/</span>
               <span className="text-primary truncate max-w-xs sm:max-w-md">{currentRunTitle}</span>
             </div>
@@ -192,11 +192,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 }`}
               />
               <span className="font-sans text-label-md text-on-surface">
-                {isDeliberating ? 'Synthesis Active' : 'Cluster Active'}
+                {isDeliberating ? 'Researching' : 'Ready'}
               </span>
               <span className="text-outline-variant">·</span>
               <span className="text-on-surface-variant">
-                {isDeliberating ? `Round ${activeRound} (${formatDuration(elapsedSeconds)})` : 'Ready for Inquiry'}
+                {isDeliberating ? `Round ${activeRound} (${formatDuration(elapsedSeconds)})` : 'Ready to research'}
               </span>
             </div>
           </div>
@@ -260,7 +260,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     Comprehensive (48k tokens)
                   </option>
                   <option value="exhaustive" className="bg-surface-container-high text-on-surface">
-                    Exhaustive Synthesis (128k)
+                    Exhaustive Answer (128k)
                   </option>
                 </select>
               </div>
@@ -308,7 +308,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               disabled={isDeliberating}
               className="flex items-center gap-space-sm bg-primary hover:bg-secondary text-on-primary font-headline font-semibold text-headline-sm px-space-lg py-2 rounded-full shadow-[0_0_16px_rgba(76,214,251,0.25)] transition-all active:scale-[0.98] disabled:opacity-50"
             >
-              <span>{isDeliberating ? 'Synthesizing...' : 'Initiate Synthesis'}</span>
+              <span>{isDeliberating ? 'Researching...' : 'Start research'}</span>
               <span className="material-symbols-outlined text-headline-sm">
                 {isDeliberating ? 'sync' : 'arrow_forward'}
               </span>
@@ -320,11 +320,11 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-space-md sm:p-space-lg shadow-sm">
           <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
             <span className="font-mono text-code-sm text-outline uppercase tracking-wider">
-              Verification Pipeline Topology
+              Research progress
             </span>
             <span className="font-mono text-code-sm text-tertiary flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-              {isDeliberating ? `Stage 0${activeRound} Active` : session?.status === 'completed' ? 'Consensus Committed' : 'Standby'}
+              {isDeliberating ? `Stage 0${activeRound} Active` : session?.status === 'completed' ? 'Research complete' : 'Standby'}
             </span>
           </div>
 
@@ -335,7 +335,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               { num: '03', name: 'Proposals', sub: 'Multi-Hypothesis', icon: 'lightbulb' },
               { num: '04', name: 'Challenge', sub: 'Adversarial Stress', icon: 'gavel' },
               { num: '05', name: 'Evidence', sub: 'DOI Verification', icon: 'fact_check' },
-              { num: '06', name: 'Synthesis', sub: 'Calm Executive Brief', icon: 'auto_stories' },
+              { num: '06', name: 'Answer', sub: 'Final answer', icon: 'auto_stories' },
             ].map((step, idx) => {
               const stepRound = idx + 1;
               const isPast = (session?.status === 'completed') || (isDeliberating && activeRound > stepRound);
@@ -368,7 +368,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
           </div>
         </div>
 
-        {/* Dynamic Display: Results / Synthesis OR Empty State */}
+        {/* Dynamic Display: Results / Answer OR Empty State */}
         {session?.finalOutput || isDeliberating ? (
           <div ref={resultsTopRef} className="flex flex-col gap-space-lg w-full">
             {/* Live Streaming Indicator (if active) */}
@@ -395,18 +395,18 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
               </div>
             )}
 
-            {/* Answer First: Executive Synthesis Takeaway */}
+            {/* Answer First: Executive Answer Takeaway */}
             {session?.finalOutput && (
               <div className="rounded-3xl bg-surface-container border border-outline-variant/40 shadow-xl p-space-md sm:p-space-lg flex flex-col gap-space-md">
                 <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
                   <div className="flex items-center gap-space-sm">
                     <span className="w-3 h-3 rounded-full bg-primary" />
                     <span className="font-headline font-semibold text-headline-sm text-on-surface">
-                      Definitive Synthesis Resolution
+                      Breezy's answer
                     </span>
                   </div>
                   <div className="flex items-center gap-space-xs font-mono text-code-sm text-outline">
-                    <span>94.8% Concordance</span>
+                    <span></span>
                     <span>·</span>
                     <span className="text-tertiary">Verified</span>
                   </div>
@@ -427,7 +427,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                       <span className="material-symbols-outlined text-[16px]">
                         {copied ? 'check' : 'content_copy'}
                       </span>
-                      <span>{copied ? 'Copied' : 'Copy Synthesis'}</span>
+                      <span>{copied ? 'Copied' : 'Copy Answer'}</span>
                     </button>
 
                     {onExportMarkdown && (
@@ -510,10 +510,10 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                       verified_user
                     </span>
                     <h3 className="font-headline font-semibold text-headline-sm text-on-surface">
-                      Verified Evidence Registry ({sources.length} Primary Citations)
+                      Sources ({sources.length})
                     </h3>
                   </div>
-                  <span className="font-mono text-code-sm text-tertiary">Cryptographic Match</span>
+                  <span className="font-mono text-code-sm text-tertiary"></span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-xs pt-1">
@@ -535,7 +535,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                       </div>
                       <div className="flex items-center justify-between font-mono text-[11px] text-outline mt-2">
                         <span>{src.domain || 'Verified Domain'}</span>
-                        <span className="text-tertiary">DOI Audit Passed</span>
+                        <span className="text-tertiary">Source</span>
                       </div>
                     </a>
                   ))}
@@ -550,7 +550,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-sm">
                   <div className="flex items-center gap-space-xs text-primary font-mono text-code-sm">
                     <span className="material-symbols-outlined text-[18px]">lightbulb</span>
-                    <span className="font-semibold uppercase">Perspectives Formulated</span>
+                    <span className="font-semibold uppercase">Perspectives</span>
                   </div>
                   <div className="space-y-space-sm">
                     {proposals.map((p, idx) => (
@@ -571,7 +571,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                 <div className="p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-sm">
                   <div className="flex items-center gap-space-xs text-secondary font-mono text-code-sm">
                     <span className="material-symbols-outlined text-[18px]">gavel</span>
-                    <span className="font-semibold uppercase">Adversarial Checks &amp; Contradictions</span>
+                    <span className="font-semibold uppercase">Challenges</span>
                   </div>
                   <div className="space-y-space-sm">
                     {challenges.length === 0 ? (
