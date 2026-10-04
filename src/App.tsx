@@ -12,6 +12,7 @@ import { ModelsSynthexisView } from './components/console/ModelsSynthexisView';
 import { WorkspaceSettingsView } from './components/console/WorkspaceSettingsView';
 import { LandingPageView } from './components/console/LandingPageView';
 import { CommandPaletteModal } from './components/console/CommandPaletteModal';
+import { GuideView } from './components/console/GuideView';
 import { BreezySidebar, BreezyTab } from './components/breezy/BreezySidebar';
 import { BreezyWorkspace } from './components/breezy/BreezyWorkspace';
 import { BreezyIdeWorkspace } from './components/breezy/BreezyIdeWorkspace';
@@ -486,6 +487,7 @@ export default function App() {
           onDeleteChat={handleDeleteBreezyChat}
           onOpenProfile={() => setIsProfileSettingsOpen(true)}
           onSwitchToSynthexis={() => setProductMode('synthexis')}
+          onOpenGuide={() => setBreezyTab('docs')}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           isOpenMobile={isMobileMenuOpen}
@@ -539,6 +541,8 @@ export default function App() {
                 onOpenSettings={() => setIsProfileSettingsOpen(true)}
               />
             )}
+
+            {breezyTab === 'docs' && <GuideView product="breezy" />}
           </main>
         </div>
 
@@ -587,6 +591,7 @@ export default function App() {
         onOpenProfile={() => setIsProfileSettingsOpen(true)}
         onDeleteSession={handleDeleteSession}
         onSwitchToBreezy={() => setProductMode('breezy')}
+        onOpenGuide={() => setActiveTab('docs')}
       />
 
       <div className={`flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'pl-0 lg:pl-64' : 'pl-0'}`}>
@@ -718,6 +723,8 @@ export default function App() {
               }}
             />
           )}
+
+          {activeTab === 'docs' && <GuideView product="synthexis" />}
 
           {activeTab === 'landing' && (
             <LandingPageView
