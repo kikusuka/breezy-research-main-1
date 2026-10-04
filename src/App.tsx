@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar, ConsoleTab } from './components/console/Sidebar';
 import { TopBar, ProductMode } from './components/console/TopBar';
