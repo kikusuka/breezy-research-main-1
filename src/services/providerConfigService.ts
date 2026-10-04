@@ -252,7 +252,11 @@ export const providerConfigService = {
    */
   getConfiguredProviders(): string[] {
     const keys = this.getKeys();
-    return Object.keys(keys).filter((p) => Boolean(keys[p]));
+    const config = this.getConfig();
+    const configured = Object.keys(keys).filter((p) => Boolean(keys[p]));
+    if (config.ollamaBaseUrl && !configured.includes('ollama')) configured.push('ollama');
+    if (config.openaiCompatibleBaseUrl && !configured.includes('openai-compatible')) configured.push('openai-compatible');
+    return configured;
   },
 
   /**
