@@ -224,6 +224,41 @@ export const ModelsSynthexisView: React.FC<ModelsSynthexisViewProps> = ({ onOpen
             </div>
           </div>
         </section>
+
+        <section className="border border-stone-800/60 bg-stone-900/10 rounded-lg p-5 mt-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-stone-100">Heartbeat</h2>
+              <p className="text-xs text-stone-500 mt-1">Periodic task reminders keep long research runs aligned with the original question and evidence rules.</p>
+            </div>
+            <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-stone-400">
+              <input type="checkbox" checked={config.heartbeatEnabled !== false} onChange={(e) => {
+                const next = providerConfigService.getConfig();
+                next.heartbeatEnabled = e.target.checked;
+                next.preset = 'custom';
+                providerConfigService.saveConfig(next);
+                setConfig(next);
+              }} />
+              Enabled
+            </label>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 font-mono">Interval</span>
+            <select value={config.heartbeatIntervalSec || 60} onChange={(e) => {
+              const next = providerConfigService.getConfig();
+              next.heartbeatIntervalSec = Number(e.target.value);
+              next.preset = 'custom';
+              providerConfigService.saveConfig(next);
+              setConfig(next);
+            }} className="bg-stone-950 border border-stone-800 rounded-md px-3 py-2 text-xs text-stone-200 outline-none">
+              <option value={30}>30 seconds</option>
+              <option value={60}>1 minute</option>
+              <option value={120}>2 minutes</option>
+              <option value={180}>3 minutes</option>
+              <option value={300}>5 minutes</option>
+            </select>
+          </div>
+        </section>
       </div>
 
       <div className="p-4 sm:p-8 flex flex-col gap-10 max-w-7xl mx-auto w-full">
