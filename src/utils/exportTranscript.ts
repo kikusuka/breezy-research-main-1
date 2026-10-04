@@ -9,7 +9,6 @@ export interface ExportableDebate {
   finalOutput?: string;
   metrics?: {
     durationMs?: number;
-    synthexisRate?: number;
     contentionLevel?: string;
     resolvedPointsCount?: number;
   };
