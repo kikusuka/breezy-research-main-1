@@ -1050,7 +1050,6 @@ Structure your response in clean Markdown with clear headings.`;
 
             metrics: {
               durationMs: totalDurationMs,
-              synthexisRate: null,
               contentionLevel: 'None (Solo Inquiry)',
               resolvedPointsCount: 0,
             },
@@ -1366,7 +1365,6 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
           },
           metrics: {
             durationMs: totalDurationMs,
-            synthexisRate: researchMetrics.synthexisRate,
             contentionLevel: researchMetrics.claimsContradicted > 0 ? 'Moderate' : 'Low',
             resolvedPointsCount: researchMetrics.claimsSupported,
           },
