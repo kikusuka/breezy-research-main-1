@@ -674,7 +674,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
           ) : (
             <div className="flex flex-col gap-4">
               <p className="font-sans text-[11px] text-stone-400 leading-relaxed mb-1">
-                Configure your search engine keys to enable live real-time search grounding and fact-checking during dialectic inquiries.
+                Connect a search provider when you want live web grounding and source checks.
               </p>
 
               <div className="flex flex-col gap-1">
