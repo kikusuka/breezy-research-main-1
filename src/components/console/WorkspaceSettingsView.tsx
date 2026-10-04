@@ -5,6 +5,7 @@ import { workspaceService, GoogleDriveFile, GmailMessage, CalendarEvent } from '
 import { gitHubService, GitHubRepository } from '../../services/gitHubService';
 import { providerConfigService } from '../../services/providerConfigService';
 import { userProfileService, UserProfile } from '../../services/userProfileService';
+import { effectiveProviderService } from '../../services/effectiveProviderService';
 
 interface WorkspaceSettingsViewProps {
   keys: ProviderKeyConfig;
@@ -21,7 +22,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
   const [activeTab, setActiveTab] = useState<'general' | 'synthesis' | 'privacy' | 'storage' | 'shortcuts' | 'integrations' | 'profile'>('general');
 
   // General settings
-  const [workspaceName, setWorkspaceName] = useState(() => localStorage.getItem('breezy_workspace_name') || 'Aris Analytical Lab / Macro-Risk');
+  const [workspaceName, setWorkspaceName] = useState(() => localStorage.getItem('breezy_workspace_name') || 'My Breezy Workspace');
   const [defaultCanvas, setDefaultCanvas] = useState<'chat' | 'research'>(() => (localStorage.getItem('breezy_default_canvas') as any) || 'research');
   const [executionAlerts, setExecutionAlerts] = useState(true);
   const [sourceConflicts, setSourceConflicts] = useState(true);
@@ -41,9 +42,9 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
 
   // Profile state
   const [profile, setProfile] = useState<UserProfile>(() => userProfileService.getProfile());
-  const [displayName, setDisplayName] = useState(profile.displayName || 'Dr. Aris Vance');
-  const [roleTitle, setRoleTitle] = useState(profile.roleTitle || 'Lead Analyst');
-  const [email, setEmail] = useState(profile.email || 'aris.vance@breezy-intel.io');
+  const [displayName, setDisplayName] = useState(profile.displayName || '');
+  const [roleTitle, setRoleTitle] = useState(profile.roleTitle || '');
+  const [email, setEmail] = useState(profile.email || '');
 
   // Integrations state
   const [googleUser, setGoogleUser] = useState<AuthUser | null>(null);
@@ -86,7 +87,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
   };
 
   const handleResetDefaults = () => {
-    setWorkspaceName('Aris Analytical Lab / Macro-Risk');
+    setWorkspaceName('My Breezy Workspace');
     setDefaultCanvas('research');
     setReasoningDepth(4);
     setAdversarialRounds(2);
@@ -94,12 +95,15 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
   };
 
   const depthNames = [
-    'Fast Surface Scan (Tier 1)',
-    'Basic Literature (Tier 2)',
-    'Standard Synthesis (Tier 3)',
-    'Exhaustive (Tier 4)',
-    'Autonomous Deep Audit (Tier 5)',
+    'Quick',
+    'Focused',
+    'Standard',
+    'Deep',
+    'Extended',
   ];
+
+  const configuredProviderCount = providerConfigService.getConfiguredProviders().length;
+  const serverGeminiConfigured = effectiveProviderService.isServerGeminiConfigured();
 
   return (
     <div className="relative w-full flex-1 flex flex-col bg-surface font-sans text-on-surface p-space-md sm:p-space-lg pb-24 max-w-7xl mx-auto">
@@ -183,17 +187,18 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
             );
           })}
 
-          <div className="hidden lg:flex flex-col mt-space-lg p-space-md rounded-2xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
+          <div className="hidden lg:flex flex-col mt-space-lg p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30">
             <div className="flex items-center justify-between mb-space-xs font-mono text-code-sm">
-              <span className="uppercase text-outline">Runtime Node</span>
-              <span className="text-tertiary font-medium">Connected</span>
+              <span className="uppercase text-outline">Provider connections</span>
+              <span className={`font-medium ${configuredProviderCount > 0 ? 'text-tertiary' : 'text-outline'}`}>
+                {configuredProviderCount > 0 ? 'Configured' : 'None'}
+              </span>
             </div>
-            <p className="font-mono text-code-sm text-on-surface">node-04-eu-central</p>
-            <div className="mt-space-sm flex items-center gap-space-xs font-mono text-code-sm">
-              <div className="h-1 flex-1 rounded bg-surface-container-highest overflow-hidden">
-                <div className="w-1/3 h-full bg-primary" />
-              </div>
-              <span className="text-on-surface-variant">32% memory</span>
+            <p className="font-mono text-code-sm text-on-surface">
+              {configuredProviderCount} provider{configuredProviderCount === 1 ? '' : 's'} configured
+            </p>
+            <div className="mt-space-sm text-label-sm text-on-surface-variant">
+              No model is shown here until Breezy has a real provider/model configuration.
             </div>
           </div>
         </aside>
@@ -440,10 +445,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
               <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
                 <div>
                   <h2 className="font-headline font-semibold text-headline-md text-on-surface">
-                    Data &amp; Cryptographic Privacy
+                    Data &amp; Privacy
                   </h2>
                   <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
-                    Air-gap enforcement, zero-retention triggers, and localized encryption hooks.
+                    Control local retention preferences and diagnostic behavior for this browser session.
                   </p>
                 </div>
                 <span className="material-symbols-outlined text-tertiary text-headline-lg">security</span>
@@ -454,10 +459,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
                   <div className="flex flex-col">
                     <div className="flex items-center gap-space-xs">
                       <span className="font-sans text-label-md text-on-surface font-medium">
-                        Strict Zero-Retention Pipeline
+                        Session retention preference
                       </span>
                       <span className="font-mono text-code-sm text-primary bg-primary/10 px-1 rounded border border-primary/20">
-                        No-Cloud-Log
+                        LOCAL PREF
                       </span>
                     </div>
                     <span className="font-sans text-body-sm text-on-surface-variant max-w-xl mt-0.5">
@@ -477,9 +482,9 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
                   <div className="flex flex-col">
                     <div className="flex items-center gap-space-xs">
                       <span className="font-sans text-label-md text-on-surface font-medium">
-                        Local OS Keychain Integration
+                        Provider credential storage
                       </span>
-                      <span className="font-mono text-code-sm text-outline">Hardware-Backed Storage</span>
+                      <span className="font-mono text-code-sm text-outline">BROWSER STORAGE</span>
                     </div>
                     <span className="font-sans text-body-sm text-on-surface-variant max-w-xl mt-0.5">
                       Store remote provider tokens exclusively in your browser/system key vault. Never touches disk
@@ -497,10 +502,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
                 <div className="flex items-center justify-between p-space-md rounded-xl bg-surface-container border border-outline-variant/30">
                   <div className="flex flex-col">
                     <span className="font-sans text-label-md text-on-surface font-medium">
-                      Zero Telemetry Transmission
+                      Diagnostic telemetry preference
                     </span>
                     <span className="font-sans text-body-sm text-on-surface-variant max-w-xl mt-0.5">
-                      Disables crash reporting, token count diagnostic beacons, and external latency probes.
+                      Controls whether optional diagnostics are enabled by this workspace.
                     </span>
                   </div>
                   <input
@@ -545,11 +550,11 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="font-sans text-label-md text-on-surface font-medium">Google Gemini</span>
                     <span className="font-mono text-code-sm text-tertiary">
-                      {keys.gemini ? 'Configured' : 'Environment Key Active'}
+                      {keys.gemini || serverGeminiConfigured ? 'Configured' : 'Not configured'}
                     </span>
                   </div>
                   <div className="font-mono text-code-sm text-on-surface-variant bg-surface-container-high px-space-sm py-1 rounded-lg">
-                    {keys.gemini ? `AIzaSy••••••••${keys.gemini.slice(-4)}` : 'Server Environment Key'}
+                    {keys.gemini ? `••••••••${keys.gemini.slice(-4)}` : serverGeminiConfigured ? 'Server-side provider configured' : 'No key configured'}
                   </div>
                 </div>
               </div>
@@ -705,15 +710,13 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({
               <div className="flex items-start justify-between pb-space-sm border-b border-outline-variant/20">
                 <div>
                   <h2 className="font-headline font-semibold text-headline-md text-on-surface">
-                    User Profile &amp; Credentials
+                    User Profile
                   </h2>
                   <p className="font-sans text-body-sm text-on-surface-variant mt-0.5">
-                    Manage researcher identity, signature authority, and session credentials.
+                    Manage the profile information shown in your Breezy workspace.
                   </p>
                 </div>
-                <span className="font-mono text-code-sm px-space-xs py-0.5 rounded bg-surface-container-high text-tertiary border border-tertiary/20">
-                  Verified Lead
-                </span>
+
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
