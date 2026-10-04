@@ -212,7 +212,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       {heartbeatState?.checkpoint && isDeliberating && (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-2 w-full">
           <div className="border border-amber-500/10 bg-amber-500/[0.025] px-3 py-2 rounded-md text-[10px] text-stone-500 font-mono">
-            <span className="text-amber-400">CHECKPOINT</span> · {heartbeatState.taskReminder || 'Task alignment checkpoint applied'}
+            <span className="text-amber-400">PROGRESS</span> · {heartbeatState.taskReminder || 'Progress check complete'}
           </div>
         </div>
       )}
@@ -377,7 +377,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
             <div className="w-full max-w-xl mt-16 text-left border-t border-white/5 pt-8 font-sans">
               <span className="text-[10px] text-stone-500 uppercase tracking-widest block mb-4 font-semibold">Choose a workflow</span>
-              <p className="text-xs text-stone-500 leading-relaxed mb-6">You can change this later. The workflow controls how Synthexis structures the investigation; your model routing stays yours.</p>
+              <p className="text-xs text-stone-500 leading-relaxed mb-6">You can change this later. The workflow controls how Research structures the investigation; your model routing stays yours.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {researchWorkflows.map((item) => (
                   <button key={item.method} type="button" onClick={() => {
@@ -707,7 +707,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isDeliberating ? 'Steer the debate: challenge a claim, add evidence, change direction...' : 'Ask follow-up query, challenge a synthexis claim...'}
+                    placeholder={isDeliberating ? 'Steer the debate: challenge a claim, add evidence, or change direction...' : 'Ask a follow-up, challenge a claim, or steer the research...'}
                     rows={1}
                     className="w-full bg-transparent text-stone-100 placeholder-stone-500 text-sm resize-none focus:outline-none leading-relaxed border-none focus:ring-0 p-0"
                   />
