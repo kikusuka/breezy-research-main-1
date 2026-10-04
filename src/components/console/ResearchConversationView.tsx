@@ -17,7 +17,6 @@ interface ResearchConversationViewProps {
   onSaveNote?: (title: string, content: string) => void;
   onExportMarkdown?: () => void;
   keys: ProviderKeyConfig;
-  researchEvents?: string[];
   onOpenNotes?: () => void;
   onOpenInBreezy?: (session: DebateSession) => void;
   onOpenInIde?: (session: DebateSession) => void;
@@ -39,7 +38,6 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   onOpenInIde,
   onPinToCanvas,
   heartbeatState,
-  researchEvents,
   onOpenNotes,
 }) => {
   const [inputText, setInputText] = useState('');
@@ -53,7 +51,6 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const resultsTopRef = useRef<HTMLDivElement>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -175,7 +172,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   const sources: EvidenceSource[] = session?.evidenceGraph?.sourcesConsulted || [];
 
   return (
-    <div className="relative min-h-full w-full overflow-x-hidden bg-surface text-on-surface">
+    <div className="relative min-h-full w-full overflow-x-hidden bg-surface text-on-surface [background-image:radial-gradient(circle_at_50%_18%,rgba(0,180,216,0.10)_0%,transparent_62%)]">
       <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".txt,.md,.json,.csv,.py,.ts,.tsx,.js" />
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 pb-20 pt-5 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-3 border-b border-outline-variant/40 pb-5 md:flex-row md:items-end md:justify-between">
@@ -210,20 +207,44 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
         </section>
 
         {!session?.finalOutput && !isDeliberating && (
-          <section className="grid gap-px border border-outline-variant/45 bg-outline-variant/45 lg:grid-cols-[1.15fr_.85fr]">
-            <div className="bg-surface-container-low p-5 sm:p-6">
-              <div className="flex items-center justify-between"><div><h2 className="font-headline text-lg font-semibold">Research pipeline</h2><p className="mt-1 text-sm text-on-surface-variant">Breezy works through these stages without making you manage them.</p></div><span className="font-mono text-[10px] uppercase tracking-wider text-outline">Ready</span></div>
-              <div className="relative mt-6 pl-7"><div className="absolute bottom-2 left-2 top-2 w-px bg-outline-variant/70" />
-                {[
-                  ['01','Question','Understand the problem','help_outline'],['02','Exploration','Find relevant information','travel_explore'],['03','Perspectives','Develop independent views','lightbulb'],['04','Challenge','Look for weak assumptions','gavel'],['05','Evidence','Check supporting sources','fact_check'],['06','Answer','Bring the useful pieces together','auto_stories']
-                ].map(([num,title,desc,icon],index)=>(
-                  <div key={num} className="relative mb-5 flex items-start gap-3 last:mb-0"><div className={`absolute -left-7 top-0 flex h-5 w-5 items-center justify-center border bg-surface ${index===0?'border-primary/60 text-primary':'border-outline-variant text-outline'}`}><span className="material-symbols-outlined text-[14px]">{icon}</span></div><div><span className="text-sm font-semibold">{num}. {title}</span><p className="mt-0.5 text-xs text-on-surface-variant">{desc}</p></div></div>
-                ))}
+          <section className="relative overflow-hidden bg-surface-container-low/70 p-5 sm:p-8 lg:p-10">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.025] [background-image:radial-gradient(circle_at_center,#4cd6fb_1px,transparent_1px)] [background-size:24px_24px]" />
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-full max-w-3xl">
+                <div className="relative hidden items-start justify-between sm:flex">
+                  <div className="absolute left-6 right-6 top-4 h-px bg-surface-container-highest" />
+                  {[
+                    ['Question','help_outline'],['Exploration','manage_search'],['Proposals','schema'],['Challenge','gavel'],['Evidence','verified'],['Synthesis','auto_stories']
+                  ].map(([title,icon],index)=>(
+                    <div key={title} className="relative z-10 flex flex-col items-center gap-2">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${index===0?'bg-surface-container-high text-primary':'bg-surface-container text-outline'}`}>
+                        <span className="material-symbols-outlined text-[19px]">{icon}</span>
+                      </div>
+                      <span className={`font-mono text-[11px] ${index===0?'text-primary font-medium':'text-outline'}`}>{title}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col items-center sm:hidden">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-container-high text-primary"><span className="material-symbols-outlined text-[19px]">help_outline</span></div>
+                  <span className="mt-2 font-mono text-[11px] text-primary">Question</span>
+                </div>
               </div>
-            </div>
-            <div className="bg-surface-container p-5 sm:p-6">
-              <div className="flex items-center justify-between"><div><h2 className="font-headline text-lg font-semibold">Good places to start</h2><p className="mt-1 text-sm text-on-surface-variant">Use one as-is or edit it in the composer.</p></div><span className="material-symbols-outlined text-primary">north_east</span></div>
-              <div className="mt-5 space-y-2">{sampleDirectives.map((d,idx)=><button key={d.domain} type="button" onClick={()=>handleApplyDirective(d.prompt)} className="group flex w-full items-start gap-3 border border-outline-variant/40 bg-surface-container-low p-3 text-left hover:bg-surface-container-high"><span className="font-mono text-[10px] text-primary">0{idx+1}</span><span className="min-w-0"><span className="block text-sm font-medium">{d.title}</span><span className="mt-0.5 block text-xs leading-5 text-on-surface-variant">{d.desc}</span></span></button>)}</div>
+              <div className="mt-10 max-w-xl">
+                <h2 className="font-headline text-lg font-medium">No active synthesis in progress</h2>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">Submit an inquiry above to coordinate multi-model exploration, adversarial cross-examination, and literature grounding.</p>
+              </div>
+              <div className="mt-10 w-full max-w-2xl border-t border-outline-variant/30 pt-6">
+                <div className="mb-4 flex items-center justify-center gap-2 text-[11px] font-medium uppercase tracking-wider text-outline"><span className="material-symbols-outlined text-[15px]">bolt</span><span>Sample Directives</span></div>
+                <div className="grid gap-2 md:grid-cols-3 text-left">
+                  {sampleDirectives.map((d,idx)=>(
+                    <button key={d.domain} type="button" onClick={()=>handleApplyDirective(d.prompt)} className="group flex min-h-[132px] flex-col justify-between bg-surface-container p-4 text-left transition-colors hover:bg-surface-container-high">
+                      <div className="mb-2 flex items-center justify-between"><span className="font-mono text-[10px] text-primary">{d.domain.replace('Domain #','Domain #')}</span><span className="material-symbols-outlined text-[15px] text-outline group-hover:text-primary">north_east</span></div>
+                      <span className="font-headline text-sm font-semibold">{d.title}</span>
+                      <span className="mt-1 text-xs leading-5 text-on-surface-variant">{d.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         )}
