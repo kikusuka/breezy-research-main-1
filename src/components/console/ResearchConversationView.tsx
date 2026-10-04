@@ -38,6 +38,9 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   onExportMarkdown,
   onOpenInIde,
   onPinToCanvas,
+  heartbeatState,
+  researchEvents,
+  onOpenNotes,
 }) => {
   const [inputText, setInputText] = useState('');
   const [researchDepth, setResearchDepth] = useState<'standard' | 'exhaustive' | 'fast'>('standard');
@@ -72,16 +75,32 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
       textareaRef.current?.focus();
       return;
     }
+
     let promptToSend = inputText.trim();
     if (attachedFile) {
       promptToSend += `\n\n--- [Attached Reference Context: ${attachedFile.name}] ---\n${attachedFile.content}\n--- [End Context] ---`;
     }
+
+    const verificationInstruction = {
+      'cross-exam': 'Use grounded cross-examination: distinguish evidence from inference and actively test important claims.',
+      consensus: 'Use a consensus-oriented verification pass: compare independent evidence and prefer conclusions supported across sources.',
+      adversarial: 'Use adversarial verification: actively search for counterexamples, contradictions, edge cases, and unsupported assumptions.',
+    }[verificationMode];
+
+    promptToSend += `\n\n--- Verification Preference ---\n${verificationInstruction}\n--- End Verification Preference ---`;
+
     const depthMap = {
       fast: 'solo' as const,
       standard: 'standard' as const,
       exhaustive: 'deep' as const,
     };
-    onStartDebate(promptToSend, depthMap[researchDepth]);
+
+    if (isDeliberating && onSteer) {
+      onSteer(promptToSend);
+    } else {
+      onStartDebate(promptToSend, depthMap[researchDepth]);
+    }
+
     setInputText('');
     setAttachedFile(null);
   };
@@ -162,7 +181,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
         <header className="flex flex-col gap-3 border-b border-outline-variant/40 pb-5 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.14em] text-outline"><span>Workspace</span><span className="text-outline-variant">/</span><span className="truncate text-primary">{currentRunTitle}</span></div>
-            <h1 className="mt-2 font-headline text-2xl font-semibold tracking-tight sm:text-3xl">Research</h1>
+            <h1 className="mt-2 font-headline text-2xl font-semibold tracking-tight sm:text-3xl">Research Workspace</h1>
             <p className="mt-1 max-w-2xl text-sm text-on-surface-variant">Explore a question, compare perspectives, challenge assumptions, and follow the evidence.</p>
           </div>
           <div className={`flex items-center gap-2 self-start border border-outline-variant/50 bg-surface-container-low px-2.5 py-1.5 font-mono text-[10px] md:self-auto ${isDeliberating ? 'text-primary' : 'text-on-surface-variant'}`}>
@@ -209,7 +228,55 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
           </section>
         )}
 
-        {isDeliberating && <section className="border border-primary/35 bg-surface-container-low p-4 sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant/40 pb-3"><div className="flex items-center gap-2 text-sm font-medium text-primary"><span className="h-2 w-2 rounded-full bg-primary animate-pulse" />Stage {String(activeRound).padStart(2,'0')} · {streamingRole || 'Research'}</div><span className="font-mono text-[10px] text-outline">{liveUsage?.totalTokens ? liveUsage.totalTokens.toLocaleString()+' tokens' : 'Running'}</span></div><div className="mt-4 min-h-20 text-sm leading-6 text-on-surface-variant">{streamingRoundText ? streamingRoundText.slice(-1200) : 'Working through the research stages…'}</div></section>}
+        {isDeliberating && (
+          <section className="border border-primary/35 bg-surface-container p-4 sm:p-5 lg:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant/40 pb-4">
+              <div>
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.14em] text-primary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  Active synthesis
+                </div>
+                <h2 className="mt-1 font-headline text-lg font-semibold">
+                  Stage {String(activeRound).padStart(2,'0')} · {streamingRole || 'Research'}
+                </h2>
+                <p className="mt-1 text-xs text-on-surface-variant">Breezy is working through the research pipeline. You can steer the direction without restarting the workspace.</p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-[10px] font-mono text-outline">
+                <span className="border border-outline-variant/50 bg-surface-container-low px-2.5 py-1.5">{formatDuration(elapsedSeconds)}</span>
+                {liveUsage?.totalTokens ? <span className="border border-outline-variant/50 bg-surface-container-low px-2.5 py-1.5">{liveUsage.totalTokens.toLocaleString()} tokens</span> : null}
+              </div>
+            </div>
+            <div className="mt-5 grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
+              <div className="relative pl-6">
+                <div className="absolute bottom-2 left-2 top-2 w-px bg-outline-variant/70" />
+                {[['01','Question'],['02','Exploration'],['03','Perspectives'],['04','Challenge'],['05','Evidence'],['06','Synthesis']].map(([num,title], index) => {
+                  const active = index + 1 === activeRound;
+                  const done = index + 1 < activeRound;
+                  return <div key={num} className="relative mb-4 last:mb-0">
+                    <span className={`absolute -left-6 top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface-container ${active ? 'bg-primary text-on-primary' : done ? 'bg-tertiary text-on-primary' : 'bg-surface-container-highest text-outline'}`}>
+                      <span className="material-symbols-outlined text-[10px]">{done ? 'check' : active ? 'radio_button_checked' : 'radio_button_unchecked'}</span>
+                    </span>
+                    <span className={`text-xs font-medium ${active ? 'text-primary' : done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{num}. {title}</span>
+                  </div>;
+                })}
+              </div>
+              <div className="min-w-0">
+                <div className="min-h-[116px] border border-outline-variant/45 bg-surface-container-low p-4">
+                  <div className="flex items-center justify-between gap-3 border-b border-outline-variant/35 pb-2">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-outline">Live output</span>
+                    {heartbeatState?.statusText && <span className="truncate text-[10px] text-tertiary">{heartbeatState.statusText}</span>}
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-on-surface-variant">{streamingRoundText ? streamingRoundText.slice(-1800) : 'Working through the research stages…'}</p>
+                </div>
+                {heartbeatState?.taskReminder && <div className="mt-2 border border-tertiary/25 bg-tertiary/5 px-3 py-2 text-[11px] text-on-surface-variant"><span className="font-medium text-tertiary">Focus:</span> {heartbeatState.taskReminder}</div>}
+                {onSteer && <div className="mt-3 flex items-end gap-2 border border-outline-variant/45 bg-surface-container-low p-2.5 focus-within:border-primary/60">
+                  <textarea value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleInitiate(); } }} rows={1} placeholder="Steer this research: challenge a claim, add evidence, or change direction…" className="min-h-9 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:text-outline" />
+                  <button type="button" onClick={handleInitiate} disabled={!inputText.trim()} className="flex h-9 shrink-0 items-center gap-1.5 bg-primary px-3 text-xs font-semibold text-on-primary hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40">Steer<span className="material-symbols-outlined text-[15px]">arrow_upward</span></button>
+                </div>}
+              </div>
+            </div>
+          </section>
+        )}
 
         {session?.finalOutput && (
           <>
@@ -221,6 +288,7 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
                   <button type="button" onClick={handleCopy} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs hover:border-outline"><span className="material-symbols-outlined text-[16px]">{copied?'check':'content_copy'}</span>{copied?'Copied':'Copy'}</button>
                   {onExportMarkdown&&<button type="button" onClick={onExportMarkdown} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs hover:border-outline"><span className="material-symbols-outlined text-[16px]">download</span>Export</button>}
                   {onSaveNote&&<button type="button" onClick={handleSave} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs hover:border-outline"><span className="material-symbols-outlined text-[16px]">{saved?'bookmark_added':'bookmark'}</span>{saved?'Saved':'Save'}</button>}
+                  {onOpenNotes&&<button type="button" onClick={onOpenNotes} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs hover:border-outline"><span className="material-symbols-outlined text-[16px]">sticky_note_2</span>Notes</button>}
                   {onPinToCanvas&&<button type="button" onClick={()=>onPinToCanvas(session)} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs hover:border-outline"><span className="material-symbols-outlined text-[16px]">draw</span>Canvas</button>}
                   {onOpenInIde&&<button type="button" onClick={()=>onOpenInIde(session)} className="flex h-9 items-center gap-1.5 border border-outline-variant/60 bg-surface-container-high px-3 text-xs hover:border-outline"><span className="material-symbols-outlined text-[16px]">terminal</span>Build</button>}
                   <button type="button" onClick={()=>setShowEvidenceGraph(v=>!v)} className="ml-auto flex h-9 items-center gap-1.5 text-xs text-primary"><span className="material-symbols-outlined text-[16px]">{showEvidenceGraph?'expand_less':'account_tree'}</span>{showEvidenceGraph?'Hide graph':'Evidence graph'}</button>
