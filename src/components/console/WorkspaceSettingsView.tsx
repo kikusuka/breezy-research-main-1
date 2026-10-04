@@ -33,10 +33,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     return localStorage.getItem('breezy_auto_save_drive') === 'true';
   });
   const [roles, setRoles] = useState(canonical.roles || {
-    architect: { provider: 'gemini', model: 'gemini-2.5-flash' },
-    skeptic: { provider: 'gemini', model: 'gemini-2.5-flash' },
-    verifier: { provider: 'gemini', model: 'gemini-2.5-flash' },
-    arbiter: { provider: 'gemini', model: 'gemini-2.5-flash' },
+    architect: { provider: '' as any, model: '' },
+    skeptic: { provider: '' as any, model: '' },
+    verifier: { provider: '' as any, model: '' },
+    arbiter: { provider: '' as any, model: '' },
   });
 
   // Key inputs
