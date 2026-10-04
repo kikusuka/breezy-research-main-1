@@ -134,18 +134,18 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-950 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-lg"
           >
             <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>New_Inquiry</span>
+            <span>New research</span>
           </button>
         </div>
       </div>
 
-      {/* Quick Stats Telemetry Row */}
+      {/* Quick stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total_Streams', value: completedSessions.length, icon: 'library_books' },
-          { label: 'Multi_Analyses', value: completedSessions.filter((s) => s.protocol !== 'solo').length, icon: 'account_tree' },
-          { label: 'Solo_Analyses', value: completedSessions.filter((s) => s.protocol === 'solo').length, icon: 'bolt' },
-          { label: 'Source_Network', value: completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0), icon: 'verified_user', color: 'text-stone-400' },
+          { label: 'Research sessions', value: completedSessions.length, icon: 'library_books' },
+          { label: 'Multi-model', value: completedSessions.filter((s) => s.protocol !== 'solo').length, icon: 'account_tree' },
+          { label: 'Single-model', value: completedSessions.filter((s) => s.protocol === 'solo').length, icon: 'bolt' },
+          { label: 'Sources used', value: completedSessions.reduce((acc, s) => acc + (s?.evidenceGraph?.sourcesConsulted?.length || 0), 0), icon: 'verified_user', color: 'text-stone-400' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-stone-900/40 p-4 rounded-xl flex items-center justify-between border border-stone-800/40 backdrop-blur-sm">
             <div className="flex flex-col">
@@ -323,9 +323,9 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
             <div className="rounded-xl border border-dashed border-stone-800 bg-stone-900/10 p-12 text-center flex flex-col items-center justify-center gap-3">
               <span className="material-symbols-outlined text-stone-700 text-4xl">folder_zip</span>
               <div className="max-w-md">
-                <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">Enclave_Empty</h4>
+                <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">No saved research yet</h4>
                 <p className="text-[11px] text-stone-600 mt-2 leading-relaxed font-serif italic">
-                  Initiate an inquiry in the Research Workspace to populate the secure local archives.
+                  Start a research run and your saved sessions will appear here.
                 </p>
               </div>
             </div>
@@ -336,7 +336,7 @@ export const ResearchNotesView: React.FC<ResearchNotesViewProps> = ({ onSelectNo
         <aside className="xl:col-span-3 flex flex-col gap-4">
           <div className="bg-stone-900/40 p-4 rounded-xl flex flex-col gap-3 border border-stone-800/40 font-mono backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-stone-800/40 pb-2">
-              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">Backend_Connection</span>
+              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">Backend</span>
               <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase tracking-tighter ${backendStatus === 'online' ? 'text-stone-200 bg-stone-800 border-stone-700' : backendStatus === 'checking' ? 'text-stone-400 bg-stone-900 border-stone-800' : 'text-stone-500 bg-stone-950 border-stone-900'}`}>
                 {backendStatus === 'online' ? 'Online' : backendStatus === 'checking' ? 'Checking' : 'Offline'}
               </span>
