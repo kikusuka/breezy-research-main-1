@@ -1095,6 +1095,7 @@ Structure in clean Markdown with clear headings.`;
           onChunk: (chunk) => {
             sendEvent('token', { round: 1, token: chunk });
           },
+          onUsage: (usage) => emitUsage(1, usage),
           env,
           signal: req.signal,
         });
@@ -1162,7 +1163,6 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
             sendEvent('token', { round: 2, token: chunk });
           },
           onUsage: (usage) => emitUsage(2, usage),
-          },
           env,
           signal: req.signal,
         });
@@ -1235,7 +1235,6 @@ Perform rigorous empirical and constraint verification on these analyses.`;
                 sendEvent('token', { round: verifierRoundNum, token: chunk });
               },
               onUsage: (usage) => emitUsage(verifierRoundNum, usage),
-              },
               env,
               signal: req.signal,
             });
@@ -1323,7 +1322,6 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
             sendEvent('token', { round: finalRoundNum, token: chunk });
           },
           onUsage: (usage) => emitUsage(finalRoundNum, usage),
-          },
           env,
           signal: req.signal,
         });
