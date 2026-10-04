@@ -18,7 +18,7 @@ export type ProviderConnectionStatus = 'CONNECTED' | 'CONFIGURED' | 'NOT_CONNECT
 export interface EffectiveProviderInfo {
   provider: string;
   status: ProviderConnectionStatus;
-  source: 'byok' | 'server' | 'none';
+  source: 'byok' | 'server' | 'local' | 'none';
   hasKey: boolean;
   latencyMs?: number;
   errorMessage?: string;
@@ -93,7 +93,7 @@ class EffectiveProviderService {
       return {
         provider,
         status: cached.status,
-        source: hasByok ? 'byok' : hasServer ? 'server' : 'none',
+        source: hasByok ? 'byok' : hasServer ? 'server' : hasLocalRuntime ? 'local' : 'none',
         hasKey: true,
         latencyMs: cached.latencyMs,
         errorMessage: cached.msg,
@@ -103,7 +103,7 @@ class EffectiveProviderService {
     return {
       provider,
       status: 'CONFIGURED',
-      source: hasByok ? 'byok' : 'server',
+      source: hasByok ? 'byok' : hasServer ? 'server' : 'local',
       hasKey: true,
     };
   }
@@ -118,6 +118,14 @@ class EffectiveProviderService {
     }
 
     const byokKey = providerConfigService.getKey(provider) || '';
+    // Local runtimes (Ollama / OpenAI-compatible) do not have a remote vault key to verify.
+    // Their routability is determined by the configured base URL and model instead.
+    if (info.source === 'local') {
+      this.verificationCache.set(provider, { status: 'CONNECTED', timestamp: Date.now() });
+      this.notify();
+      return this.getProviderInfo(provider);
+    }
+
     if (info.source === 'server') {
       this.verificationCache.set(provider, {
         status: 'CONFIGURED',
@@ -166,7 +174,7 @@ class EffectiveProviderService {
   /**
    * Get the primary active routable model or null
    */
-  public getActiveRoutableModel(): { provider: string; model: string; source: 'byok' | 'server' } | null {
+  public getActiveRoutableModel(): { provider: string; model: string; source: 'byok' | 'server' | 'local' } | null {
     const config = providerConfigService.getConfig();
     const currentProvider = config.defaultProvider;
 
@@ -174,7 +182,8 @@ class EffectiveProviderService {
       const models = AVAILABLE_MODELS[currentProvider];
       const model = config.defaultModel || models?.[0]?.id || '';
       const info = this.getProviderInfo(currentProvider);
-      return { provider: currentProvider, model, source: info.source as 'byok' | 'server' };
+      if (!model) return null;
+      return { provider: currentProvider, model, source: info.source as 'byok' | 'server' | 'local' };
     }
 
     // Check fallback routables
@@ -184,7 +193,7 @@ class EffectiveProviderService {
         const models = AVAILABLE_MODELS[p];
         const info = this.getProviderInfo(p);
         if (models && models.length > 0) {
-          return { provider: p, model: models[0].id, source: info.source as 'byok' | 'server' };
+          return { provider: p, model: models[0].id, source: info.source as 'byok' | 'server' | 'local' };
         }
       }
     }
