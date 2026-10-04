@@ -276,22 +276,10 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
     setTimeout(() => setShowToast(false), 3500);
   };
 
-  const getSpeedEstimate = (rounds: number) => {
-    const activeRoles = Object.values(roles);
-    if (activeRoles.length === 0) return `~${rounds * 2}s`;
-    const avgSeconds = activeRoles.reduce((sum, r) => {
-      if (r.provider === 'anthropic' || (r.model && r.model.includes('sonnet'))) return sum + 4.5;
-      if (r.provider === 'groq') return sum + 1.2;
-      return sum + 2.0;
-    }, 0) / activeRoles.length;
-    const totalEst = Math.max(1, Math.round(avgSeconds * rounds));
-    return `~${totalEst}s`;
-  };
-
   const roundLabels: Record<number, string> = {
-    1: `1 Round • Fast (${getSpeedEstimate(1)})`,
-    2: `2 Rounds • Balanced (${getSpeedEstimate(2)})`,
-    4: `4 Rounds • Deep Audit (${getSpeedEstimate(4)})`,
+    1: '1 Round • Fast',
+    2: '2 Rounds • Balanced',
+    4: '4 Rounds • Deep Audit',
   };
 
   const isGoogleConnected = Boolean(googleUser && googleToken);
