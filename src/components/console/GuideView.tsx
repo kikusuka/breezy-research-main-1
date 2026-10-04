@@ -10,7 +10,7 @@ const breezySections = [
   {
     id: 'start',
     title: 'Start here',
-    text: 'Breezy is the everyday workspace. Ask questions, keep conversations, move work into the IDE, or open Research when you need models to challenge and verify an answer.',
+    text: 'Breezy is your everyday workspace. Chat, research, build, create, and configure the models you actually connect.',
   },
   {
     id: 'models',
