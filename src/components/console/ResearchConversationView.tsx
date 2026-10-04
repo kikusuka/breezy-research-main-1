@@ -13,6 +13,9 @@ interface ResearchConversationViewProps {
   streamingRoundText: string;
   streamingRole: string;
   onStartDebate: (prompt: string, depth?: 'solo' | 'standard' | 'deep') => void;
+  activeRoundStartedAt?: number | null;
+  liveUsage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; round?: number } | null;
+  heartbeatState?: { statusText?: string; taskReminder?: string; checkpoint?: string } | null;
   onSaveNote?: (title: string, content: string) => void;
   onExportMarkdown?: () => void;
   keys: ProviderKeyConfig;
@@ -30,6 +33,9 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   streamingRoundText,
   streamingRole,
   onStartDebate,
+  activeRoundStartedAt,
+  liveUsage,
+  heartbeatState,
   onSaveNote,
   onExportMarkdown,
   keys,
@@ -58,6 +64,15 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
   };
 
   const isUserTyping = inputText.trim().length > 0;
+  const [nowMs, setNowMs] = useState(Date.now());
+  useEffect(() => {
+    if (!isDeliberating) return;
+    const timer = window.setInterval(() => setNowMs(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [isDeliberating]);
+  const elapsedSeconds = activeRoundStartedAt ? Math.max(0, Math.floor((nowMs - activeRoundStartedAt) / 1000)) : 0;
+  const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  const formatTokens = (value?: number) => typeof value === 'number' ? value.toLocaleString() : '—';
 
   // Auto-resize textarea
   useEffect(() => {
@@ -174,6 +189,27 @@ export const ResearchConversationView: React.FC<ResearchConversationViewProps> =
         className="hidden"
         accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv"
       />
+
+      {isDeliberating && (
+        <div className="sticky top-0 z-20 border-b border-stone-800/60 bg-stone-950/95 px-4 py-2">
+          <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-mono text-stone-500 uppercase tracking-wider">
+            <span className="text-stone-300">{streamingRole || 'Research'} · {formatDuration(elapsedSeconds)}</span>
+            <span>input {formatTokens(liveUsage?.inputTokens)}</span>
+            <span>output {formatTokens(liveUsage?.outputTokens)}</span>
+            <span>total {formatTokens(liveUsage?.totalTokens)}</span>
+            {liveUsage?.reasoningTokens ? <span>reasoning {formatTokens(liveUsage.reasoningTokens)}</span> : null}
+            <span className="text-emerald-400">LIVE</span>
+            {heartbeatState?.statusText ? <span className="text-amber-400 truncate max-w-[280px]">{heartbeatState.statusText}</span> : null}
+          </div>
+        </div>
+      )}
+      {heartbeatState?.checkpoint && isDeliberating && (
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-2 w-full">
+          <div className="border border-amber-500/10 bg-amber-500/[0.025] px-3 py-2 rounded-md text-[10px] text-stone-500 font-mono">
+            <span className="text-amber-400">HEARTBEAT</span> · {heartbeatState.taskReminder || 'Task alignment checkpoint applied'}
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       <div className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-12 flex flex-col justify-between">
