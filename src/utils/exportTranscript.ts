@@ -646,15 +646,11 @@ export function exportFullTranscriptAsPdf(debate: ExportableDebate): void {
   const metricsHtml = debate.metrics
     ? `<div class="metrics-grid">
          <div class="metric-item">
-           <div class="metric-label">Synthexis Score</div>
-           <div class="metric-val" style="color: #059669;">${debate.metrics.synthexisRate ?? 90}%</div>
-         </div>
-         <div class="metric-item">
-           <div class="metric-label">Contention Index</div>
+           <div class="metric-label">Review intensity</div>
            <div class="metric-val" style="color: #d97706;">${debate.metrics.contentionLevel ?? 'Moderate'}</div>
          </div>
          <div class="metric-item">
-           <div class="metric-label">Flaws Fortified</div>
+           <div class="metric-label">Points resolved</div>
            <div class="metric-val">${debate.metrics.resolvedPointsCount ?? 0} points</div>
          </div>
          <div class="metric-item">
@@ -682,7 +678,7 @@ export function exportFullTranscriptAsPdf(debate: ExportableDebate): void {
   });
 
   const finalSynthexisHtml = debate.finalOutput
-    ? `<h1>Final Ratified Synthexis</h1>
+    ? `<h1>Final research result</h1>
        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 16px; margin-top: 12px;">
          ${markdownToHtml(debate.finalOutput)}
        </div>`
@@ -690,27 +686,27 @@ export function exportFullTranscriptAsPdf(debate: ExportableDebate): void {
 
   const bodyHtml = `
     <div class="header-seal">
-      <div class="seal-brand">Synthexis Research</div>
-      <div class="seal-tag">Complete Dialectic Proceedings • Transcript</div>
+      <div class="seal-brand">Breezy Research</div>
+      <div class="seal-tag">Complete research transcript</div>
     </div>
 
     <div class="inquiry-box">
-      <div class="inquiry-label">Inquiry Under Deliberation</div>
+      <div class="inquiry-label">Research question</div>
       <div class="inquiry-text">${debate.prompt}</div>
     </div>
 
     ${metricsHtml}
 
-    <h1>Synthexis Research Record</h1>
+    <h1>Breezy Research record</h1>
     ${stepsHtml}
 
     ${finalSynthexisHtml}
 
     <div class="footer-seal">
-      <div>Protocol: ${debate.protocol.toUpperCase()} Synthexis Architecture</div>
-      <div>Archived on ${humanDate} • Synthexis Archive</div>
+      <div>Protocol: ${debate.protocol.toUpperCase()} research</div>
+      <div>Created ${humanDate} • Breezy Research</div>
     </div>
   `;
 
-  renderPrintableDocument(`Iris Full Transcript - ${debate.prompt.slice(0, 30)}`, bodyHtml);
+  renderPrintableDocument(`Breezy Research Transcript - ${debate.prompt.slice(0, 30)}`, bodyHtml);
 }
