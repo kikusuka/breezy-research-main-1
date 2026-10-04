@@ -102,7 +102,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src="/breezy.png"
+                      src="/breezy-logo.svg"
                       alt="Breezy"
                       className="w-[22.5px] h-[22.5px] object-contain shrink-0"
                       style={{ width: '22.5px', height: '22.5px' }}
