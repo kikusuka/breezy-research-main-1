@@ -69,3 +69,10 @@
 .breezy-surface { background: #191c21; border: 1px solid rgba(61,73,77,.45); }
 .breezy-surface-high { background: #272a30; border: 1px solid rgba(61,73,77,.55); }
 .breezy-divider { border-color: rgba(61,73,77,.4); }
+
+/* Stitch geometry overrides: use compact utility-tool radii instead of inflated AI-card shapes. */
+.rounded-3xl { border-radius: .75rem !important; }
+.rounded-2xl { border-radius: .5rem !important; }
+.rounded-xl { border-radius: .375rem !important; }
+.rounded-lg { border-radius: .25rem !important; }
+.shadow-xl, .shadow-2xl, .shadow-lg, .shadow-md, .shadow-sm { box-shadow: 0 12px 32px -8px rgba(0,0,0,.28) !important; }
