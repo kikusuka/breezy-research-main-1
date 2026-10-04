@@ -6,6 +6,10 @@ Synthexis Workspace is a unified, multi-mode developer and researcher platform. 
 
 ---
 
+## Proprietary / Beta
+
+Breezy and Synthexis are proprietary software owned by Kikusuka. The beta service may be offered free of charge, but free access does not grant permission to copy, fork, redistribute, or reuse the source code or branding. See the repository `LICENSE` for the current terms.
+
 ## 🏛️ Architecture & Unified Workspaces
 
 Synthexis Workspace is structured as a single platform shell hosting specialized workspaces:
