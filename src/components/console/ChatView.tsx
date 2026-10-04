@@ -169,21 +169,21 @@ export const ChatView: React.FC<ChatViewProps> = ({
     <div className="relative flex min-h-full w-full flex-1 flex-col overflow-hidden bg-surface text-on-surface">
       <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".txt,.md,.json,.csv,.py,.ts,.tsx,.js,.html,.css" />
 
-      <main className="relative flex min-h-[calc(100vh-4rem)] flex-1 flex-col overflow-hidden bg-surface">
+      <main className="relative flex min-h-[calc(100vh-4rem)] flex-1 flex-col overflow-hidden bg-surface [background-image:radial-gradient(circle_at_50%_22%,rgba(0,180,216,0.12)_0%,transparent_58%)]">
         {messages.length === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-36 pt-12 sm:px-6 lg:px-8">
-            <div className="flex w-full max-w-3xl flex-col items-center text-center">
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-outline-variant/50 bg-surface-container">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden px-4 pb-36 pt-12 sm:px-6 lg:px-8">
+            <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center">
+              <div className="relative mb-space-lg flex h-14 w-14 items-center justify-center rounded-full bg-surface-container shadow-lg transition-transform duration-500 hover:scale-105">
                 <img src="/breezy-logo.svg" alt="Breezy" className="h-8 w-8 object-contain" />
               </div>
 
-              <div className="mb-3 text-[10px] font-mono uppercase tracking-[0.16em] text-primary">Breezy Chat</div>
-              <h1 className="max-w-2xl font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">What would you like to talk through?</h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-on-surface-variant sm:text-base">
+              <div className="mb-space-md inline-flex items-center gap-space-xs rounded-full bg-surface-container-high px-space-sm py-0.5 font-code-sm text-code-sm text-primary">BREEZY COGNITIVE KERNEL <span className="text-outline">·</span> CHAT</div>
+              <h1 className="mb-space-sm max-w-xl font-headline-xl text-headline-xl tracking-tight text-on-surface">What would you like to explore?</h1>
+              <p className="mb-space-xl max-w-lg font-body-lg text-body-lg text-on-surface-variant">
                 Ask directly, work through an idea, or send the question to deeper research.
               </p>
 
-              <div className="mt-8 grid w-full gap-2 md:grid-cols-3">
+              <div className="grid w-full gap-space-sm text-left md:grid-cols-3">
                 {suggestionStarters.map((starter, idx) => (
                   <button
                     key={starter.title}
@@ -192,15 +192,15 @@ export const ChatView: React.FC<ChatViewProps> = ({
                       setInput(starter.query);
                       textareaRef.current?.focus();
                     }}
-                    className="group min-h-[132px] border border-outline-variant/50 bg-surface-container p-4 text-left transition-colors hover:border-outline hover:bg-surface-container-high"
+                    className="group flex h-36 min-h-[132px] flex-col justify-between rounded-full bg-surface-container px-space-lg p-space-md text-left shadow-sm transition-all duration-200 hover:bg-surface-container-high"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-[10px] text-primary">0{idx + 1}</span>
+                      <span className="font-code-sm text-code-sm uppercase tracking-wider text-primary">0{idx + 1} · DIRECTIVE</span>
                       <span className="material-symbols-outlined text-[17px] text-outline group-hover:text-primary">arrow_outward</span>
                     </div>
-                    <div className="mt-8">
-                      <h2 className="text-sm font-semibold text-on-surface group-hover:text-primary">{starter.title}</h2>
-                      <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{starter.meta}</p>
+                    <div className="mt-space-sm">
+                      <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface group-hover:text-primary">{starter.title}</h2>
+                      <p className="mt-1 font-label-sm text-label-sm leading-5 text-outline">{starter.meta}</p>
                     </div>
                   </button>
                 ))}
@@ -247,9 +247,9 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
           <div className="pointer-events-auto mx-auto w-full max-w-4xl px-4 pb-3 sm:px-6">
-            <div className="border border-outline-variant/55 bg-surface-container p-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,.65)]">
+            <div className="rounded-full bg-surface-container-low px-space-lg py-space-md shadow-xl transition-shadow">
               {attachedFile && (
-                <div className="mb-2 flex items-center justify-between border border-primary/25 bg-surface-container-high px-3 py-2">
+                <div className="mb-2 flex items-center justify-between rounded-xl border border-primary/25 bg-surface-container-high px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2 text-xs text-primary">
                     <span className="material-symbols-outlined text-[16px]">description</span>
                     <span className="truncate">{attachedFile.name}</span>
@@ -261,14 +261,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
               )}
 
               <div className="flex items-center gap-2 border-b border-outline-variant/35 px-2 pb-2">
-                <div className="flex h-8 items-center gap-2 border border-outline-variant/45 bg-surface-container-low px-2.5 text-[11px] text-on-surface-variant">
+                <div className="flex h-8 items-center gap-2 rounded-full bg-surface-container px-space-sm text-[11px] text-on-surface-variant shadow-sm">
                   <span className="material-symbols-outlined text-[15px] text-primary">memory</span>
                   <span className="max-w-[220px] truncate">{selectedModel || 'No model connected'}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setGroundingEnabled((prev) => !prev)}
-                  className={`flex h-8 items-center gap-1.5 border px-2.5 text-[11px] transition-colors ${groundingEnabled ? 'border-primary/35 bg-primary/5 text-primary' : 'border-outline-variant/45 bg-surface-container-low text-outline'}`}
+                  className={`flex h-8 items-center gap-1.5 rounded-full border px-space-sm text-[11px] transition-colors ${groundingEnabled ? 'border-primary/35 bg-primary/5 text-primary' : 'border-outline-variant/45 bg-surface-container-low text-outline'}`}
                 >
                   <span className="material-symbols-outlined text-[15px]">travel_explore</span>
                   <span className="hidden sm:inline">Web grounding</span>
@@ -299,22 +299,22 @@ export const ChatView: React.FC<ChatViewProps> = ({
               </div>
 
               <div className="flex items-center justify-between px-1">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-9 w-9 items-center justify-center text-outline hover:bg-surface-container-high hover:text-primary" aria-label="Attach file">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-full text-outline hover:bg-surface-container-high hover:text-primary" aria-label="Attach file">
                   <span className="material-symbols-outlined text-[18px]">attach_file</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSend}
                   disabled={(!input.trim() && !attachedFile) || isLoading}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-secondary disabled:pointer-events-none disabled:opacity-35"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-secondary disabled:pointer-events-none disabled:opacity-35"
                   aria-label="Send message"
                 >
                   <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
                 </button>
               </div>
             </div>
-            <div className="flex items-center justify-between px-1 pt-1.5 text-[10px] text-outline">
-              <span>Conversation saved locally</span>
+            <div className="flex items-center justify-center gap-space-xs px-1 pt-1.5 text-[10px] text-on-surface-variant">
+              <span className="material-symbols-outlined text-[12px]">shield</span><span>Conversation saved locally · model state shown from your configuration</span>
               <span className="hidden sm:inline">Enter to send · Shift + Enter for newline</span>
             </div>
           </div>
