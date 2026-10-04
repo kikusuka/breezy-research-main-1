@@ -186,7 +186,7 @@ export default function App() {
       try {
         await googleDocsService.saveResearchSession(currentSession);
         localStorage.setItem(savedKey, '1');
-        console.log('Synthexis Google Docs archive sync complete.');
+        console.log('Breezy Research Google Docs archive sync complete.');
       } catch (e) {
         console.warn('Synthexis auto-save failed:', e);
       }
@@ -275,7 +275,6 @@ export default function App() {
     const seats = providerConfigService.getSeatsPayload();
 
     const config = providerConfigService.getConfig();
-    const agreementThreshold = config.agreementThreshold ?? 78;
     const autoResolve = config.autoResolve ?? true;
     const selectedRound = config.selectedRound ?? 2;
 
@@ -298,7 +297,6 @@ export default function App() {
           keys,
           seats,
           enableSearchGrounding: true,
-          agreementThreshold,
           autoResolve,
           selectedRound,
           researchMethod: config.researchMethod || 'adaptive',
@@ -519,7 +517,7 @@ export default function App() {
                 onNewChat={handleNewBreezyChat}
                 onSwitchToSynthexis={() => {
                   setProductMode('synthexis');
-                  toast('Switched to Synthexis Research Console.');
+                  toast('Switched to Breezy Research.');
                 }}
                 isSidebarOpen={isSidebarOpen}
               />
