@@ -47,6 +47,8 @@ export const AVAILABLE_MODELS: Record<string, { id: string; name: string; descri
     { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B (OpenRouter)', description: 'Unified router access' },
     { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1 (OpenRouter)', description: 'Deep reasoning & chain-of-thought verification' },
   ],
+  ollama: [],
+  'openai-compatible': [],
 };
 
 export interface CanonicalWorkspaceConfig {
