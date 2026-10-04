@@ -60,7 +60,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
   return (
     <div className={product === 'breezy'
       ? 'min-h-[calc(100vh-4rem)] bg-[#090d16] text-slate-100'
-      : 'min-h-[calc(100vh-4rem)] bg-stone-950 text-stone-200'}>
+       : 'min-h-[calc(100vh-4rem)] bg-[#07111f] text-slate-100'}>
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 sm:py-12">
         <div className="max-w-3xl">
           <div className="text-[10px] uppercase tracking-[0.22em] font-mono text-slate-500 mb-3">
@@ -68,12 +68,12 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
           </div>
           <h1 className={product === 'breezy'
             ? 'text-3xl sm:text-4xl font-semibold tracking-tight text-white'
-            : 'text-3xl sm:text-4xl font-serif italic font-medium tracking-tight text-stone-100'}>
+             : 'text-3xl sm:text-4xl font-semibold tracking-tight text-white'}>
             How to use {product === 'breezy' ? 'Breezy' : 'Breezy Research'}
           </h1>
           <p className={product === 'breezy'
             ? 'mt-3 text-sm leading-7 text-slate-400'
-            : 'mt-3 text-sm leading-7 text-stone-500'}>
+             : 'mt-3 text-sm leading-7 text-slate-400'}>
             A practical guide to using Breezy's real chat, research, model setup, and code workflows.
           </p>
         </div>
@@ -87,7 +87,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
                 onClick={() => setActiveId(section.id)}
                 className={product === 'breezy'
                   ? `w-full text-left px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer ${activeId === section.id ? 'bg-sky-500/10 text-sky-300 border border-sky-500/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`
-                  : `w-full text-left px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer ${activeId === section.id ? 'bg-stone-900 text-stone-100 border border-stone-800' : 'text-stone-500 hover:text-stone-200 hover:bg-stone-900/50'}`}>
+                   : `w-full text-left px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer ${activeId === section.id ? 'bg-sky-500/10 text-sky-300 border border-sky-500/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}>
                 {section.title}
               </button>
             ))}
@@ -95,13 +95,13 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
 
           <article className={product === 'breezy'
             ? 'rounded-xl border border-slate-800/80 bg-[#0d1322] p-6 sm:p-8'
-            : 'rounded-xl border border-stone-800/70 bg-stone-900/20 p-6 sm:p-8'}>
-            <h2 className={product === 'breezy' ? 'text-xl font-semibold text-white' : 'text-xl font-serif text-stone-100'}>
+             : 'rounded-xl border border-slate-800/80 bg-[#0d1322] p-6 sm:p-8'}>
+            <h2 className={product === 'breezy' ? 'text-xl font-semibold text-white'  : 'text-xl font-semibold text-white'}>
               {active.title}
             </h2>
             <p className={product === 'breezy'
               ? 'mt-4 text-sm leading-7 text-slate-400'
-              : 'mt-4 text-sm leading-7 text-stone-400'}>
+               : 'mt-4 text-sm leading-7 text-slate-400'}>
               {active.text}
             </p>
 
@@ -119,9 +119,9 @@ export const GuideView: React.FC<GuideViewProps> = ({ product }) => {
             {active.id === 'roles' && product === 'synthexis' && (
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {['Lead Analyst', 'Adversary', 'Verifier', 'Synthesizer'].map((item) => (
-                  <div key={item} className="rounded-lg border border-stone-800 p-4">
-                    <div className="text-xs font-medium text-stone-200">{item}</div>
-                    <div className="mt-1 text-[11px] text-stone-500">Assign the provider and model you want this seat to use.</div>
+                  <div key={item} className="rounded-lg border border-slate-800 p-4">
+                    <div className="text-xs font-medium text-slate-200">{item}</div>
+                    <div className="mt-1 text-[11px] text-slate-500">Assign the provider and model you want this seat to use.</div>
                   </div>
                 ))}
               </div>
