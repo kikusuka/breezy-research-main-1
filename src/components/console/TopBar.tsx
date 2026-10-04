@@ -132,7 +132,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   )}
                 </button>
 
-                {/* Synthexis option */}
+                {/* Research option */}
                 <button
                   type="button"
                   onClick={() => {
@@ -153,7 +153,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                           Research
                         </span>
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          Research
+                          Multi-model
                         </span>
                       </div>
                       <span className="text-[11px] text-stone-400 group-hover:text-stone-300 truncate">
