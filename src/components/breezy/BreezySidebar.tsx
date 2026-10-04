@@ -1,279 +1,34 @@
 import React from 'react';
-import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 
 export type BreezyTab = 'chat' | 'ide' | 'canvas' | 'docs';
-
-interface BreezyChat {
-  id: string;
-  title: string;
-  messages: any[];
-  createdAt: string;
-}
-
+interface BreezyChat { id: string; title: string; messages: any[]; createdAt: string; }
 interface BreezySidebarProps {
-  activeTab: BreezyTab;
-  onSelectTab: (tab: BreezyTab) => void;
-  chats: Record<string, BreezyChat>;
-  activeId: string | null;
-  onSelectChat: (id: string) => void;
-  onNewChat: () => void;
-  onDeleteChat: (id: string, e: React.MouseEvent) => void;
-  onOpenProfile: () => void;
-  onSwitchToSynthexis?: () => void;
-  onOpenGuide?: () => void;
-  isOpen?: boolean;
-  onClose?: () => void;
-  isOpenMobile?: boolean;
-  onCloseMobile?: () => void;
+  activeTab: BreezyTab; onSelectTab: (tab: BreezyTab) => void; chats: Record<string, BreezyChat>; activeId: string | null;
+  onSelectChat: (id: string) => void; onNewChat: () => void; onDeleteChat: (id: string, e: React.MouseEvent) => void;
+  onOpenProfile: () => void; onSwitchToSynthexis?: () => void; onOpenGuide?: () => void; isOpen?: boolean; onClose?: () => void;
+  isOpenMobile?: boolean; onCloseMobile?: () => void;
 }
 
-export const BreezySidebar: React.FC<BreezySidebarProps> = ({
-  activeTab,
-  onSelectTab,
-  chats,
-  activeId,
-  onSelectChat,
-  onNewChat,
-  onDeleteChat,
-  onOpenProfile,
-  onSwitchToSynthexis,
-  onOpenGuide,
-  isOpen,
-  onClose,
-  isOpenMobile,
-  onCloseMobile,
-}) => {
+export const BreezySidebar: React.FC<BreezySidebarProps> = ({ activeTab, onSelectTab, chats, activeId, onSelectChat, onNewChat, onDeleteChat, onOpenProfile, onSwitchToSynthexis, onOpenGuide, isOpen, onClose, isOpenMobile, onCloseMobile }) => {
   const handleClose = onCloseMobile || onClose;
+  const profile = userProfileService.getProfile();
+  const chatList = Object.values(chats).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const navItems = [
+    { id: 'chat' as const, label: 'Chat', icon: 'chat_bubble' },
+    { id: 'ide' as const, label: 'Build', icon: 'code' },
+    { id: 'canvas' as const, label: 'Canvas', icon: 'dashboard_customize' },
+    { id: 'docs' as const, label: 'Docs', icon: 'menu_book' },
+  ];
 
-  const chatList = Object.values(chats).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  return (
-    <>
-      {/* Mobile backdrop */}
-      {isOpenMobile && (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
-          onClick={handleClose}
-        />
-      )}
-
-      <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-[#0d1322]/95 backdrop-blur-xl border-r border-slate-800/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
-          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
-        } ${
-          isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col gap-3 flex-1 min-h-0">
-          {/* Brand Header */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-1.5 font-sans">
-              <span className="text-base font-bold text-white tracking-tight leading-none">
-                Breezy
-              </span>
-              <span className="text-slate-500 font-semibold text-xs leading-none">/</span>
-              {onSwitchToSynthexis ? (
-                <button
-                  type="button"
-                  onClick={onSwitchToSynthexis}
-                  className="text-xs font-semibold text-slate-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
-                  title="Switch to Breezy Research"
-                >
-                  Research
-                </button>
-              ) : (
-                <span className="text-xs font-semibold text-slate-400 leading-none">
-                  Research
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
-              title="Close sidebar"
-            >
-              <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
-            </button>
-          </div>
-
-          {/* Primary Breezy Mode Navigation */}
-          <div className="flex flex-col gap-1 pt-1 pb-2 border-b border-slate-800/80">
-            <button
-              type="button"
-              onClick={() => {
-                onSelectTab('chat');
-                onCloseMobile?.();
-              }}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
-                activeTab === 'chat'
-                  ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 text-sky-300 border border-sky-500/30 shadow-[0_2px_10px_rgba(56,189,248,0.15)]'
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[17px] ${activeTab === 'chat' ? 'text-sky-400' : 'text-slate-500'}`}>
-                forum
-              </span>
-              <span>Chat</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onSelectTab('ide');
-                onCloseMobile?.();
-              }}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
-                activeTab === 'ide'
-                  ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 text-sky-300 border border-sky-500/30 shadow-[0_2px_10px_rgba(56,189,248,0.15)]'
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[17px] ${activeTab === 'ide' ? 'text-sky-400' : 'text-slate-500'}`}>
-                code
-              </span>
-              <span>Build</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onSelectTab('canvas');
-                onCloseMobile?.();
-              }}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
-                activeTab === 'canvas'
-                  ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 text-sky-300 border border-sky-500/30 shadow-[0_2px_10px_rgba(56,189,248,0.15)]'
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[17px] ${activeTab === 'canvas' ? 'text-sky-400' : 'text-slate-500'}`}>
-                dashboard_customize
-              </span>
-              <span>Canvas</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              onOpenGuide?.();
-              onCloseMobile?.();
-            }}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
-              activeTab === 'docs'
-                ? 'bg-sky-500/10 text-sky-300 border border-sky-500/20'
-                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-            }`}
-            title="Open the Breezy guide"
-          >
-            <span className={`material-symbols-outlined text-[17px] ${activeTab === 'docs' ? 'text-sky-400' : 'text-slate-500'}`}>menu_book</span>
-            <span>Guide</span>
-          </button>
-
-          {/* New Chat Action */}
-          <button
-            type="button"
-            onClick={() => {
-              onSelectTab('chat');
-              onNewChat();
-              onCloseMobile?.();
-            }}
-            className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-sky-400 hover:from-sky-400 hover:to-sky-300 text-slate-950 font-sans text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-sm font-bold">add</span>
-                <span>New chat</span>
-          </button>
-
-          {/* Stream List */}
-          <div className="flex-1 overflow-y-auto flex flex-col gap-3 mt-1">
-            <div className="flex flex-col gap-1.5">
-              <span className="px-2 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                Recent chats
-              </span>
-
-              {chatList.length === 0 ? (
-                <p className="px-2 font-sans text-xs text-slate-500 mt-1">
-                  No chats yet.
-                </p>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {chatList.map((c) => {
-                    const isActive = c.id === activeId && activeTab === 'chat';
-                    return (
-                      <div
-                        key={c.id}
-                        onClick={() => {
-                          onSelectTab('chat');
-                          onSelectChat(c.id);
-                          onCloseMobile?.();
-                        }}
-                        className={`group flex items-center justify-between gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer ${
-                          isActive
-                            ? 'bg-slate-800/80 text-sky-300 border border-sky-500/20'
-                            : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span
-                            className={`material-symbols-outlined text-base shrink-0 ${
-                              isActive ? 'text-sky-400' : 'text-slate-500'
-                            }`}
-                          >
-                            chat_bubble
-                          </span>
-                          <span className="truncate font-sans text-xs font-medium">
-                            {c.title || 'New chat'}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => onDeleteChat(c.id, e)}
-                          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full hover:bg-slate-700 flex items-center justify-center text-slate-400 shrink-0 cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">
-                            close
-                          </span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Profile Card Bottom Bar */}
-        <div
-          onClick={onOpenProfile}
-          className="pt-3 border-t border-slate-800/80 flex items-center justify-between bg-slate-900/50 p-2.5 rounded-2xl cursor-pointer hover:bg-slate-800/50 transition-colors border border-white/5"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-[#d4ff33]/20 text-[#d4ff33] border border-[#d4ff33]/30 flex items-center justify-center font-bold text-xs shrink-0">
-              {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-sans text-xs font-bold text-slate-200 leading-tight truncate">
-                {userProfileService.getProfile().displayName}
-              </span>
-              <span className="font-sans text-[10px] text-slate-400 leading-none truncate mt-0.5">
-                {userProfileService.getProfile().roleTitle}
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-white shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg">tune</span>
-          </button>
-        </div>
-      </aside>
-    </>
-  );
+  return <>
+    {isOpenMobile && <div aria-hidden="true" className="fixed inset-0 z-40 bg-[#020b16]/75 lg:hidden" onClick={handleClose} />}
+    <aside className={`fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r border-sky-200/[0.08] bg-[#081525] transition-transform duration-300 ${isOpenMobile ? 'translate-x-0' : '-translate-x-full'} ${isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'}`}>
+      <div className="flex h-[72px] items-center justify-between border-b border-sky-200/[0.08] px-5"><div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-300 text-slate-950"><span className="material-symbols-outlined text-[18px]">air</span></div><div><div className="text-sm font-semibold tracking-tight text-white">Breezy</div><div className="text-[10px] text-sky-200/45">Everyday workspace</div></div></div><button type="button" onClick={handleClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white/[0.06] hover:text-white" aria-label="Close navigation"><span className="material-symbols-outlined text-[18px]">menu_open</span></button></div>
+      <div className="px-4 pt-5"><button type="button" onClick={() => { onSelectTab('chat'); onNewChat(); onCloseMobile?.(); }} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-sky-300 text-xs font-semibold text-slate-950 transition hover:bg-sky-200"><span className="material-symbols-outlined text-[17px]">add</span>New chat</button></div>
+      <nav className="px-3 pt-6" aria-label="Breezy navigation"><div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-200/40">Workspace</div><div className="space-y-1">{navItems.map((item) => <button key={item.id} type="button" onClick={() => { item.id === 'docs' ? onOpenGuide?.() : onSelectTab(item.id); onCloseMobile?.(); }} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${activeTab === item.id ? 'bg-sky-300/[0.12] text-sky-100' : 'text-slate-400 hover:bg-white/[0.045] hover:text-slate-100'}`}><span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? 'text-sky-300' : 'text-slate-500'}`}>{item.icon}</span>{item.label}{activeTab === item.id && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sky-300" />}</button>)}</div></nav>
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-8"><div className="flex items-center justify-between px-3"><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-200/40">Recent chats</span><span className="text-[11px] text-slate-600">{chatList.length || ''}</span></div><div className="mt-3 space-y-1">{chatList.length === 0 ? <p className="px-3 py-4 text-xs leading-5 text-slate-600">No chats yet. Start a conversation when you are ready.</p> : chatList.slice(0, 14).map((chat) => { const active = chat.id === activeId && activeTab === 'chat'; return <div key={chat.id} className={`group flex items-start gap-2 rounded-lg px-3 py-2.5 ${active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'}`}><button type="button" onClick={() => { onSelectTab('chat'); onSelectChat(chat.id); onCloseMobile?.(); }} className="min-w-0 flex-1 text-left"><span className={`block truncate text-xs ${active ? 'text-sky-100' : 'text-slate-400 group-hover:text-slate-200'}`}>{chat.title || 'New chat'}</span><span className="mt-1 block text-[10px] text-slate-600">{chat.messages.length ? `${chat.messages.length} messages` : 'Empty chat'}</span></button><button type="button" onClick={(event) => onDeleteChat(chat.id, event)} className="hidden h-6 w-6 shrink-0 items-center justify-center rounded text-slate-600 hover:bg-red-400/10 hover:text-red-300 group-hover:flex" aria-label="Delete chat"><span className="material-symbols-outlined text-[14px]">close</span></button></div>; })}</div></div>
+      <div className="border-t border-sky-200/[0.08] p-4"><button type="button" onClick={onSwitchToSynthexis} className="mb-3 flex w-full items-center justify-between rounded-lg border border-sky-200/[0.08] px-3 py-2.5 text-xs text-slate-400 hover:border-sky-300/25 hover:text-sky-100"><span className="flex items-center gap-2"><span className="material-symbols-outlined text-[17px] text-sky-300">travel_explore</span>Open Research</span><span className="material-symbols-outlined text-[15px]">arrow_forward</span></button><button type="button" onClick={onOpenProfile} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/[0.04]"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-300/10 text-xs font-semibold text-sky-200">{profile.displayName.charAt(0).toUpperCase()}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-slate-200">{profile.displayName}</span><span className="block truncate text-[10px] text-slate-600">{profile.roleTitle}</span></span><span className="material-symbols-outlined text-[17px] text-slate-600">settings</span></button></div>
+    </aside>
+  </>;
 };

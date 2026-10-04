@@ -1,323 +1,36 @@
 import React from 'react';
 import { DebateSession } from '../../types';
-import { SynthexisLogoIcon } from '../icons/ProductLogos';
 import { userProfileService } from '../../services/userProfileService';
 import { PWAInstallButton } from './PWAInstallButton';
 
 export type ConsoleTab = 'chat' | 'notes' | 'models' | 'settings' | 'landing' | 'docs';
 
 interface SidebarProps {
-  activeTab: ConsoleTab;
-  onSelectTab: (tab: ConsoleTab) => void;
-  sessions: DebateSession[];
-  activeSessionId: string | null;
-  onSelectSession: (id: string) => void;
-  onNewSession: () => void;
-  synthexisMode?: boolean;
-  onToggleSynthexisMode?: () => void;
-  isOpenMobile?: boolean;
-  onCloseMobile?: () => void;
-  onOpenProfile?: () => void;
-  onDeleteSession?: (id: string, e: React.MouseEvent) => void;
-  onSwitchToBreezy?: () => void;
-  onOpenGuide?: () => void;
-  isOpen?: boolean;
-  onClose?: () => void;
+  activeTab: ConsoleTab; onSelectTab: (tab: ConsoleTab) => void; sessions: DebateSession[]; activeSessionId: string | null;
+  onSelectSession: (id: string) => void; onNewSession: () => void; synthexisMode?: boolean; onToggleSynthexisMode?: () => void;
+  isOpenMobile?: boolean; onCloseMobile?: () => void; onOpenProfile?: () => void; onDeleteSession?: (id: string, e: React.MouseEvent) => void;
+  onSwitchToBreezy?: () => void; onOpenGuide?: () => void; isOpen?: boolean; onClose?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeTab,
-  onSelectTab,
-  sessions,
-  activeSessionId,
-  onSelectSession,
-  onNewSession,
-  synthexisMode = true,
-  onToggleSynthexisMode,
-  isOpenMobile = false,
-  onCloseMobile,
-  onOpenProfile,
-  onDeleteSession,
-  onSwitchToBreezy,
-  onOpenGuide,
-  isOpen,
-  onClose,
-}) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, sessions, activeSessionId, onSelectSession, onNewSession, synthexisMode = true, onToggleSynthexisMode, isOpenMobile = false, onCloseMobile, onOpenProfile, onDeleteSession, onSwitchToBreezy, onOpenGuide, isOpen, onClose }) => {
   const handleClose = onCloseMobile || onClose;
+  const profile = userProfileService.getProfile();
+  const navItems = [
+    { id: 'chat' as const, label: 'Research', icon: 'travel_explore' },
+    { id: 'notes' as const, label: 'History', icon: 'history' },
+    { id: 'models' as const, label: 'Models', icon: 'tune' },
+    { id: 'docs' as const, label: 'Docs', icon: 'menu_book' },
+  ];
 
-  return (
-    <>
-      {/* Mobile backdrop */}
-      {isOpenMobile && (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs"
-          onClick={handleClose}
-        />
-      )}
-
-      <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-stone-950 z-50 flex flex-col justify-between border-r border-stone-800/60 transition-transform duration-200 ${
-          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
-        } ${
-          isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col flex-1 min-h-0">
-          {/* Header: Editorial Wordmark */}
-          <div className="h-14 px-4 flex items-center justify-between border-b border-stone-800/40">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-sm bg-stone-100 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-stone-950 text-[15px] font-bold">adjust</span>
-              </div>
-              <div className="flex items-center gap-1.5 font-sans">
-                {onSwitchToBreezy ? (
-                  <button
-                    type="button"
-                    onClick={onSwitchToBreezy}
-                    className="text-xs font-semibold text-stone-400 hover:text-sky-300 transition-colors cursor-pointer leading-none"
-                    title="Switch to Breezy"
-                  >
-                    Breezy
-                  </button>
-                ) : (
-                  <span className="text-xs font-semibold text-stone-400 leading-none">Breezy</span>
-                )}
-                <span className="text-stone-600 font-semibold text-xs leading-none">/</span>
-                <span className="font-display text-sm tracking-tight text-stone-100 italic font-bold leading-none">
-                  Breezy Research
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => {
-                  onNewSession();
-                  onSelectTab('chat');
-                  handleClose?.();
-                }}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-100 hover:bg-stone-800/60 transition-colors cursor-pointer"
-                title="New Session"
-              >
-                <span className="material-symbols-outlined text-[17px]">add</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-white hover:bg-stone-800/60 transition-colors cursor-pointer"
-                title="Close sidebar"
-              >
-                <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Primary Views Nav: Minimalist unboxed */}
-          <div className="px-3 py-4 border-b border-stone-800/40">
-            <nav className="flex flex-col gap-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab('chat');
-                  onCloseMobile?.();
-                }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'chat'
-                    ? 'bg-sky-400/10 text-sky-200 font-semibold border border-sky-400/10'
-                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">psychology</span>
-                <span>Workspace</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab('notes');
-                  onCloseMobile?.();
-                }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'notes'
-                    ? 'bg-stone-800 text-stone-100 font-bold'
-                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">folder_special</span>
-                <span>History</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab('models');
-                  onCloseMobile?.();
-                }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'models'
-                    ? 'bg-stone-800 text-stone-100 font-bold'
-                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">hub</span>
-                <span>Models</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenGuide?.();
-                  onCloseMobile?.();
-                }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'docs'
-                    ? 'bg-stone-800 text-stone-100 font-bold'
-                    : 'text-stone-300 hover:bg-stone-900/50 hover:text-white'
-                }`}
-                title="Open the Breezy Research guide"
-              >
-                <span className="material-symbols-outlined text-[18px]">menu_book</span>
-                <span>Docs</span>
-              </button>
-
-              {/* Direct Switch to Breezy Chat */}
-              {onSwitchToBreezy && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSwitchToBreezy();
-                    onCloseMobile?.();
-                  }}
-                  className="mt-2 flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-sans font-medium transition-all cursor-pointer bg-sky-950/40 hover:bg-sky-900/60 border border-sky-500/30 text-sky-300 hover:text-white"
-                  title="Switch to Breezy Chat"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[17px] text-sky-400">chat</span>
-                    <span>Breezy Chat</span>
-                  </div>
-                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                </button>
-              )}
-            </nav>
-          </div>
-
-          {/* Breezy Research Mode Toggle: Minimal */}
-          <div className="mx-3 mt-4 mb-2 px-3 py-3 rounded-xl bg-stone-900/60 border border-stone-800/60 flex flex-col gap-2 shrink-0 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-stone-400 tracking-tight">Research mode</span>
-              <button
-                type="button"
-                onClick={onToggleSynthexisMode}
-                className={`w-9 h-5 rounded p-0.5 transition-colors cursor-pointer ${
-                  synthexisMode ? 'bg-sky-300' : 'bg-stone-800'
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-sm bg-slate-950 shadow-xs transition-transform duration-200 ${
-                    synthexisMode ? 'translate-x-4' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-            <p className="text-[11px] text-stone-500 leading-relaxed">
-              {synthexisMode 
-                ? 'Multi-model research' 
-                : 'Single-model chat'}
-            </p>
-          </div>
-
-          {/* Research History List: Editorial List */}
-          <div className="flex-1 overflow-y-auto p-3 mt-4 flex flex-col gap-3">
-            <span className="text-xs font-medium text-stone-300 px-3">
-              Journal
-            </span>
-
-            <div className="flex flex-col gap-0.5">
-              {sessions.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-stone-400 font-sans italic">
-                  No recorded entries.
-                </p>
-              ) : (
-                sessions.map((s) => {
-                  if (!s) return null;
-                  const isActive = s.id === activeSessionId && activeTab === 'chat';
-                  return (
-                    <div
-                      key={s.id}
-                      onClick={() => {
-                        onSelectSession(s.id);
-                        onSelectTab('chat');
-                        onCloseMobile?.();
-                      }}
-                      className={`group w-full text-left px-3 py-2 rounded-lg transition-all flex items-start justify-between gap-2 cursor-pointer border border-transparent ${
-                        isActive
-                          ? 'bg-stone-800/40 text-stone-100 border-stone-700/50 shadow-sm'
-                          : 'text-stone-300 hover:text-white hover:bg-stone-900/50'
-                      }`}
-                    >
-                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                        <span className="truncate text-[13px] leading-snug font-medium">
-                          {s.prompt}
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] text-stone-400 font-mono uppercase tracking-tight">
-                          <span>{new Date(s.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                          {s.evidenceGraph?.sourcesConsulted && s.evidenceGraph.sourcesConsulted.length > 0 && (
-                            <>
-                              <span className="text-stone-500">/</span>
-                              <span>{s.evidenceGraph.sourcesConsulted.length} SRC</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {onDeleteSession && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteSession(s.id, e);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded hover:bg-stone-700 text-stone-500 hover:text-stone-200 transition-all shrink-0"
-                          title="Purge record"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">close</span>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer: Institutional Profile */}
-        <div
-          onClick={onOpenProfile}
-          className="p-4 border-t border-stone-800/60 bg-stone-950/80 backdrop-blur-md cursor-pointer hover:bg-stone-900 transition-colors"
-        >
-          <div className="flex items-center justify-between group">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded bg-stone-800 border border-stone-700 flex items-center justify-center font-display text-stone-200 text-lg shrink-0">
-                {userProfileService.getProfile().displayName.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-sans text-xs font-bold text-stone-200 leading-tight truncate">
-                  {userProfileService.getProfile().displayName}
-                </span>
-                <span className="font-mono text-[9px] text-stone-500 uppercase tracking-widest truncate mt-0.5">
-                  {userProfileService.getProfile().roleTitle}
-                </span>
-              </div>
-            </div>
-            <span className="material-symbols-outlined text-[18px] text-stone-500 group-hover:text-stone-300 transition-colors">
-              settings
-            </span>
-          </div>
-        </div>
-      </aside>
-    </>
-  );
+  return <>
+    {isOpenMobile && <div aria-hidden="true" className="fixed inset-0 z-40 bg-[#020b16]/75 lg:hidden" onClick={handleClose} />}
+    <aside className={`fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r border-sky-200/[0.08] bg-[#081525] transition-transform duration-300 ${isOpenMobile ? 'translate-x-0' : '-translate-x-full'} ${isOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'}`}>
+      <div className="flex h-[72px] items-center justify-between border-b border-sky-200/[0.08] px-5"><div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-300 text-slate-950"><span className="material-symbols-outlined text-[18px]">air</span></div><div><div className="text-sm font-semibold tracking-tight text-white">Breezy</div><div className="text-[10px] text-sky-200/45">Research workspace</div></div></div><button type="button" onClick={handleClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white/[0.06] hover:text-white" aria-label="Close navigation"><span className="material-symbols-outlined text-[18px]">menu_open</span></button></div>
+      <div className="px-4 pt-5"><button type="button" onClick={() => { onNewSession(); onSelectTab('chat'); handleClose?.(); }} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-sky-300 text-xs font-semibold text-slate-950 transition hover:bg-sky-200"><span className="material-symbols-outlined text-[17px]">add</span>New research</button></div>
+      <nav className="px-3 pt-6" aria-label="Research navigation"><div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-200/40">Workspace</div><div className="space-y-1">{navItems.map((item) => <button key={item.id} type="button" onClick={() => { item.id === 'docs' ? onOpenGuide?.() : onSelectTab(item.id); onCloseMobile?.(); }} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${activeTab === item.id ? 'bg-sky-300/[0.12] text-sky-100' : 'text-slate-400 hover:bg-white/[0.045] hover:text-slate-100'}`}><span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? 'text-sky-300' : 'text-slate-500'}`}>{item.icon}</span><span>{item.label}</span>{item.id === 'notes' && sessions.length > 0 ? <span className="ml-auto text-[10px] text-slate-600">{sessions.length}</span> : null}</button>)}</div></nav>
+      <div className="mx-4 mt-6 rounded-xl border border-sky-200/[0.08] bg-sky-300/[0.035] p-3.5"><div className="flex items-center justify-between"><div><div className="text-xs font-medium text-slate-200">Research mode</div><div className="mt-1 text-[11px] text-slate-500">{synthexisMode ? 'Compare perspectives' : 'One model, faster'}</div></div><button type="button" onClick={onToggleSynthexisMode} aria-label="Toggle research mode" className={`relative h-5 w-9 rounded-full transition ${synthexisMode ? 'bg-sky-300' : 'bg-slate-700'}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-slate-950 transition ${synthexisMode ? 'left-4' : 'left-0.5'}`} /></button></div></div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-7"><div className="flex items-center justify-between px-3"><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-200/40">Recent research</span><button type="button" onClick={() => onSelectTab('notes')} className="text-[11px] text-sky-300 hover:text-sky-200">View all</button></div><div className="mt-3 space-y-1">{sessions.length === 0 ? <p className="px-3 py-4 text-xs leading-5 text-slate-600">No research yet. Start a run and saved sessions will appear here.</p> : sessions.slice(0, 12).map((session) => { const active = session.id === activeSessionId && activeTab === 'chat'; return <div key={session.id} className={`group flex items-start gap-2 rounded-lg px-3 py-2.5 ${active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'}`}><button type="button" onClick={() => { onSelectSession(session.id); onSelectTab('chat'); onCloseMobile?.(); }} className="min-w-0 flex-1 text-left"><span className={`block truncate text-xs ${active ? 'text-sky-100' : 'text-slate-400 group-hover:text-slate-200'}`}>{session.prompt || 'Untitled research'}</span><span className="mt-1 block text-[10px] text-slate-600">{new Date(session.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span></button>{onDeleteSession && <button type="button" onClick={(event) => onDeleteSession(session.id, event)} className="hidden h-6 w-6 shrink-0 items-center justify-center rounded text-slate-600 hover:bg-red-400/10 hover:text-red-300 group-hover:flex" aria-label="Delete research session"><span className="material-symbols-outlined text-[14px]">close</span></button>}</div>; })}</div></div>
+      <div className="border-t border-sky-200/[0.08] p-4"><button type="button" onClick={onSwitchToBreezy} className="mb-3 flex w-full items-center justify-between rounded-lg border border-sky-200/[0.08] px-3 py-2.5 text-xs text-slate-400 hover:border-sky-300/25 hover:text-sky-100"><span className="flex items-center gap-2"><span className="material-symbols-outlined text-[17px] text-sky-300">chat</span>Open Chat</span><span className="material-symbols-outlined text-[15px]">arrow_forward</span></button><button type="button" onClick={onOpenProfile} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/[0.04]"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-300/10 text-xs font-semibold text-sky-200">{profile.displayName.charAt(0).toUpperCase()}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-slate-200">{profile.displayName}</span><span className="block truncate text-[10px] text-slate-600">{profile.roleTitle}</span></span><span className="material-symbols-outlined text-[17px] text-slate-600">settings</span></button><PWAInstallButton /></div>
+    </aside>
+  </>;
 };
