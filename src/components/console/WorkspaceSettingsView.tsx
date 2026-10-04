@@ -583,7 +583,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <div className="max-w-sm">
                       <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Synchronization_Inactive</h4>
                       <p className="text-[11px] text-stone-600 mt-2 leading-relaxed font-serif italic">
-                        Authorize Synthexis to read spec documents directly from your Google Drive files to execute fact-checking grounded in real specifications.
+                        Authorize Breezy Research to read spec documents directly from your Google Drive files for evidence-grounded research.
                       </p>
                       <button
                         onClick={() => onConnectWorkspace(googleSubTab)}
@@ -839,7 +839,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                       <span className="material-symbols-outlined text-[20px]">smart_toy</span>
                     </div>
                     <div>
-                      <h2 className="font-sans text-base font-semibold text-on-surface">Active Synthexis Engine</h2>
+                      <h2 className="font-sans text-base font-semibold text-on-surface">Active Research Engine</h2>
                       <p className="font-sans text-xs text-stone-400">
                         Calibrate multi-turn cross validation and resolution strictness
                       </p>
@@ -920,7 +920,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <div className="flex flex-col">
                       <span className="font-sans text-xs text-stone-300 font-medium">Auto-resolve Contradictions</span>
                       <span className="font-sans text-[11px] text-stone-400">
-                        Automatically synthexis common ground when mutual agreement breaches synthexis threshold
+                        Automatically find common ground when the configured agreement threshold is reached
                       </span>
                     </div>
                     <button
@@ -1079,7 +1079,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                     <span className="material-symbols-outlined text-[20px]">notifications_active</span>
                   </div>
                   <div>
-                    <h2 className="font-sans text-base font-semibold text-stone-100">Synthexis Webhook Dispatches</h2>
+                    <h2 className="font-sans text-base font-semibold text-stone-100">Research Webhook Dispatches</h2>
                     <p className="font-sans text-xs text-stone-400">
                       Configure webhook relays to notify external teams of completed inquiries or contradictions
                     </p>
@@ -1090,7 +1090,7 @@ export const WorkspaceSettingsView: React.FC<WorkspaceSettingsViewProps> = ({ ke
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="text-xs text-stone-300 font-semibold">Relay Completion Status</span>
-                      <span className="text-[11px] text-stone-500 leading-relaxed">Send a lightweight JSON payload of the synthexis once final answers complete</span>
+                      <span className="text-[11px] text-stone-500 leading-relaxed">Send a lightweight JSON payload when final research answers complete</span>
                     </div>
                     <button
                       type="button"
