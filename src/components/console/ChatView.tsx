@@ -34,7 +34,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [groundingEnabled, setGroundingEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [selectedModel, setSelectedModel] = useState(() => providerConfigService.getActiveRoutableModel()?.model || '');
+  const [selectedProvider, setSelectedProvider] = useState(() => providerConfigService.getActiveRoutableModel()?.provider || '');
   const [attachedFile, setAttachedFile] = useState<{ name: string; content: string } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -83,15 +84,23 @@ export const ChatView: React.FC<ChatViewProps> = ({
     }
 
     try {
+      const active = providerConfigService.getActiveRoutableModel();
+      if (!active) {
+        showToast('No model connected. Connect a provider in Models first.');
+        setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+        return;
+      }
+      setSelectedProvider(active.provider);
+      setSelectedModel(active.model);
       const config = providerConfigService.getConfig();
       const keys = config.keys || {};
-      
+
       const res = await apiClient.chatBreezy({
         prompt: userText,
         history: newHistory.slice(-8).map((m) => ({ role: m.role, content: m.content })),
-        provider: 'gemini',
-        model: selectedModel,
-        apiKey: keys.gemini,
+        provider: active.provider as any,
+        model: active.model,
+        apiKey: keys[active.provider],
       });
 
       const assistantMsg: ChatMessage = {
@@ -169,11 +178,9 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
       {/* Top Utility Indicator Bar */}
       <div className="relative z-10 w-full flex items-center justify-between px-space-md sm:px-space-lg py-space-sm border-b border-outline-variant/20 bg-surface-container-lowest/60 backdrop-blur-sm">
-        <div className="inline-flex items-center gap-space-xs bg-surface-container-low px-space-md py-1 rounded-full shadow-sm border border-outline-variant/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
-          <span className="font-mono text-code-sm text-on-surface-variant tracking-tight">
-            CANVAS // NEW_INQUIRY
-          </span>
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-primary" />
+          <span className="text-xs font-medium text-on-surface">New conversation</span>
         </div>
         <div className="flex items-center gap-space-xs">
           {onOpenHistory && (
@@ -207,7 +214,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           <div className="my-auto flex flex-col items-center justify-center text-center py-space-xl">
             {/* Emblem Cluster */}
             <div className="relative mb-space-lg flex items-center justify-center group">
-              <div className="absolute w-28 h-28 rounded-full bg-primary/20 blur-2xl" />
+              
               <div className="relative w-16 h-16 rounded-full bg-surface-container-high border border-primary/30 flex items-center justify-center shadow-xl p-2">
                 <img src="/breezy-logo.svg" alt="Breezy" className="w-9 h-9 object-contain" />
               </div>
@@ -218,17 +225,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-space-xs px-space-sm py-0.5 rounded-full bg-surface-container-high text-primary font-mono text-code-sm mb-space-md shadow-sm border border-outline-variant/30">
-              <span>BREEZY COGNITIVE KERNEL</span>
-              <span className="text-outline">·</span>
-              <span className="text-on-surface-variant">v2.4.2</span>
-            </div>
+            <div className="mb-space-md text-xs font-medium uppercase tracking-[0.14em] text-on-surface-variant">Breezy</div>
 
             <h1 className="font-headline font-bold text-headline-xl text-on-surface tracking-tight max-w-lg mb-space-xs">
               What are we investigating today?
             </h1>
             <p className="font-sans text-body-md text-on-surface-variant max-w-md mb-space-xl leading-relaxed">
-              Multi-agent synthesis, verified citations, and counterfactual validation.
+              Ask a question, explore an idea, or hand something to deeper research.
             </p>
 
             {/* Suggestion Chips */}
@@ -341,16 +344,10 @@ export const ChatView: React.FC<ChatViewProps> = ({
           {/* Model selection & ground toggle */}
           <div className="flex items-center justify-between px-space-sm pb-space-xs pt-0.5">
             <div className="flex items-center gap-space-xs">
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="h-8 px-space-sm bg-surface-container-low hover:bg-surface-container-high text-primary border border-outline-variant/30 rounded-full font-mono text-code-sm font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-                <option value="llama-3.3-70b">Llama 3.3 70B</option>
-              </select>
+              <div className="flex h-8 items-center gap-2 border border-outline-variant/30 bg-surface-container-low px-space-sm rounded-lg text-label-sm text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px] text-primary">memory</span>
+                <span>{selectedModel || 'No model connected'}</span>
+              </div>
 
               <button
                 type="button"
@@ -428,7 +425,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
         {/* Footnote Micro text */}
         <div className="w-full px-space-xs flex items-center justify-between text-outline font-sans text-label-sm pt-space-xs select-none">
-          <span>Targeting zero-retention ephemeral scratchpad</span>
+          <span>Your conversation is saved locally</span>
           <span className="hidden sm:inline">Return to send · Shift + Return for newline</span>
         </div>
       </div>
