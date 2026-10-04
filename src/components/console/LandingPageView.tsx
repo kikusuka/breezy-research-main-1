@@ -148,7 +148,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
               {(() => {
                 const hasAnyKey = Object.keys(config.keys || {}).some((k) => Boolean(config.keys[k]));
-                const hasLocalRuntime = Boolean(config.ollamaBaseUrl) || Boolean(config.openaiCompatibleBaseUrl);
+                const hasLocalRuntime = providerConfigService.getConfiguredProviders().some((p) => p === 'ollama' || p === 'openai-compatible');
                 const hasAnyProvider = hasAnyKey || hasLocalRuntime;
                 if (!hasAnyProvider) {
                   return (
