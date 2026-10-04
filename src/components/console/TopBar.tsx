@@ -52,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Switch Workspace"
           >
             {productMode === 'synthexis' && (
-              <SynthexisLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400 group-hover:text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)] transition-all shrink-0" />
+              <SynthexisLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 text-sky-400 group-hover:text-sky-300 drop-shadow-[0_0_12px_rgba(56,189,248,0.35)] transition-all shrink-0" />
             )}
             {productMode === 'breezy' && (
               <BreezyLogoIcon className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_0_12px_rgba(56,189,248,0.35)] transition-all shrink-0" />
