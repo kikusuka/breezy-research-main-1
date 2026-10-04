@@ -3,15 +3,18 @@ import { UserProfile } from './services/userProfileService';
 
 type Props = {
   file: string;
+  mobileFile?: string;
   profile: UserProfile;
   onNavigate: (tab: string) => void;
   onResearch: (query: string) => void;
 };
 
-export default function StitchFrame({ file, profile, onNavigate, onResearch }: Props) {
+export default function StitchFrame({ file, mobileFile, profile, onNavigate, onResearch }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
+  const [src, setSrc] = React.useState(file);
 
   useEffect(() => {
+    setSrc(window.matchMedia('(max-width: 1023px)').matches && mobileFile ? mobileFile : file);
     const frame = ref.current;
     if (!frame) return;
 
@@ -86,14 +89,14 @@ export default function StitchFrame({ file, profile, onNavigate, onResearch }: P
 
     frame.addEventListener('load', handleLoad);
     return () => frame.removeEventListener('load', handleLoad);
-  }, [file, profile, onNavigate, onResearch]);
+  }, [file, mobileFile, profile, onNavigate, onResearch]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#111319', zIndex: 1 }}>
       <iframe
         ref={ref}
         title="Breezy Stitch interface"
-        src={'/stitch/' + file}
+        src={'/stitch/' + src}
         style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
       />
     </div>
