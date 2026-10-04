@@ -138,6 +138,8 @@ export async function handleBackendRequest(
     if (env.GROQ_API_KEY) configuredProviders.push('groq');
     if (env.SAMBANOVA_API_KEY) configuredProviders.push('sambanova');
     if (env.OPENROUTER_API_KEY) configuredProviders.push('openrouter');
+    if (env.OLLAMA_BASE_URL) configuredProviders.push('ollama');
+    if (env.OPENAI_COMPATIBLE_BASE_URL) configuredProviders.push('openai-compatible');
 
     const healthData: HealthResponse = {
       ok: true,
@@ -147,7 +149,7 @@ export async function handleBackendRequest(
       serverGeminiConfigured: hasServerGemini,
       defaultModel: hasServerGemini ? 'gemini-2.5-flash' : '',
       providers: configuredProviders,
-      supportedProviders: ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter'],
+      supportedProviders: ['gemini', 'anthropic', 'groq', 'sambanova', 'openrouter', 'ollama', 'openai-compatible'],
       timestamp: Date.now(),
     };
     return createJsonResponse(healthData, 200, req, env);
