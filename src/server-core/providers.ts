@@ -324,60 +324,42 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
       throw new Error('No Gemini API key available. Provide a BYOK key in settings or configure GEMINI_API_KEY.');
     }
 
-    const rawModel = sanitizeGeminiModel(model);
-    const fallbackCandidates = [
-      rawModel,
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-flash-latest',
-    ];
-    const modelsToTry = Array.from(new Set(fallbackCandidates.filter(Boolean)));
+    // Never silently substitute a different Gemini model. The selected model is
+    // part of the user's provider configuration and must be the model that runs.
+    const targetModel = sanitizeGeminiModel(requireModel(model, 'Gemini'));
     let lastError: any = null;
-    let hadRateLimit = false;
 
-    for (const m of modelsToTry) {
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          let fullText = '';
-          let announcedFallback = false;
+    // Retry the exact same model once for transient quota/rate-limit failures.
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await streamGeminiREST({
+          apiKey: keyToUse,
+          model: targetModel,
+          systemInstruction,
+          userPrompt,
+          temperature,
+          enableSearchGrounding,
+          onChunk,
+          onUsage,
+          signal,
+        });
+      } catch (err: any) {
+        lastError = err;
+        const msg = err?.message || String(err);
+        const transientQuotaError =
+          msg.includes('429') ||
+          msg.includes('Quota') ||
+          msg.includes('RESOURCE_EXHAUSTED');
 
-          await streamGeminiREST({
-            apiKey: keyToUse,
-            model: m,
-            systemInstruction,
-            userPrompt,
-            temperature,
-            enableSearchGrounding,
-            onChunk: (chunk) => {
-              if (m !== rawModel && !announcedFallback) {
-                const notice = `> *Model Notice: Requested model '${rawModel}' was unavailable. Continued with '${m}'.*\n\n`;
-                onChunk(notice);
-                fullText += notice;
-                announcedFallback = true;
-              }
-              fullText += chunk;
-            },
-            onUsage,
-            signal,
-          });
-
-          return fullText;
-        } catch (err: any) {
-          lastError = err;
-          const msg = err?.message || String(err);
-          if (msg.includes('429') || msg.includes('Quota') || msg.includes('RESOURCE_EXHAUSTED')) {
-            hadRateLimit = true;
-            if (attempt === 1) {
-              await new Promise((r) => setTimeout(r, 1200));
-              continue;
-            }
-          }
-          break;
+        if (attempt === 1 && transientQuotaError) {
+          await new Promise((r) => setTimeout(r, 1200));
+          continue;
         }
+        break;
       }
     }
 
-    throw new Error(lastError?.message || (hadRateLimit ? 'Gemini API rate limit or quota exceeded across all fallback models.' : 'Gemini agent stream failed.'));
+    throw new Error(lastError?.message || 'Gemini agent stream failed.');
   }
 
   // 2. Anthropic
