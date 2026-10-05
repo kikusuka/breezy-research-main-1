@@ -244,8 +244,7 @@ export const providerConfigService = {
    */
   isProviderConfigured(provider: string): boolean {
     if (!provider) return false;
-    const keys = this.getKeys();
-    return Boolean(keys[provider]);
+    return Boolean(this.getKey(provider));
   },
 
   /**
@@ -254,7 +253,9 @@ export const providerConfigService = {
   getConfiguredProviders(): string[] {
     const keys = this.getKeys();
     const config = this.getConfig();
-    const configured = Object.keys(keys).filter((p) => Boolean(keys[p]));
+    const configured = Object.keys(keys)
+      .filter((p) => Boolean(keys[p]))
+      .map((p) => p === 'openaiCompatible' ? 'openai-compatible' : p);
 
     const hasSelectedLocalModel = (provider: 'ollama' | 'openai-compatible') =>
       (config.defaultProvider === provider && Boolean(config.defaultModel)) ||
@@ -311,6 +312,7 @@ export const providerConfigService = {
    * Get a specific key
    */
   getKey(provider: string): string | undefined {
-    return this.getKeys()[provider];
+    const keyName = provider === 'openai-compatible' ? 'openaiCompatible' : provider;
+    return this.getKeys()[keyName];
   },
 };
