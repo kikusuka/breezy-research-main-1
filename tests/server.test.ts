@@ -63,4 +63,57 @@ describe('Server & Backend Router Core', () => {
     const body = await res.json();
     expect(body.error).toBeDefined();
   });
+
+  it('rejects oversized chat prompts before provider execution', async () => {
+    const req = new Request('http://localhost:3000/api/breezy/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'x'.repeat(20001) }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(413);
+  });
+
+  it('rejects unsupported explicitly selected providers instead of substituting another provider', async () => {
+    const req = new Request('http://localhost:3000/api/breezy/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'hello', provider: 'not-a-provider', model: 'fake-model' }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('Unsupported provider');
+  });
+
+  it('rejects chat when no provider is configured', async () => {
+    const req = new Request('http://localhost:3000/api/breezy/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'hello' }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(503);
+  });
+
+  it('rejects oversized chat history before provider execution', async () => {
+    const history = Array.from({ length: 21 }, (_, i) => ({ role: 'user', content: String(i) }));
+    const req = new Request('http://localhost:3000/api/breezy/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'hello', history }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(400);
+  });
+
+  it('does not reflect an unrelated origin when CORS is not explicitly configured', async () => {
+    const req = new Request('https://api.example.com/api/health', {
+      method: 'GET',
+      headers: { Origin: 'https://evil.example' },
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('null');
+  });
+
 });
