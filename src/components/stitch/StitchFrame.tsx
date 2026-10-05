@@ -18,7 +18,15 @@ type Props = {
   onModelProbe?: () => void;
 };
 
-const LIVE_NAV = new Set(['landing','chat','research','history','models','docs','settings','profile','build','canvas','notes']);
+const LIVE_NAV = new Set(['landing','chat','research','history','models','docs','settings','profile','build','canvas','notes','sign-up','sign-in','documentation','models-and-verification','research-methodology']);
+
+const LANDING_NAV_MAP: Record<string,string> = {
+  'sign-up': 'research',
+  'sign-in': 'chat',
+  'documentation': 'docs',
+  'models-and-verification': 'models',
+  'research-methodology': 'research',
+};
 
 function replaceLeafText(doc: Document, replacements: Array<[string,string]>) {
   doc.querySelectorAll<HTMLElement>('body *').forEach((el) => {
@@ -180,7 +188,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           if (!LIVE_NAV.has(path)) return;
           event.preventDefault();
           event.stopImmediatePropagation();
-          onNavigate(path);
+          onNavigate(LANDING_NAV_MAP[path] || path);
         }, true);
       });
 
