@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from '../../components/breezy-shared';
 
+type CanvasCard={id:string;type:'idea'|'research'|'code'|'task';title:string;content:string;tags?:string[];done?:boolean;createdAt:string};
+
 function Canvas() {
   const [cards,setCards]=useState<CanvasCard[]>(()=>{try{return JSON.parse(localStorage.getItem('breezy:canvas:cards')||'[]').filter((x:any)=>x&&x.id&&!['card-1','card-2','card-3','card-4'].includes(x.id))}catch{return []}});
   const [filter,setFilter]=useState('all');
