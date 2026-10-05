@@ -107,6 +107,28 @@ describe('Server & Backend Router Core', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects oversized research prompts before opening an SSE stream', async () => {
+    const req = new Request('http://localhost:3000/api/debate/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'x'.repeat(20001) }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(413);
+  });
+
+  it('rejects unsupported research protocols before starting the pipeline', async () => {
+    const req = new Request('http://localhost:3000/api/debate/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'hello', protocol: 'invalid-protocol' }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('Unsupported research protocol');
+  });
+
   it('does not reflect an unrelated origin when CORS is not explicitly configured', async () => {
     const req = new Request('https://api.example.com/api/health', {
       method: 'GET',
