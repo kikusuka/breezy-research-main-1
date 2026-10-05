@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ChatItem } from '../../app/types';
 import { apiClient } from '../../services/apiClient';
 import { providerConfigService } from '../../services/providerConfigService';
 import { Icon } from '../../components/breezy-shared';
