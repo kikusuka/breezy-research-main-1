@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AVAILABLE_MODELS, CanonicalWorkspaceConfig, providerConfigService } from '../../services/providerConfigService';
-import { Icon, providerLabel } from '../../components/breezy-shared';
+import { Icon, ModelIndicator, providerLabel } from '../../components/breezy-shared';
+import { effectiveProviderService } from '../../services/effectiveProviderService';
 
 function Models({serverGemini,onToast}:{serverGemini:boolean;onToast:(s:string)=>void}) {
   const [cfg,setCfg]=useState<CanonicalWorkspaceConfig>(()=>providerConfigService.getConfig());
