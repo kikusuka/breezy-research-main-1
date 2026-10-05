@@ -50,7 +50,19 @@ export default function App() {
   useEffect(()=>{window.location.hash=active;setSidebarOpen(false)},[active]);
   useEffect(()=>{saveSessions(sessions)},[sessions]);
   useEffect(()=>{if(activeSessionId)saveActiveSessionId(activeSessionId)},[activeSessionId]);
-  useEffect(()=>{apiClient.getHealth().then((h)=>setServerGemini(Boolean(h.serverGeminiConfigured))).catch(()=>{});return effectiveProviderService.subscribe(()=>{})},[]);
+  useEffect(()=>{
+    let mounted=true;
+    const refresh=async()=>{
+      try{
+        const h=await apiClient.getHealth();
+        if(mounted) setServerGemini(Boolean(h.serverGeminiConfigured));
+        await effectiveProviderService.refreshServerHealth();
+      }catch{}
+    };
+    void refresh();
+    const unsubscribe=effectiveProviderService.subscribe(()=>{});
+    return ()=>{mounted=false;unsubscribe();};
+  },[]);
 
   const showToast=(s:string)=>{setToast(s);window.setTimeout(()=>setToast(null),3200)};
   const startFromLanding=(q:string,d:Depth)=>{setPendingResearch({q,d});setActive('research')};
@@ -58,9 +70,9 @@ export default function App() {
   const render=()=>{
     if(active==='landing')return <StitchFrame file="landing-desktop.html" mobileFile="landing-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query,depth)=>startFromLanding(query,depth || 'standard')}/>;
     if(active==='chat')return <StitchFrame file="chat-desktop.html" mobileFile="chat-mobile.html" profile={profile} onNavigate={(tab)=>setActive(tab as Tab)} onChat={async(query)=>{
-      if(!serverGemini && !providerConfigService.getActiveRoutableModel()) return 'No model connected. Open Models and configure a provider first.';
+      const activeModel=effectiveProviderService.getActiveRoutableModel();
+      if(!activeModel) return 'No model connected. Open Models and configure a provider first.';
       try {
-        const activeModel=providerConfigService.getActiveRoutableModel();
         const key=activeModel ? providerConfigService.getKey(activeModel.provider) : undefined;
         const result=await apiClient.chatBreezy({prompt:query,history:[],provider:activeModel?.provider,model:activeModel?.model,apiKey:key});
         return result.text || 'The model returned an empty response.';
