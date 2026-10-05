@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { DebateSession, DebateStep, DebateTone, SearchEngineProvider } from '../../types';
 import type { Depth, ResearchUiState } from '../../app/types';
 import { apiClient } from '../../services/apiClient';
-import { providerConfigService, CanonicalWorkspaceConfig } from '../../services/providerConfigService';
+import { providerConfigService } from '../../services/providerConfigService';
+import { effectiveProviderService } from '../../services/effectiveProviderService';
 import { createNewSession } from '../../services/sessionStorage';
 import { Icon, ModelIndicator, makeInitialSteps, RESEARCH_STEPS } from '../../components/breezy-shared';
 
@@ -43,7 +44,9 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
     const cfg=providerConfigService.getConfig();
     let serverAvailable=serverGemini;
     try { const h=await apiClient.getHealth(); serverAvailable=Boolean(h.serverGeminiConfigured); } catch {}
-    if(!serverAvailable && providerConfigService.getConfiguredProviders().length===0){
+    await effectiveProviderService.refreshServerHealth();
+    const routableModel = effectiveProviderService.getActiveRoutableModel();
+    if(!serverAvailable && !routableModel){
       onToast('No model connected. Configure a provider in Models first.');
       return;
     }
