@@ -91,7 +91,11 @@ class EffectiveProviderService {
       Boolean(providerConfigService.getKey(provider));
 
     const hasLocalRuntime =
-      (provider === 'ollama' || provider === 'openai-compatible') && hasSelectedLocalModel;
+      provider === 'ollama'
+        ? Boolean(config.ollamaBaseUrl && hasSelectedLocalModel)
+        : provider === 'openai-compatible'
+          ? Boolean(config.openaiCompatibleBaseUrl && hasSelectedLocalModel)
+          : false;
     const hasServer = this.serverProviders.has(provider) || (provider === 'gemini' && this.serverGeminiConfigured);
     const hasKey = hasByok || hasServer || hasLocalRuntime;
 
