@@ -70,12 +70,6 @@ function getExtractionConfig(keys: any, env: BackendEnv) {
   if (keys.openrouter || env.OPENROUTER_API_KEY) {
     return { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct', apiKey: keys.openrouter || env.OPENROUTER_API_KEY };
   }
-  if (env.OLLAMA_BASE_URL) {
-    return { provider: 'ollama', model: 'llama3.2', apiKey: undefined };
-  }
-  if (env.OPENAI_COMPATIBLE_BASE_URL) {
-    return { provider: 'openai-compatible', model: 'default', apiKey: undefined };
-  }
   return null;
 }
 
