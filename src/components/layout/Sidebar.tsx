@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Tab } from '../../app/types';
+import { NAV } from '../../app/navigation';
 import type { UserProfile } from '../../services/userProfileService';
 import { Icon, initials } from '../breezy-shared';
 
