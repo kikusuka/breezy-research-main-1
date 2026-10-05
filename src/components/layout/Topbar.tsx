@@ -8,6 +8,9 @@ function Topbar({serverGemini,onMenu,onNewResearch}:{serverGemini:boolean;onMenu
       <ModelIndicator serverGemini={serverGemini}/>
     </div>
     <div className="topbar-right">
+      <div className="status-pill"><span className={'dot '+(serverGemini?'good':'')}></span>{serverGemini?'Inference Ready':'Inference Idle'}</div>
+      <button className="icon-btn" aria-label="Tune"><Icon name="tune"/></button>
+      <button className="icon-btn" aria-label="Notifications"><Icon name="notifications"/></button>
       <button className="secondary-btn" onClick={onNewResearch}><Icon name="add"/>New investigation</button>
     </div>
   </header>;
