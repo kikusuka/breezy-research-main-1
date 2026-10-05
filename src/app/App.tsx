@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import StitchFrame from '../components/stitch/StitchFrame';
 import { effectiveProviderService } from '../services/effectiveProviderService';
 import { apiClient } from '../services/apiClient';
@@ -12,7 +12,9 @@ import {
 import { providerConfigService } from '../services/providerConfigService';
 import { userProfileService } from '../services/userProfileService';
 import type { DebateSession } from '../types';
+import type { UserProfile } from '../services/userProfileService';
 import type { Tab, Depth, ResearchUiState } from './types';
+import { NAV } from './navigation';
 
 import Landing from '../features/landing/Landing';
 import Chat from '../features/chat/Chat';
@@ -25,6 +27,7 @@ import Profile from '../features/profile/Profile';
 import Build from '../features/build/Build';
 import Canvas from '../features/canvas/Canvas';
 import { Sidebar, Topbar } from '../components/layout';
+import { Icon } from '../components/breezy-shared';
  
 export default function App() {
   const [active,setActive]=useState<Tab>(()=>{const h=window.location.hash.replace('#','') as Tab;return (NAV.some((x)=>x.id===h)||h==='landing')?h:'landing'});
