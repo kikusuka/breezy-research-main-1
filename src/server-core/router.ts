@@ -983,7 +983,7 @@ Create a compact research plan before evidence retrieval. Return ONLY valid JSON
                 try {
                   domain = new URL(r.url).hostname.replace('www.', '');
                 } catch {}
-                const isPrimary = domain.endsWith('.org') || domain.endsWith('.gov') || domain.endsWith('.edu') || domain.includes('github') || domain.includes('apache') || domain.includes('arxiv');
+                const isPrimary = domain.endsWith('.gov') || domain.endsWith('.edu') || domain.includes('arxiv') || domain.includes('ietf.org') || domain.includes('w3.org');
                 return {
                   id: `src-${idx + 1}`,
                   title: r.title,
@@ -1010,7 +1010,7 @@ Create a compact research plan before evidence retrieval. Return ONLY valid JSON
                   .join('\n\n');
 
                 groundingContext = `\n\n---
-[VERIFIED REAL-TIME SEARCH GROUNDING - Source Engine: ${groundingResult.engineName}]
+[LIVE SEARCH GROUNDING - Source Engine: ${groundingResult.engineName}; results are not independently verified]
 ${groundingResult.summary ? `Summary / Answer: ${groundingResult.summary}\n` : ''}
 Key Live Web Citations & Snippets:
 ${snippets}
