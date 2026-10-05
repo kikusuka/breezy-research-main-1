@@ -308,6 +308,12 @@ export async function streamAnthropicREST(opts: {
 /**
  * Universal agent caller with graceful model cascades
  */
+function requireModel(model: string | undefined, providerName: string): string {
+  const value = model?.trim();
+  if (!value) throw new Error(`No ${providerName} model configured. Select a model before starting a request.`);
+  return value;
+}
+
 export async function callAgentWithStream(params: CallAgentParams): Promise<string> {
   const { provider, model, apiKey, systemInstruction, userPrompt, temperature = 0.7, enableSearchGrounding = false, onChunk, onUsage, env = {}, signal } = params;
 
@@ -380,9 +386,11 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     if (!keyToUse) {
       throw new Error('No Anthropic API key configured.');
     }
+    const targetModel = model?.trim();
+    if (!targetModel) throw new Error('No Anthropic model configured. Select a model before starting a request.');
     return streamAnthropicREST({
       apiKey: keyToUse,
-      model: model || 'claude-3-5-sonnet-20241022',
+      model: targetModel,
       systemInstruction,
       userPrompt,
       temperature,
@@ -401,7 +409,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     return streamOpenAICompatible({
       endpoint: 'https://api.groq.com/openai/v1/chat/completions',
       apiKey: keyToUse,
-      model: model || 'llama-3.3-70b-versatile',
+      model: requireModel(model, 'Groq'),
       systemInstruction,
       userPrompt,
       temperature,
@@ -420,7 +428,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     return streamOpenAICompatible({
       endpoint: 'https://api.sambanova.ai/v1/chat/completions',
       apiKey: keyToUse,
-      model: model || 'Meta-Llama-3.3-70B-Instruct',
+      model: requireModel(model, 'SambaNova'),
       systemInstruction,
       userPrompt,
       temperature,
@@ -439,7 +447,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     return streamOpenAICompatible({
       endpoint: 'https://openrouter.ai/api/v1/chat/completions',
       apiKey: keyToUse,
-      model: model || 'meta-llama/llama-3.3-70b-instruct',
+      model: requireModel(model, 'OpenRouter'),
       systemInstruction,
       userPrompt,
       temperature,
@@ -454,7 +462,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     return streamOpenAICompatible({
       endpoint: `${baseUrl}/v1/chat/completions`,
       apiKey: apiKey?.trim() || 'ollama',
-      model: model || 'llama3.2',
+      model: requireModel(model, 'Ollama'),
       systemInstruction,
       userPrompt,
       temperature,
@@ -470,7 +478,7 @@ export async function callAgentWithStream(params: CallAgentParams): Promise<stri
     return streamOpenAICompatible({
       endpoint: `${baseUrl}/chat/completions`,
       apiKey: apiKey?.trim() || 'none',
-      model: model || '',
+      model: requireModel(model, 'OpenAI-compatible'),
       systemInstruction,
       userPrompt,
       temperature,
