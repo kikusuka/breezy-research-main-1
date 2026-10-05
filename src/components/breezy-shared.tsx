@@ -12,17 +12,17 @@ export const RESEARCH_STEPS = [
   ['Synthesis','Assemble the result'],
 ];
 
-function Icon({name}:{name:string}) {
+export function Icon({name}:{name:string}) {
   return <span className="material-symbols-outlined">{name}</span>;
 }
 
-function initials(profile:UserProfile) {
+export function initials(profile:UserProfile) {
   const value = profile.displayName.trim();
   if (!value) return 'B';
   return value.split(/\s+/).slice(0,2).map((x)=>x[0]?.toUpperCase()).join('') || 'B';
 }
 
-function timeAgo(ts:number) {
+export function timeAgo(ts:number) {
   const s = Math.max(0, Date.now()-ts)/1000;
   if (s < 60) return Math.floor(s)+'s ago';
   if (s < 3600) return Math.floor(s/60)+'m ago';
@@ -30,7 +30,7 @@ function timeAgo(ts:number) {
   return Math.floor(s/86400)+'d ago';
 }
 
-function providerLabel(id:string) {
+export function providerLabel(id:string) {
   const map:Record<string,string> = {
     gemini:'Gemini',
     anthropic:'Anthropic',
@@ -43,7 +43,7 @@ function providerLabel(id:string) {
   return map[id] || id || 'No model';
 }
 
-function makeInitialSteps(config:CanonicalWorkspaceConfig, protocol:Depth): DebateStep[] {
+export function makeInitialSteps(config:CanonicalWorkspaceConfig, protocol:Depth): DebateStep[] {
   const roles = protocol === 'solo'
     ? [{id:'solo',name:'Solo Researcher',provider:config.defaultProvider,model:config.defaultModel}]
     : [
@@ -64,7 +64,7 @@ function makeInitialSteps(config:CanonicalWorkspaceConfig, protocol:Depth): Deba
   })) as DebateStep[];
 }
 
-function ModelIndicator({serverGemini}:{serverGemini:boolean}) {
+export function ModelIndicator({serverGemini}:{serverGemini:boolean}) {
   const active = providerConfigService.getActiveRoutableModel();
   if (active) {
     return <span className="status-pill"><span className="dot good"></span>{providerLabel(active.provider)} · {active.model}</span>;
