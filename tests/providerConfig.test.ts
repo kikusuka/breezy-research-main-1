@@ -21,6 +21,17 @@ describe('providerConfigService', () => {
     expect(updated.roles.skeptic.model).toBe('gemini-2.5-flash');
   });
 
+  it('normalizes the OpenAI-compatible key name to the canonical provider id', () => {
+    providerConfigService.saveConfig({
+      ...providerConfigService.getConfig(),
+      defaultProvider: 'openai-compatible',
+      defaultModel: 'local-model',
+      keys: { openaiCompatible: 'test-key' },
+    });
+    expect(providerConfigService.getKey('openai-compatible')).toBe('test-key');
+    expect(providerConfigService.getConfiguredProviders()).toContain('openai-compatible');
+  });
+
   it('correctly applies deep preset', () => {
     const updated = providerConfigService.applyPreset('deep');
     expect(updated.preset).toBe('deep');
