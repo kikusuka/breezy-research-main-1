@@ -70,6 +70,12 @@ function getExtractionConfig(keys: any, env: BackendEnv) {
   if (keys.openrouter || env.OPENROUTER_API_KEY) {
     return { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct', apiKey: keys.openrouter || env.OPENROUTER_API_KEY };
   }
+  if (env.OLLAMA_BASE_URL) {
+    return { provider: 'ollama', model: 'llama3.2', apiKey: undefined };
+  }
+  if (env.OPENAI_COMPATIBLE_BASE_URL) {
+    return { provider: 'openai-compatible', model: 'default', apiKey: undefined };
+  }
   return null;
 }
 
@@ -879,9 +885,11 @@ Analyze this deliberation and output the JSON object.`;
         };
 
         const architectConfig = resolveSeatConfig(seats.architect, 'Analyst');
-        const skepticConfig = resolveSeatConfig(seats.skeptic, 'Critic');
-        const verifierConfig = resolveSeatConfig(seats.verifier, 'Verifier');
-        const arbiterConfig = resolveSeatConfig(seats.arbiter, 'Synthesizer');
+        const skepticConfig: any = effectiveProtocol === 'solo' ? null : resolveSeatConfig(seats.skeptic, 'Critic');
+        const verifierConfig: any = (effectiveProtocol === 'quad' || effectiveProtocol === 'deep')
+          ? resolveSeatConfig(seats.verifier, 'Verifier')
+          : null;
+        const arbiterConfig: any = effectiveProtocol === 'solo' ? null : resolveSeatConfig(seats.arbiter, 'Synthesizer');
 
         const emitStatus = (role: string, agentName: string, taskDescription: string) => {
           sendEvent('status', {
