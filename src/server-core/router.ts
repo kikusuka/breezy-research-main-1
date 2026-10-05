@@ -608,6 +608,10 @@ export async function handleBackendRequest(
         return createJsonResponse({ error: `Provider "${provider}" is not configured for this request.` }, 503, req, env);
       }
 
+      if (normalizedRequestedProvider && !normalizedRequestedModel) {
+        return createJsonResponse({ error: `No model configured for provider "${provider}". Select a model before starting a request.` }, 400, req, env);
+      }
+
       const defaultModels: Record<string, string> = {
         gemini: 'gemini-2.5-flash',
         anthropic: 'claude-3-5-sonnet-20241022',
