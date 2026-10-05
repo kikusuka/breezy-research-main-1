@@ -539,7 +539,7 @@ export async function handleBackendRequest(
   if (path === '/api/breezy/chat' && req.method === 'POST') {
     try {
       const body = await req.json().catch(() => ({}));
-      const { prompt, history = [], provider = 'gemini', model = 'gemini-2.5-flash', apiKey } = body;
+      const { prompt, history = [], provider: requestedProvider, model: requestedModel, apiKey } = body;
       if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
         return createJsonResponse({ error: 'Prompt is required' }, 400, req, env);
       }
@@ -556,10 +556,27 @@ export async function handleBackendRequest(
         formattedPrompt = `Conversation History:\n${prior}\n\nUser: ${prompt.trim()}`;
       }
 
+      const supportedProviders = ['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic', 'ollama', 'openai-compatible'];
+      const envProvider = env.GEMINI_API_KEY ? 'gemini'
+        : env.ANTHROPIC_API_KEY ? 'anthropic'
+        : env.GROQ_API_KEY ? 'groq'
+        : env.SAMBANOVA_API_KEY ? 'sambanova'
+        : env.OPENROUTER_API_KEY ? 'openrouter'
+        : env.OLLAMA_BASE_URL ? 'ollama'
+        : env.OPENAI_COMPATIBLE_BASE_URL ? 'openai-compatible'
+        : 'gemini';
+      const provider = supportedProviders.includes(requestedProvider) ? requestedProvider : envProvider;
+      const model = requestedModel || (provider === 'groq' ? 'llama-3.3-70b-versatile'
+        : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022'
+        : provider === 'sambanova' ? 'Meta-Llama-3.3-70B-Instruct'
+        : provider === 'openrouter' ? 'meta-llama/llama-3.3-70b-instruct'
+        : provider === 'gemini' ? 'gemini-2.5-flash'
+        : provider === 'ollama' ? 'llama3.2'
+        : '');
       let fullAnswer = '';
       await callAgentWithStream({
-        provider: (['groq', 'sambanova', 'openrouter', 'anthropic'].includes(provider) ? provider : 'gemini') as any,
-        model: model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gemini-2.5-flash'),
+        provider: provider as any,
+        model,
         apiKey: apiKey?.trim() || undefined,
         systemInstruction,
         userPrompt: formattedPrompt,
