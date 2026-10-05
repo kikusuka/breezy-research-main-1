@@ -2,6 +2,7 @@ import React from 'react';
 import { DebateStep } from '../types';
 import { CanonicalWorkspaceConfig, providerConfigService } from '../services/providerConfigService';
 import type { UserProfile } from '../services/userProfileService';
+import type { Depth } from '../app/types';
 
 export const RESEARCH_STEPS = [
   ['Question','Define the inquiry'],
