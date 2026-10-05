@@ -38,6 +38,22 @@ function getClientIdentifier(req: Request): string {
 /**
  * Identify the best available provider/model for background research tasks (summarization, extraction)
  */
+function getProviderKey(keys: Record<string, string> = {}, provider: string): string {
+  if (provider === 'openai-compatible') return keys.openaiCompatible?.trim() || '';
+  return keys[provider]?.trim() || '';
+}
+
+function getProviderEnvKey(env: BackendEnv, provider: string): string {
+  const envName = `${provider.toUpperCase().replace(/-/g, '_')}_API_KEY`;
+  return (env as Record<string, string | undefined>)[envName]?.trim() || '';
+}
+
+function hasProviderCredential(keys: Record<string, string> = {}, env: BackendEnv, provider: string): boolean {
+  if (provider === 'ollama') return Boolean(env.OLLAMA_BASE_URL);
+  if (provider === 'openai-compatible') return Boolean(env.OPENAI_COMPATIBLE_BASE_URL || getProviderKey(keys, provider));
+  return Boolean(getProviderKey(keys, provider) || getProviderEnvKey(env, provider));
+}
+
 function getExtractionConfig(keys: any, env: BackendEnv) {
   if (keys.gemini || env.GEMINI_API_KEY) {
     return { provider: 'gemini', model: 'gemini-2.5-flash', apiKey: keys.gemini || env.GEMINI_API_KEY };
@@ -81,8 +97,11 @@ export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<strin
       }
     }
   } else if (requestOrigin) {
-    // In local dev without explicit ALLOWED_ORIGINS, allow request origin
-    resolvedOrigin = requestOrigin;
+    try {
+      resolvedOrigin = new URL(req.url).origin === requestOrigin ? requestOrigin : 'null';
+    } catch {
+      resolvedOrigin = 'null';
+    }
   }
 
   return {
@@ -543,6 +562,12 @@ export async function handleBackendRequest(
       if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
         return createJsonResponse({ error: 'Prompt is required' }, 400, req, env);
       }
+      if (prompt.length > 20000) {
+        return createJsonResponse({ error: 'Prompt is too long. Maximum length is 20,000 characters.' }, 413, req, env);
+      }
+      if (!Array.isArray(history) || history.length > 20) {
+        return createJsonResponse({ error: 'History must be an array containing at most 20 messages.' }, 400, req, env);
+      }
 
       const systemInstruction =
         'You are Breezy, an exceptionally capable, weightless AI engineering and research assistant. Deliver direct, accurate, beautifully structured answers with markdown. Provide real technical solutions, code examples, or research insights without generic disclaimers.';
@@ -557,27 +582,49 @@ export async function handleBackendRequest(
       }
 
       const supportedProviders = ['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic', 'ollama', 'openai-compatible'];
-      const envProvider = env.GEMINI_API_KEY ? 'gemini'
+      const normalizedRequestedProvider = typeof requestedProvider === 'string' ? requestedProvider.trim() : '';
+      const normalizedRequestedModel = typeof requestedModel === 'string' ? requestedModel.trim() : '';
+      const requestedKey = typeof apiKey === 'string' ? apiKey.trim() : '';
+
+      const serverProvider = env.GEMINI_API_KEY ? 'gemini'
         : env.ANTHROPIC_API_KEY ? 'anthropic'
         : env.GROQ_API_KEY ? 'groq'
         : env.SAMBANOVA_API_KEY ? 'sambanova'
         : env.OPENROUTER_API_KEY ? 'openrouter'
         : env.OLLAMA_BASE_URL ? 'ollama'
         : env.OPENAI_COMPATIBLE_BASE_URL ? 'openai-compatible'
-        : 'gemini';
-      const provider = supportedProviders.includes(requestedProvider) ? requestedProvider : envProvider;
-      const model = requestedModel || (provider === 'groq' ? 'llama-3.3-70b-versatile'
-        : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022'
-        : provider === 'sambanova' ? 'Meta-Llama-3.3-70B-Instruct'
-        : provider === 'openrouter' ? 'meta-llama/llama-3.3-70b-instruct'
-        : provider === 'gemini' ? 'gemini-2.5-flash'
-        : provider === 'ollama' ? 'llama3.2'
-        : '');
+        : '';
+
+      if (normalizedRequestedProvider && !supportedProviders.includes(normalizedRequestedProvider)) {
+        return createJsonResponse({ error: `Unsupported provider: ${normalizedRequestedProvider}` }, 400, req, env);
+      }
+
+      const provider = normalizedRequestedProvider || serverProvider;
+      if (!provider) {
+        return createJsonResponse({ error: 'No model provider is configured. Connect a provider or configure a server-side provider first.' }, 503, req, env);
+      }
+
+      if (normalizedRequestedProvider && !requestedKey && !hasProviderCredential({}, env, provider)) {
+        return createJsonResponse({ error: `Provider "${provider}" is not configured for this request.` }, 503, req, env);
+      }
+
+      const defaultModels: Record<string, string> = {
+        gemini: 'gemini-2.5-flash',
+        anthropic: 'claude-3-5-sonnet-20241022',
+        groq: 'llama-3.3-70b-versatile',
+        sambanova: 'Meta-Llama-3.3-70B-Instruct',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+        ollama: 'llama3.2',
+      };
+      const model = normalizedRequestedModel || defaultModels[provider] || '';
+      if (!model) {
+        return createJsonResponse({ error: `No model configured for provider "${provider}".` }, 400, req, env);
+      }
       let fullAnswer = '';
       await callAgentWithStream({
         provider: provider as any,
         model,
-        apiKey: apiKey?.trim() || undefined,
+        apiKey: requestedKey || undefined,
         systemInstruction,
         userPrompt: formattedPrompt,
         temperature: 0.7,
@@ -731,7 +778,7 @@ Analyze this deliberation and output the JSON object.`;
         const checkpoint = await callAgentWithStream({
           provider: config.provider,
           model: config.model,
-          apiKey: keys[config.provider],
+          apiKey: getProviderKey(keys, config.provider) || getProviderEnvKey(env, config.provider),
           systemInstruction: 'You are the research heartbeat. Do not solve the user question. Return a compact checkpoint that keeps the next generation aligned with the original task, scope, evidence standard, and unresolved uncertainty. Explicitly flag drift or hallucination risk.',
           userPrompt: `ORIGINAL TASK:\n${prompt}\n\nTASK REMINDER:\n${taskReminder}\n\nCURRENT RESEARCH CONTEXT:\n${currentContext.slice(-12000)}`,
           temperature: 0.1,
@@ -811,53 +858,30 @@ Analyze this deliberation and output the JSON object.`;
           arbiterTemp = 0.5;
         }
 
-        const resolveSeatConfig = (seat: any, roleName: string, fallbackProv: string, fallbackModel: string) => {
-          const chosen = seat || { provider: fallbackProv, model: fallbackModel };
-          const prov = chosen.provider;
-          const hasGemini = Boolean(keys.gemini || env.GEMINI_API_KEY);
+        const resolveSeatConfig = (seat: any, roleName: string) => {
+          const provider = typeof seat?.provider === 'string' ? seat.provider.trim() : '';
+          const model = typeof seat?.model === 'string' ? seat.model.trim() : '';
 
-          if (prov === 'gemini') {
-            if (!hasGemini) {
-              const alt = getExtractionConfig(keys, env);
-              if (alt) {
-                sendEvent('notice', {
-                  message: `Google Gemini unconfigured. Redirecting ${roleName} stage to ${alt.provider.toUpperCase()}.`
-                });
-                return { provider: alt.provider, model: alt.model };
-              }
-            }
-            return chosen;
+          if (!provider || !model) {
+            throw new Error(`${roleName} stage is not configured. Select both a provider and model before starting research.`);
           }
 
-          const hasKey = Boolean(
-            keys[prov]?.trim() ||
-            (env as any)[`${prov.toUpperCase()}_API_KEY`] ||
-            (prov === 'ollama' && env.OLLAMA_BASE_URL) ||
-            (prov === 'openai-compatible' && env.OPENAI_COMPATIBLE_BASE_URL)
-          );
-          if (!hasKey) {
-            if (hasGemini) {
-              sendEvent('notice', {
-                message: `No API key provided for ${prov.toUpperCase()}. Falling back to Gemini for ${roleName} stage.`
-              });
-              return { provider: 'gemini', model: 'gemini-2.5-flash' };
-            } else {
-              const alt = getExtractionConfig(keys, env);
-              if (alt) {
-                sendEvent('notice', {
-                  message: `Requested provider ${prov.toUpperCase()} unconfigured. Redirecting to ${alt.provider.toUpperCase()}.`
-                });
-                return { provider: alt.provider, model: alt.model };
-              }
-            }
+          const supportedProviders = ['gemini', 'groq', 'sambanova', 'openrouter', 'anthropic', 'ollama', 'openai-compatible'];
+          if (!supportedProviders.includes(provider)) {
+            throw new Error(`${roleName} stage uses unsupported provider "${provider}".`);
           }
-          return chosen;
+
+          if (!hasProviderCredential(keys, env, provider)) {
+            throw new Error(`${roleName} stage provider "${provider}" is not connected. Connect it before starting research.`);
+          }
+
+          return { provider, model };
         };
 
-        const architectConfig = resolveSeatConfig(seats.architect, 'Analyst', 'gemini', 'gemini-2.5-flash');
-        const skepticConfig = resolveSeatConfig(seats.skeptic, 'Critic', keys.groq ? 'groq' : 'gemini', keys.groq ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash');
-        const verifierConfig = resolveSeatConfig(seats.verifier, 'Verifier', keys.sambanova ? 'sambanova' : 'gemini', keys.sambanova ? 'Qwen2.5-72B-Instruct' : 'gemini-2.5-flash');
-        const arbiterConfig = resolveSeatConfig(seats.arbiter, 'Synthesizer', 'gemini', 'gemini-2.5-flash');
+        const architectConfig = resolveSeatConfig(seats.architect, 'Analyst');
+        const skepticConfig = resolveSeatConfig(seats.skeptic, 'Critic');
+        const verifierConfig = resolveSeatConfig(seats.verifier, 'Verifier');
+        const arbiterConfig = resolveSeatConfig(seats.arbiter, 'Synthesizer');
 
         const emitStatus = (role: string, agentName: string, taskDescription: string) => {
           sendEvent('status', {
@@ -899,7 +923,7 @@ Create a compact research plan before evidence retrieval. Return ONLY valid JSON
           const plannerRaw = await callAgentWithStream({
             provider: architectConfig.provider,
             model: architectConfig.model,
-            apiKey: keys[architectConfig.provider],
+            apiKey: getProviderKey(keys, architectConfig.provider) || getProviderEnvKey(env, architectConfig.provider),
             systemInstruction: 'You are the research planner. Define scope, subquestions, retrieval queries, and an evidence standard. Do not answer the question yet.',
             userPrompt: plannerPrompt,
             temperature: 0.2,
@@ -1024,7 +1048,7 @@ Structure your response in clean Markdown with clear headings.`;
           soloContent = await callAgentWithStream({
             provider: architectConfig.provider,
             model: architectConfig.model,
-            apiKey: keys[architectConfig.provider],
+            apiKey: getProviderKey(keys, architectConfig.provider) || getProviderEnvKey(env, architectConfig.provider),
             systemInstruction: soloSystemPrompt,
             userPrompt: groundedPrompt,
             temperature: 0.7,
@@ -1110,7 +1134,7 @@ Structure in clean Markdown with clear headings.`;
         proposalContent = await callAgentWithStream({
           provider: architectConfig.provider,
           model: architectConfig.model,
-          apiKey: keys[architectConfig.provider],
+          apiKey: getProviderKey(keys, architectConfig.provider) || getProviderEnvKey(env, architectConfig.provider),
           systemInstruction: architectSystemPrompt,
           userPrompt: groundedPrompt,
           temperature: 0.7,
@@ -1177,7 +1201,7 @@ Stress-test this proposal rigorously. Identify genuine technical vulnerabilities
         critiqueContent = await callAgentWithStream({
           provider: skepticConfig.provider,
           model: skepticConfig.model,
-          apiKey: keys[skepticConfig.provider],
+          apiKey: getProviderKey(keys, skepticConfig.provider) || getProviderEnvKey(env, skepticConfig.provider),
           systemInstruction: skepticSystemPrompt,
           userPrompt: skepticUserPrompt,
           temperature: skepticTemp,
@@ -1249,7 +1273,7 @@ Perform rigorous empirical and constraint verification on these analyses.`;
             verifierContent = await callAgentWithStream({
               provider: verifierConfig.provider,
               model: verifierConfig.model,
-              apiKey: keys[verifierConfig.provider],
+              apiKey: getProviderKey(keys, verifierConfig.provider) || getProviderEnvKey(env, verifierConfig.provider),
               systemInstruction: verifierSystemPrompt,
               userPrompt: verifierUserPrompt,
               temperature: 0.3,
@@ -1336,7 +1360,7 @@ Synthesize the final, definitive, high-integrity answer for the user.`;
         finalSynthexis = await callAgentWithStream({
           provider: arbiterConfig.provider,
           model: arbiterConfig.model,
-          apiKey: keys[arbiterConfig.provider],
+          apiKey: getProviderKey(keys, arbiterConfig.provider) || getProviderEnvKey(env, arbiterConfig.provider),
           systemInstruction: arbiterSystemPrompt,
           userPrompt: arbiterUserPrompt,
           temperature: arbiterTemp,
