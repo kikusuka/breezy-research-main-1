@@ -86,6 +86,18 @@ describe('Server & Backend Router Core', () => {
     expect(body.error).toContain('Unsupported provider');
   });
 
+  it('rejects an explicitly selected provider when no model is supplied', async () => {
+    const req = new Request('http://localhost:3000/api/breezy/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'hello', provider: 'gemini', apiKey: 'test-key' }),
+    });
+    const res = await handleBackendRequest(req, {}, 'local-dev');
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('No model configured');
+  });
+
   it('rejects chat when no provider is configured', async () => {
     const req = new Request('http://localhost:3000/api/breezy/chat', {
       method: 'POST',
