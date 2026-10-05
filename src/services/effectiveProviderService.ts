@@ -26,6 +26,7 @@ export interface EffectiveProviderInfo {
 
 class EffectiveProviderService {
   private serverGeminiConfigured: boolean = false;
+  private serverProviders: Set<string> = new Set();
   private verificationCache: Map<string, { status: ProviderConnectionStatus; latencyMs?: number; msg?: string; timestamp: number }> = new Map();
   private listeners: Set<() => void> = new Set();
 
@@ -48,9 +49,12 @@ class EffectiveProviderService {
   public async refreshServerHealth(): Promise<boolean> {
     try {
       const health = await apiClient.getHealth();
-      const prev = this.serverGeminiConfigured;
+      const prevGemini = this.serverGeminiConfigured;
+      const previousProviders = Array.from(this.serverProviders).sort().join(',');
       this.serverGeminiConfigured = Boolean(health.serverGeminiConfigured);
-      if (prev !== this.serverGeminiConfigured) {
+      this.serverProviders = new Set(Array.isArray(health.providers) ? health.providers : []);
+      const currentProviders = Array.from(this.serverProviders).sort().join(',');
+      if (prevGemini !== this.serverGeminiConfigured || previousProviders !== currentProviders) {
         this.notify();
       }
       return this.serverGeminiConfigured;
@@ -62,6 +66,10 @@ class EffectiveProviderService {
 
   public isServerGeminiConfigured(): boolean {
     return this.serverGeminiConfigured;
+  }
+
+  public getServerProviders(): string[] {
+    return Array.from(this.serverProviders);
   }
 
   /**
@@ -84,7 +92,7 @@ class EffectiveProviderService {
 
     const hasLocalRuntime =
       (provider === 'ollama' || provider === 'openai-compatible') && hasSelectedLocalModel;
-    const hasServer = provider === 'gemini' && this.serverGeminiConfigured;
+    const hasServer = this.serverProviders.has(provider) || (provider === 'gemini' && this.serverGeminiConfigured);
     const hasKey = hasByok || hasServer || hasLocalRuntime;
 
     if (!hasKey) {
