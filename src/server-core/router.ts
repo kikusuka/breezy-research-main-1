@@ -829,7 +829,12 @@ Analyze this deliberation and output the JSON object.`;
             return chosen;
           }
 
-          const hasKey = Boolean(keys[prov]?.trim() || (env as any)[`${prov.toUpperCase()}_API_KEY`]);
+          const hasKey = Boolean(
+            keys[prov]?.trim() ||
+            (env as any)[`${prov.toUpperCase()}_API_KEY`] ||
+            (prov === 'ollama' && env.OLLAMA_BASE_URL) ||
+            (prov === 'openai-compatible' && env.OPENAI_COMPATIBLE_BASE_URL)
+          );
           if (!hasKey) {
             if (hasGemini) {
               sendEvent('notice', {
