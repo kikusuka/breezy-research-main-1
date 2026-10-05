@@ -729,6 +729,14 @@ Analyze this deliberation and output the JSON object.`;
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
       return createJsonResponse({ error: 'Prompt is required' }, 400, req, env);
     }
+    if (prompt.length > 20000) {
+      return createJsonResponse({ error: 'Prompt is too long. Maximum length is 20,000 characters.' }, 413, req, env);
+    }
+
+    const supportedProtocols = ['solo', 'trio', 'quad', 'deep'];
+    if (!supportedProtocols.includes(protocol)) {
+      return createJsonResponse({ error: `Unsupported research protocol: ${protocol}` }, 400, req, env);
+    }
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
