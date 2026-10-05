@@ -65,7 +65,7 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
       await apiClient.streamDebate(
         {
           prompt,protocol,tone:'balanced' as DebateTone,searchEngine:session.searchEngine,keys:providerConfigService.getKeys(),seats,
-          enableSearchGrounding:true,autoResolve:cfg.autoResolve??true,selectedRound:cfg.selectedRound??2,
+          enableSearchGrounding:true,autoResolve:cfg.autoResolve??true,selectedRound:chosenDepth==='solo'?1:chosenDepth==='deep'?4:2,
           researchMethod:cfg.researchMethod||'adaptive',heartbeatEnabled:cfg.heartbeatEnabled!==false,heartbeatIntervalSec:cfg.heartbeatIntervalSec||60,
         },
         {
