@@ -9,6 +9,41 @@ import type { CallAgentParams, BackendEnv } from './types.ts';
 /**
  * Sanitize model names to valid supported versions without destructive rewriting
  */
+export const SUPPORTED_PROVIDER_MODELS: Record<string, readonly string[]> = {
+  gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite'],
+  anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
+  groq: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768'],
+  sambanova: ['Meta-Llama-3.3-70B-Instruct', 'Qwen2.5-72B-Instruct'],
+  openrouter: ['meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-r1'],
+  // Local/custom endpoints expose their own model catalog, so the server
+  // validates only that a non-empty model id was supplied for these providers.
+  ollama: [],
+  'openai-compatible': [],
+};
+
+export function validateProviderModel(provider: string, model?: string): { valid: boolean; error?: string } {
+  const normalizedProvider = provider.trim();
+  const normalizedModel = model?.trim() || '';
+
+  if (!normalizedModel) {
+    return { valid: false, error: `No model configured for provider "${normalizedProvider}". Select a model before starting a request.` };
+  }
+
+  const knownModels = SUPPORTED_PROVIDER_MODELS[normalizedProvider];
+  if (!knownModels) {
+    return { valid: false, error: `Unsupported provider: ${normalizedProvider}` };
+  }
+
+  if (knownModels.length > 0 && !knownModels.includes(normalizedModel)) {
+    return {
+      valid: false,
+      error: `Model "${normalizedModel}" is not a supported configured model for provider "${normalizedProvider}". Select a model from that provider's available model list.`,
+    };
+  }
+
+  return { valid: true };
+}
+
 export function sanitizeGeminiModel(m?: string): string {
   if (!m) return 'gemini-2.5-flash';
   const clean = m.trim();
