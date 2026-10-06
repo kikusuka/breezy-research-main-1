@@ -215,6 +215,7 @@ export async function performSearchGrounding(
     return {
       engine: 'duckduckgo',
       engineName: 'DuckDuckGo Keyless Index',
+      requestedEngine: engine,
       query: trimmedQuery,
       results: fallbackResults,
     };
@@ -253,6 +254,7 @@ export async function performSearchGrounding(
   return {
     engine: usedEngine,
     engineName: usedEngineName,
+    requestedEngine: engine,
     query: trimmedQuery,
     results: deduplicated,
   };
