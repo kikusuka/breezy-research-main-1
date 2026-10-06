@@ -54,7 +54,7 @@ export default function App() {
         const key=providerConfigService.getKey(activeModel.provider);
         const result=await apiClient.chatBreezy({prompt:query,history:chatHistory.slice(-20),provider:activeModel.provider,model:activeModel.model,apiKey:key});
         const response=result.text||'The model returned an empty response.';
-        const next: ChatMessage[]=[...chatHistory,{role:'user',content:query},{role:'assistant',content:response}].slice(-20);
+        const next: ChatMessage[]=[...chatHistory,{role:'user' as const,content:query},{role:'assistant' as const,content:response}].slice(-20);
         setChatHistory(next);
         return response;
       }catch(e:any){return 'Chat failed: '+(e?.message||'Unknown error');}
