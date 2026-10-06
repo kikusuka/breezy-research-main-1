@@ -137,6 +137,7 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
   if (title) {
     title.textContent =
       state.status === 'completed' ? 'Synthesis complete'
+      : state.status === 'cancelled' ? 'Synthesis stopped'
       : state.status === 'error' ? 'Synthesis stopped'
       : state.running ? 'Synthesis in progress'
       : 'Ready for inquiry';
@@ -144,6 +145,7 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
   if (copy) {
     copy.textContent =
       state.status === 'completed' ? (state.output ? 'The investigation completed. Your result is preserved in History.' : 'The investigation completed and is preserved in History.')
+      : state.status === 'cancelled' ? 'The investigation was stopped by you. The partial session remains preserved in History.'
       : state.status === 'error' ? 'The run stopped with an error. Correct the connection or prompt and try again.'
       : state.running ? 'Breezy is coordinating the configured research pipeline. You can watch the session in History as it evolves.'
       : 'Submit an inquiry above to coordinate multi-model exploration, challenge, verification, and synthesis.';
