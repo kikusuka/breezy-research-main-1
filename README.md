@@ -1,130 +1,54 @@
 # Breezy Playground
 
-> **A multi-model workspace for difficult questions, research, and code.**
+Breezy is a proprietary beta workspace for conversational AI, grounded multi-model research, and repository-based development.
 
-Breezy Playground is the main Breezy workspace: conversational AI, model-to-model research, evidence review, and code in one browser application.
+## Product structure
 
----
+- **Chat** — conversational work with the models the user actually connects.
+- **Research** — Breezy's Synthexis research engine: independent perspectives, challenge, evidence, and synthesis.
+- **Build** — real GitHub repository browsing and editing.
+- **Canvas** — lightweight local workspace for ideas and research notes.
+- **History** — locally stored research sessions.
+- **Models** — provider credentials, model assignments, and routing.
+- **Docs / Settings / Profile** — workspace configuration and guidance.
 
-## Proprietary / Beta
+Synthexis is an internal engine, not a separate product or product switcher.
 
-Breezy and Synthexis are proprietary software owned by Kikusuka. The beta service may be offered free of charge, but free access does not grant permission to copy, fork, redistribute, or reuse the source code or branding. See the repository `LICENSE` for the current terms.
+## Truthfulness rules
 
-## 🏛️ Architecture & Unified Workspaces
+Breezy must not invent:
+- connected providers or models
+- live compute/nodes
+- confidence or verification scores
+- citations
+- telemetry
+- successful connection states
 
-Breezy Playground is structured as one product with focused workspaces:
+If a provider is not configured, the UI says so.
 
-```text
-                             BREEZY PLAYGROUND
-                                      │
-                      ┌───────────────┼───────────────┐
-                      │               │               │
-                    Chat         Research          Build
-               (Everyday chat)   (Multi-model   (Cloud IDE &
-                                research &       Ephemeral
-                              evidence)        Runner)
-```
+## Architecture
 
-### 1. Breezy (Core Interactive Workspace)
-* **Persistent Threads**: Instant conversation tracking stored locally and organized by topic.
-* **Canvas Prototype**: Interactive layout for authoring and outlining presentations, tasks, and coursework. *(Clearly designated in preview mode while live Google Workspace OAuth sync is in active development).*
-* **Design & Theme**: High-contrast, accessibility-checked Dark and Light mode support with smooth palette transitions.
+The frontend is React + TypeScript + Vite. The Stitch HTML screens live under `public/stitch/` and are loaded by `src/components/stitch/StitchFrame.tsx`.
 
-### 2. Research (Synthexis engine)
-* **Multi-Perspective Synthesis**: Reconciles thesis arguments, critical counter-arguments, and synthesis findings from top-tier LLMs.
-* **Search Grounding Abstraction**: Pluggable provider interface supporting:
-  * **SearXNG** (Self-hostable privacy-first metasearch)
-  * **Tavily Search**
-  * **Google Search Grounding**
-  * **Brave Search**, **Serper**, and **DuckDuckGo**
-* **Truthful Evidence Graph**: Maps claims directly to retrieved sources, explicitly reporting whether evidence currently supports each claim without inflated verification claims.
-* **Structured Export**: Markdown export with complete citation trails and inquiry parameters.
+The shared backend lives under `src/server-core/`. `server.ts` provides the Node/Express runtime and `workers/index.ts` provides the Cloudflare Worker entry point.
 
-### 3. Build (Breezy IDE)
-* **Embedded Editor**: Syntax-highlighted code editor powered by Prism.js supporting Python, TypeScript, JavaScript, JSON, CSS, and HTML.
-* **Local Output & Preview**: The Build workspace shows output from real browser-local Python runs and the sandboxed HTML preview. It does not pretend to provision remote compute.
+## Development
 
----
+Requires Node.js 22+.
 
-## 🛠️ Technology Stack & Deployment Architecture
-
-Breezy Playground consists of a static React frontend with a primary edge backend and optional failover:
-
-```text
-                             BREEZY PLAYGROUND
-                                    │
-                         Static Frontend (Vite)
-                         Cloudflare Pages / Assets
-                                    │
-                                    ▼
-                           Cloudflare Worker
-                       [PRIMARY EDGE API]
-                                    │
-                           ┌────────┴────────┐
-                           │                 │
-                      Provider APIs      Render Node
-                       + search        [FALLBACK / NODE]
-                           │                 │
-                           └────────┬────────┘
-                                    │
-                             R2 / D1 / KV
-```
-
-| Layer | Technologies & Runtime |
-| :--- | :--- |
-| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Prism.js |
-| **Static Frontend** | Cloudflare Pages / Workers Static Assets |
-| **Primary API** | Cloudflare Workers (`workers/index.ts`) - edge routing, auth checks, rate limits, SSE |
-| **Fallback / Node API** | Node.js Express (`server.ts`) - Render Web Service / local dev |
-| **Optional Runtime Target** | Deno Deploy (`deno/main.ts`) |
-| **AI Integration** | Gemini, Anthropic, Groq, SambaNova, OpenRouter, Ollama, OpenAI-compatible runtimes |
-| **Persistence** | IndexedDB, LocalStorage, optional Firebase / Google Drive sync |
-
----
-
-## 🔐 Security & Data Handling Model
-
-* **Local-First Storage**: User chat threads, research sessions, and notebook data are stored in local browser storage (IndexedDB and LocalStorage).
-* **Secure Key Vault Configuration**: API keys (BYOK) are stored locally in the user's browser, and are passed securely inside requests to the edge backend proxies so they are never exposed to remote logs.
-* **Explicit Authentication States**: Connected services strictly differentiate between real authenticated connections (OAuth / Personal Access Tokens) and local Sandbox Demo modes.
-* **Audited Scopes**: When connecting third-party services, access is requested strictly for necessary capabilities (e.g. read-only repository inspection).
-* **Bounded Edge Failover**: If the primary Cloudflare Worker is rate-limited or unavailable, requests fail over to the secondary Deno Deploy backend with clear UI notification.
-
----
-
-## 🚀 Getting Started & Deployment
-
-See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment instructions.
-
-### Prerequisites
-* Node.js 18+ and npm
-
-### 1. Installation
 ```bash
 npm install
-```
-
-### 2. Environment Configuration
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-
-### 3. Run Development Server
-```bash
 npm run dev
 ```
-The application will launch on `http://localhost:3000`.
 
-### 4. Build Static Frontend
+Useful checks:
+
 ```bash
+npm run typecheck
+npm test
 npm run build
 ```
 
----
+See `DEPLOYMENT.md` for deployment instructions.
 
-## 📌 Project Standards & Guidelines
-
-1. **Truthful UI State**: No simulated action or mock token may present itself as an active third-party connection. Prototypes and previews must be explicitly labeled.
-2. **Real Metrics**: No fabricated telemetry numbers or pseudo-scientific confidence percentages. Every displayed metric must derive from a real calculation or source count.
-3. **No Theatrical Terminology**: User interfaces prioritize clear, respectful, domain-appropriate language over speculative sci-fi jargon.
+Breezy is proprietary software. See `LICENSE` for the repository's terms.
