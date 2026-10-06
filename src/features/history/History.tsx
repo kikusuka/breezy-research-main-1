@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import type { DebateSession } from '../../types';
-import { Icon, timeAgo } from '../../components/breezy-shared';
-import { googleDocsService } from '../../services/googleDocsService';
 
 function History({sessions,onSelect}:{sessions:DebateSession[];onSelect:(id:string)=>void}) {
   const [q,setQ]=useState('');
