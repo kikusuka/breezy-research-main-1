@@ -176,12 +176,12 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
 export default function StitchFrame({ file, mobileFile, profile, researchState, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
   );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const media = window.matchMedia('(max-width: 767px)');
+    const media = window.matchMedia('(max-width: 1023px)');
     const update = () => setIsMobile(media.matches);
     update();
     media.addEventListener?.('change', update);
@@ -195,6 +195,13 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
     const handleLoad = () => {
       const doc = frame.contentDocument;
       if (!doc) return;
+
+      // Stitch has dedicated mobile compositions below 1024px. Between 1024px and 1439px,
+      // keep the desktop composition but tighten the shell so panels never collide.
+      const responsiveStyle = doc.createElement('style');
+      responsiveStyle.setAttribute('data-breezy-responsive', 'true');
+      responsiveStyle.textContent = "        html, body { width: 100%; max-width: 100%; overflow-x: hidden; }\n        *, *::before, *::after { box-sizing: border-box; }\n        @media (min-width: 1024px) and (max-width: 1439px) {\n          body > aside.fixed { width: 232px !important; }\n          body > div.pl-64 { padding-left: 232px !important; }\n          body > div.pl-64 > header.fixed { left: 232px !important; }\n          main { min-width: 0 !important; max-width: 100% !important; }\n          main .max-w-7xl, main .max-w-5xl { max-width: 100% !important; }\n          main .px-gutter-lg { padding-left: 20px !important; padding-right: 20px !important; }\n          main .grid.grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n          main .grid.grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n        }\n        @media (min-width: 1440px) { main { min-width: 0 !important; } }";
+      doc.head.appendChild(responsiveStyle);
 
       doc.querySelectorAll<HTMLElement>('[data-path]').forEach((el) => {
         el.addEventListener('click', (event) => {
