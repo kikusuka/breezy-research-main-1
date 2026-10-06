@@ -308,7 +308,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           const depthValue = (doc.getElementById('depth-select') as HTMLSelectElement | null)?.value;
           const depth = depthValue === 'solo' ? 'solo' : depthValue === 'standard' ? 'standard' : 'deep';
           onResearch?.(q, depth);
-        }, true);
+        }, listenerOptions);
       }
 
       const chatInput = doc.getElementById('inquiryInput') as HTMLInputElement | HTMLTextAreaElement | null;
@@ -452,7 +452,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
               return;
             }
             onSeatModelChange?.(index,value.slice(0,split),value.slice(split+1));
-          }, true);
+          }, listenerOptions);
         }, listenerOptions);
 
         replaceLeafText(doc, [
