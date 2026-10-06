@@ -340,6 +340,8 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           void sendChat();
         };
         chatForm?.addEventListener('submit', handleChatSubmit, true);
+        const sendButton = doc.getElementById('sendBtn') as HTMLButtonElement | null;
+        sendButton?.addEventListener('click', handleChatSubmit, true);
         chatInput.addEventListener('keydown', (event) => {
           if ((event as KeyboardEvent).key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
           if (chatInput instanceof HTMLTextAreaElement) event.preventDefault();
