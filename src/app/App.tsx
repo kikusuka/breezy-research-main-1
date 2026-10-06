@@ -37,6 +37,7 @@ export default function App() {
   const [profile,setProfile]=useState<UserProfile>(()=>userProfileService.getProfile());
   const [serverGemini,setServerGemini]=useState(false);
   const [toast,setToast]=useState<string|null>(null);
+  const [chatHistory,setChatHistory]=useState<Array<{role:'user'|'assistant';content:string}>>([]);
   const [pendingResearch,setPendingResearch]=useState<{q:string;d:Depth}|null>(null);
   const [researchUi,setResearchUi]=useState<ResearchUiState>({
     running:false,
@@ -74,8 +75,11 @@ export default function App() {
       if(!activeModel) return 'No model connected. Open Models and configure a provider first.';
       try {
         const key=activeModel ? providerConfigService.getKey(activeModel.provider) : undefined;
-        const result=await apiClient.chatBreezy({prompt:query,history:[],provider:activeModel?.provider,model:activeModel?.model,apiKey:key});
-        return result.text || 'The model returned an empty response.';
+        const historyForRequest = chatHistory.slice(-20);
+        const result=await apiClient.chatBreezy({prompt:query,history:historyForRequest,provider:activeModel?.provider,model:activeModel?.model,apiKey:key});
+        const text=result.text || 'The model returned an empty response.';
+        setChatHistory((prev)=>[...prev,{role:'user',content:query},{role:'assistant',content:text}].slice(-20));
+        return text;
       } catch(e:any) { return 'Chat failed: '+(e?.message || 'Unknown error'); }
     }}/>;
     if(active==='research')return <StitchFrame file="research-desktop.html" mobileFile="research-mobile.html" profile={profile} researchState={researchUi} onNavigate={(tab)=>setActive(tab as Tab)} onResearch={(query,depth)=>startFromLanding(query,depth || 'deep')}/>;
