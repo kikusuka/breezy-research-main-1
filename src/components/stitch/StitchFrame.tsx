@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { UserProfile } from '../../services/userProfileService';
 import { AVAILABLE_MODELS, providerConfigService } from '../../services/providerConfigService';
 
@@ -175,6 +175,18 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
 
 export default function StitchFrame({ file, mobileFile, profile, researchState, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
 
   useEffect(() => {
     const frame = ref.current;
@@ -282,32 +294,57 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             return;
           }
           const depthValue = (doc.getElementById('depth-select') as HTMLSelectElement | null)?.value;
-          const depth = depthValue === 'standard' ? 'standard' : depthValue === 'exhaustive' ? 'deep' : 'deep';
+          const depth = depthValue === 'solo' ? 'solo' : depthValue === 'standard' ? 'standard' : 'deep';
           onResearch?.(q, depth);
         }, true);
       }
 
       const chatInput = doc.getElementById('inquiryInput') as HTMLInputElement | HTMLTextAreaElement | null;
+      const chatForm = chatInput?.closest('form') as HTMLFormElement | null;
       if (chatInput && onChat) {
-        chatInput.addEventListener('keydown', (event) => {
-          if ((event as KeyboardEvent).key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
-          event.preventDefault();
-          event.stopImmediatePropagation();
+        let chatBusy = false;
+        const sendChat = async () => {
+          if (chatBusy) return;
           const q = chatInput.value.trim();
           if (!q) return;
+          chatBusy = true;
+          chatInput.setAttribute('aria-busy', 'true');
+          const originalPlaceholder = chatInput.getAttribute('placeholder');
+          chatInput.setAttribute('placeholder', 'Breezy is thinking…');
 
-          void (async () => {
+          const wrap = doc.createElement('div');
+          wrap.className = 'flex justify-start mb-6';
+          const bubble = doc.createElement('div');
+          bubble.className = 'max-w-2xl rounded-2xl bg-surface-container px-space-md py-space-sm text-on-surface whitespace-pre-wrap';
+          bubble.textContent = 'Thinking…';
+          wrap.appendChild(bubble);
+          const scrollHost = chatInput.closest('.flex-1.overflow-y-auto') || chatInput.closest('main') || doc.body;
+          scrollHost.insertBefore(wrap, scrollHost.lastElementChild || null);
+
+          try {
             const result = await onChat(q);
-            const wrap = doc.createElement('div');
-            wrap.className = 'flex justify-start mb-6';
-            const bubble = doc.createElement('div');
-            bubble.className = 'max-w-2xl rounded-2xl bg-surface-container px-space-md py-space-sm text-on-surface whitespace-pre-wrap';
             bubble.textContent = result;
-            wrap.appendChild(bubble);
-            const scrollHost = chatInput.closest('.flex-1.overflow-y-auto') || chatInput.closest('main') || doc.body;
-            scrollHost.insertBefore(wrap, scrollHost.lastElementChild || null);
             chatInput.value = '';
-          })();
+          } catch (error) {
+            bubble.textContent = error instanceof Error ? error.message : 'Chat failed. Please try again.';
+          } finally {
+            chatBusy = false;
+            chatInput.removeAttribute('aria-busy');
+            if (originalPlaceholder !== null) chatInput.setAttribute('placeholder', originalPlaceholder);
+          }
+        };
+
+        const handleChatSubmit = (event: Event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          void sendChat();
+        };
+        chatForm?.addEventListener('submit', handleChatSubmit, true);
+        chatInput.addEventListener('keydown', (event) => {
+          if ((event as KeyboardEvent).key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
+          if (chatInput instanceof HTMLTextAreaElement) event.preventDefault();
+          event.stopImmediatePropagation();
+          void sendChat();
         }, true);
       }
 
@@ -330,10 +367,40 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
 
         const testBtn = doc.getElementById('modalTestBtn') as HTMLButtonElement | null;
         if (testBtn) {
-          testBtn.addEventListener('click', (event) => {
+          testBtn.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            testBtn.textContent = 'Verification unavailable';
+            const title = doc.getElementById('modalProviderTitle')?.textContent?.trim() || '';
+            const provider = title.replace(/^Configure\s*/, '');
+            const key = (doc.getElementById('modalKeyInput') as HTMLInputElement | null)?.value.trim() || '';
+            if (!key) return;
+            const providerMap: Record<string,string> = {
+              Anthropic: 'anthropic',
+              'Google DeepMind': 'gemini',
+              OpenAI: 'openai-compatible',
+              'Local Ollama': 'ollama',
+              'Custom LLM Provider / vLLM': 'openai-compatible',
+            };
+            const providerId = providerMap[provider];
+            if (!providerId) {
+              testBtn.textContent = 'Unsupported provider';
+              return;
+            }
+            testBtn.disabled = true;
+            testBtn.textContent = 'Verifying…';
+            try {
+              const response = await fetch('/api/vault/verify-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider: providerId, apiKey: key }),
+              });
+              const data = await response.json().catch(() => ({}));
+              testBtn.textContent = data.valid ? 'Verified' : (data.error || 'Not verified');
+            } catch {
+              testBtn.textContent = 'Verification failed';
+            } finally {
+              testBtn.disabled = false;
+            }
             onModelProbe?.();
           }, true);
         }
@@ -412,7 +479,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
     if (doc) applyResearchState(doc, researchState);
   }, [researchState]);
 
-  const src = mobileFile && typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches ? mobileFile : file;
+  const src = mobileFile && isMobile ? mobileFile : file;
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#111319', zIndex: 1 }}>
       <iframe ref={ref} title="Breezy Stitch interface" src={'/stitch/' + src} style={{ width: '100%', height: '100%', border: 0, display: 'block' }} />
