@@ -31,6 +31,7 @@ export interface SearchResultItem {
 export interface SearchGroundingResult {
   engine: SearchEngineProvider;
   engineName: string;
+  requestedEngine?: SearchEngineProvider;
   query: string;
   summary?: string;
   results: SearchResultItem[];
