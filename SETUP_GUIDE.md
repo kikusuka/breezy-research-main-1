@@ -1,86 +1,47 @@
-# 🚀 Breezy Setup Guide
+# Breezy Setup Guide
 
-> Comprehensive setup instructions for running, configuring, and deploying Breezy Playground.
+## Quick start
 
----
+Requires Node.js 22+.
 
-## ⚡ Quick Start
-
-### 1. Install Dependencies
 ```bash
 npm install
-```
-
-### 2. Environment Configuration
-Create a `.env` file in the project root:
-
-```env
-# Optional server-side Gemini API key for default workspace queries
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional: SearXNG endpoint for self-hosted search grounding
-SEARXNG_URL=https://your-searxng-instance.example.com
-
-# Firebase Authentication (configured automatically via firebase-applet-config.json)
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-```
-
-### 3. Run Development Server
-```bash
 npm run dev
 ```
-The app will launch on `http://localhost:3000`.
 
----
+The development server runs on `http://localhost:3000`.
 
-## 🏛️ Workspaces & Configuration
+## Provider configuration
 
-### A. AI Providers (Bring Your Own Key - BYOK)
-You can configure your own API keys in **Settings → AI Providers**:
-* **Google Gemini**: Obtain an API key from Google AI Studio.
-* **Groq**: Fast inference for open models (Llama 3.3, etc.).
-* **OpenRouter / SambaNova**: Direct access to external models.
-* **Ollama (Local AI)**: Connect to a locally running instance at `http://localhost:11434` without internet access.
+Breezy starts with no connected model unless a provider is actually configured.
 
-### B. Search Grounding Providers
-Breezy supports pluggable search providers for grounded research:
-1. **Google Search Grounding**: Integrated directly with Gemini models.
-2. **SearXNG**: Enter your instance URL in Settings or `.env`.
-3. **Tavily / Brave / Serper**: Enter your provider API keys in Settings.
+Server-side environment variables can include:
 
-### C. Build Workspace & GitHub Integration
-To browse and commit code in the **Build (IDE)** workspace:
-1. Generate a GitHub Personal Access Token (PAT):
-   - Scope: `public_repo` or `repo` (if committing changes to private repositories).
-   - Read-only scope is sufficient for inspecting files and running previews.
-2. In the Build workspace, click **Connect GitHub** and provide the token.
-3. The token is stored locally in your browser (`breezy_github_token`) and used exclusively for direct GitHub REST API calls.
+- `GEMINI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `GROQ_API_KEY`
+- `SAMBANOVA_API_KEY`
+- `OPENROUTER_API_KEY`
+- `OLLAMA_BASE_URL`
+- `OPENAI_COMPATIBLE_BASE_URL`
 
-### D. Local code execution and preview
-* The Build workspace previews HTML/JS in a sandboxed browser frame and can run Python locally through WebAssembly.
-* It does not provide a fake cloud terminal or pretend to install packages remotely.
-* The **Live Preview** tab renders sandboxed HTML/JS apps in real time with an active console interceptor.
+Search providers can use `SEARXNG_URL`, `TAVILY_API_KEY`, `BRAVE_API_KEY`, or `SERPER_API_KEY`.
 
----
+For BYOK, users configure provider credentials in Breezy's Models workspace. Catalog entries are never treated as connected providers.
 
-## 🚀 Production Build & Deployment
+## Research
 
-### Build for Production
+Research is the Synthexis engine inside Breezy. It can run Solo, Standard, or Deep protocols using the models and search providers that are actually configured.
+
+## Build
+
+Build connects to real GitHub repositories with a user-provided personal access token. Breezy does not create a fake demo repository.
+
+## Production
+
 ```bash
 npm run build
-```
-
-### Start Server
-```bash
 npm start
 ```
 
----
-
-## 🔒 Security & Data Privacy
-
-* **Local-First**: Conversations, research notes, and study decks are stored in browser storage (`IndexedDB` / `localStorage`).
-* **Safe Proxies**: API keys configured in BYOK settings are handled securely through the backend proxy.
-* **Truthful Status**: Simulated actions and preview executions are clearly marked in the UI to prevent ambiguity.
+The frontend is built with Vite. The Node/Express server exposes the shared `/api/*` backend router, while `workers/index.ts` provides the Cloudflare Worker entry point.
