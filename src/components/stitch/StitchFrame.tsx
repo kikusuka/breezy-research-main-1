@@ -175,6 +175,7 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
 
 export default function StitchFrame({ file, mobileFile, profile, researchState, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
+  const listenerAbortRef = useRef<AbortController | null>(null);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
   );
@@ -195,6 +196,10 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
     const handleLoad = () => {
       const doc = frame.contentDocument;
       if (!doc) return;
+      listenerAbortRef.current?.abort();
+      const listenerAbort = new AbortController();
+      listenerAbortRef.current = listenerAbort;
+      const listenerOptions: AddEventListenerOptions = { capture: true, signal: listenerAbort.signal };
 
       // Stitch has dedicated mobile compositions below 1024px. Between 1024px and 1439px,
       // keep the desktop composition but tighten the shell so panels never collide.
@@ -210,7 +215,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.preventDefault();
           event.stopImmediatePropagation();
           onNavigate(LANDING_NAV_MAP[path] || path);
-        }, true);
+        }, listenerOptions);
       });
 
       const name = profile.displayName.trim() || 'Breezy user';
@@ -286,7 +291,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.stopImmediatePropagation();
           const q = landingInput.value.trim();
           if (q) onResearch?.(q, 'standard');
-        }, true);
+        }, listenerOptions);
       }
 
       const researchInput = doc.getElementById('inquiry-input') as HTMLTextAreaElement | null;
@@ -346,15 +351,15 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.stopImmediatePropagation();
           void sendChat();
         };
-        chatForm?.addEventListener('submit', handleChatSubmit, true);
+        chatForm?.addEventListener('submit', handleChatSubmit, listenerOptions);
         const sendButton = doc.getElementById('sendBtn') as HTMLButtonElement | null;
-        sendButton?.addEventListener('click', handleChatSubmit, true);
+        sendButton?.addEventListener('click', handleChatSubmit, listenerOptions);
         chatInput.addEventListener('keydown', (event) => {
           if ((event as KeyboardEvent).key !== 'Enter' || (event as KeyboardEvent).shiftKey) return;
           if (chatInput instanceof HTMLTextAreaElement) event.preventDefault();
           event.stopImmediatePropagation();
           void sendChat();
-        }, true);
+        }, listenerOptions);
       }
 
       if (screen === 'models') {
@@ -371,7 +376,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             onProviderKeySave?.(provider, key);
             const modal = doc.getElementById('credentialModal');
             modal?.classList.add('hidden');
-          }, true);
+          }, listenerOptions);
         }
 
         const testBtn = doc.getElementById('modalTestBtn') as HTMLButtonElement | null;
@@ -411,7 +416,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
               testBtn.disabled = false;
             }
             onModelProbe?.();
-          }, true);
+          }, listenerOptions);
         }
 
         const pingBtn = doc.getElementById('testConnectionsBtn') as HTMLButtonElement | null;
@@ -421,7 +426,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             event.stopImmediatePropagation();
             pingBtn.textContent = 'No live node check';
             onModelProbe?.();
-          }, true);
+          }, listenerOptions);
         }
 
         const routingBtn = doc.getElementById('saveRoutingBtn') as HTMLButtonElement | null;
@@ -430,7 +435,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             event.preventDefault();
             event.stopImmediatePropagation();
             routingBtn.textContent = 'Routing saved locally';
-          }, true);
+          }, listenerOptions);
         }
 
         Array.from(doc.querySelectorAll<HTMLSelectElement>('select')).slice(0,4).forEach((select,index) => {
@@ -448,7 +453,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             }
             onSeatModelChange?.(index,value.slice(0,split),value.slice(split+1));
           }, true);
-        });
+        }, listenerOptions);
 
         replaceLeafText(doc, [
           ['Claude 3.7 Sonnet', 'Catalog model — choose from live catalog'],
@@ -472,14 +477,18 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.preventDefault();
           event.stopImmediatePropagation();
           landingInput.value = 'Compare the evidence for a research question you care about';
-        }, true);
+        }, listenerOptions);
       }
 
       applyResearchState(doc, researchState);
     };
 
     frame.addEventListener('load', handleLoad);
-    return () => frame.removeEventListener('load', handleLoad);
+    return () => {
+      frame.removeEventListener('load', handleLoad);
+      listenerAbortRef.current?.abort();
+      listenerAbortRef.current = null;
+    };
   }, [file, profile, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe, researchState]);
 
   useEffect(() => {
