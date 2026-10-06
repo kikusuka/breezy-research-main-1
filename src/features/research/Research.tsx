@@ -105,7 +105,18 @@ function Research({sessions,setSessions,activeId,setActiveId,serverGemini,onToas
         }
       );
     } catch(e:any) {
-      if(e?.name!=='AbortError'){setSessions((prev)=>prev.map((s)=>s.id===session.id?{...s,status:'error',error:e?.message||'Research failed'}:s));setEvents((ev)=>[...ev,'Error: '+(e?.message||'Research failed')]);}
+      if(e?.name==='AbortError'){
+        setSessions((prev)=>prev.map((s)=>s.id===session.id?{
+          ...s,
+          status:'cancelled',
+          error:'Research stopped by user.',
+          updatedAt:Date.now(),
+        }:s));
+        setEvents((ev)=>[...ev,'Investigation stopped by user.']);
+      } else {
+        setSessions((prev)=>prev.map((s)=>s.id===session.id?{...s,status:'error',error:e?.message||'Research failed'}:s));
+        setEvents((ev)=>[...ev,'Error: '+(e?.message||'Research failed')]);
+      }
     } finally {setRunning(false);controller.current=null;}
   };
 
