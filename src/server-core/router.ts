@@ -51,7 +51,7 @@ function getProviderEnvKey(env: BackendEnv, provider: string): string {
 function hasProviderCredential(keys: Record<string, string> = {}, env: BackendEnv, provider: string): boolean {
   if (provider === 'ollama') return Boolean(env.OLLAMA_BASE_URL);
   if (provider === 'openai-compatible') {
-    return Boolean(env.OPENAI_COMPATIBLE_BASE_URL && (getProviderKey(keys, provider) || env.OPENAI_COMPATIBLE_API_KEY || true));
+    return Boolean(env.OPENAI_COMPATIBLE_BASE_URL);
   }
   return Boolean(getProviderKey(keys, provider) || getProviderEnvKey(env, provider));
 }
