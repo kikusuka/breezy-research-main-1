@@ -5,7 +5,7 @@
  */
 
 import { BackendEnv, HealthResponse, SearchEngineProvider } from './types';
-import { callAgentWithStream, sanitizeGeminiModel } from './providers';
+import { callAgentWithStream, sanitizeGeminiModel, validateProviderModel } from './providers';
 import { performSearchGrounding } from './search';
 import { summarizeStage, generateRealEvidenceGraph } from './evidence';
 
@@ -621,8 +621,9 @@ export async function handleBackendRequest(
         ollama: 'llama3.2',
       };
       const model = normalizedRequestedModel || defaultModels[provider] || '';
-      if (!model) {
-        return createJsonResponse({ error: `No model configured for provider "${provider}".` }, 400, req, env);
+      const modelValidation = validateProviderModel(provider, model);
+      if (!modelValidation.valid) {
+        return createJsonResponse({ error: modelValidation.error || 'Invalid provider/model configuration.' }, 400, req, env);
       }
       let fullAnswer = '';
       await callAgentWithStream({
@@ -883,6 +884,11 @@ Analyze this deliberation and output the JSON object.`;
             throw new Error(`${roleName} stage uses unsupported provider "${provider}".`);
           }
 
+          const modelValidation = validateProviderModel(provider, model);
+          if (!modelValidation.valid) {
+            throw new Error(`${roleName} stage: ${modelValidation.error || 'invalid provider/model configuration'}`);
+          }
+
           if (!hasProviderCredential(keys, env, provider)) {
             throw new Error(`${roleName} stage provider "${provider}" is not connected. Connect it before starting research.`);
           }
@@ -984,7 +990,7 @@ Create a compact research plan before evidence retrieval. Return ONLY valid JSON
         let discoveredSources: any[] = [];
         if (enableSearchGrounding) {
           await sendEvent('status', {
-            message: `Grounding analysis with real-time web search (${searchEngine.toUpperCase()})...`,
+            message: `Grounding analysis with live web search (${searchEngine.toUpperCase()})...`,
           });
 
           try {
