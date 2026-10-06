@@ -17,6 +17,8 @@ import Canvas from '../features/canvas/Canvas';
 import { Sidebar, Topbar } from '../components/layout';
 import { Icon } from '../components/breezy-shared';
 
+type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
 export default function App() {
   const [active,setActive]=useState<Tab>(()=>{const h=window.location.hash.replace('#','') as Tab;return (NAV.some((x)=>x.id===h)||h==='landing')?h:'landing'});
   const [sidebarOpen,setSidebarOpen]=useState(false);
@@ -25,7 +27,7 @@ export default function App() {
   const [profile,setProfile]=useState<UserProfile>(()=>userProfileService.getProfile());
   const [serverGemini,setServerGemini]=useState(false);
   const [toast,setToast]=useState<string|null>(null);
-  const [chatHistory,setChatHistory]=useState<Array<{role:'user'|'assistant';content:string}>>([]);
+  const [chatHistory,setChatHistory]=useState<ChatMessage[]>([]);
   const [pendingResearch,setPendingResearch]=useState<{q:string;d:Depth}|null>(null);
   const [researchUi,setResearchUi]=useState<ResearchUiState>({running:false,activeStep:0,status:'idle',query:'',output:''});
 
@@ -52,7 +54,8 @@ export default function App() {
         const key=providerConfigService.getKey(activeModel.provider);
         const result=await apiClient.chatBreezy({prompt:query,history:chatHistory.slice(-20),provider:activeModel.provider,model:activeModel.model,apiKey:key});
         const response=result.text||'The model returned an empty response.';
-        setChatHistory(prev=>[...prev,{role:'user',content:query},{role:'assistant',content:response}].slice(-20));
+        const next: ChatMessage[]=[...chatHistory,{role:'user',content:query},{role:'assistant',content:response}].slice(-20);
+        setChatHistory(next);
         return response;
       }catch(e:any){return 'Chat failed: '+(e?.message||'Unknown error');}
     }}/>;
