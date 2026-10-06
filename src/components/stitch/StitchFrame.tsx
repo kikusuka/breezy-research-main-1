@@ -176,6 +176,8 @@ function applyResearchState(doc: Document, state?: ResearchUiState) {
 export default function StitchFrame({ file, mobileFile, profile, researchState, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
   const listenerAbortRef = useRef<AbortController | null>(null);
+  const handlersRef = useRef({ onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe, profile });
+  handlersRef.current = { onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe, profile };
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
   );
@@ -214,13 +216,13 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           if (!LIVE_NAV.has(path)) return;
           event.preventDefault();
           event.stopImmediatePropagation();
-          onNavigate(LANDING_NAV_MAP[path] || path);
+          handlersRef.current.onNavigate(LANDING_NAV_MAP[path] || path);
         }, listenerOptions);
       });
 
-      const name = profile.displayName.trim() || 'Breezy user';
-      const role = profile.roleTitle.trim() || 'No role set';
-      const email = profile.email.trim();
+      const name = handlersRef.current.profile.displayName.trim() || 'Breezy user';
+      const role = handlersRef.current.profile.roleTitle.trim() || 'No role set';
+      const email = handlersRef.current.profile.email.trim();
       const initials = name.split(/\s+/).slice(0, 2).map((x) => x[0] || '').join('').toUpperCase() || 'B';
       replaceLeafText(doc, [
         ['Dr. Aris Vance', name],
@@ -290,7 +292,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           event.preventDefault();
           event.stopImmediatePropagation();
           const q = landingInput.value.trim();
-          if (q) onResearch?.(q, 'standard');
+          if (q) handlersRef.current.onResearch?.(q, 'standard');
         }, listenerOptions);
       }
 
@@ -313,7 +315,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
 
       const chatInput = doc.getElementById('inquiryInput') as HTMLInputElement | HTMLTextAreaElement | null;
       const chatForm = chatInput?.closest('form') as HTMLFormElement | null;
-      if (chatInput && onChat) {
+      if (chatInput && handlersRef.current.onChat) {
         let chatBusy = false;
         const sendChat = async () => {
           if (chatBusy) return;
@@ -334,7 +336,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
           scrollHost.insertBefore(wrap, scrollHost.lastElementChild || null);
 
           try {
-            const result = await onChat(q);
+            const result = await handlersRef.current.onChat?.(q) ?? 'Chat is unavailable.';
             bubble.textContent = result;
             chatInput.value = '';
           } catch (error) {
@@ -373,7 +375,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             const provider = title.replace(/^Configure\\s*/, '');
             const key = (doc.getElementById('modalKeyInput') as HTMLInputElement | null)?.value || '';
             if (!key.trim()) return;
-            onProviderKeySave?.(provider, key);
+            handlersRef.current.onProviderKeySave?.(provider, key);
             const modal = doc.getElementById('credentialModal');
             modal?.classList.add('hidden');
           }, listenerOptions);
@@ -415,7 +417,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             } finally {
               testBtn.disabled = false;
             }
-            onModelProbe?.();
+            handlersRef.current.onModelProbe?.();
           }, listenerOptions);
         }
 
@@ -443,7 +445,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
             event.stopImmediatePropagation();
             const value = select.value;
             if (!value) {
-              onSeatModelChange?.(index,'','');
+              handlersRef.current.onSeatModelChange?.(index,'','');
               return;
             }
             const split = value.indexOf(':');
@@ -489,7 +491,7 @@ export default function StitchFrame({ file, mobileFile, profile, researchState, 
       listenerAbortRef.current?.abort();
       listenerAbortRef.current = null;
     };
-  }, [file, profile, screen, onNavigate, onResearch, onChat, onProviderKeySave, onSeatModelChange, onModelProbe, researchState]);
+  }, [file, mobileFile, screen]);
 
   useEffect(() => {
     if (!researchState) return;
