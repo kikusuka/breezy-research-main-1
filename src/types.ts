@@ -134,7 +134,7 @@ export interface DebateSession {
   heartbeatIntervalSec?: number;
   createdAt: number;
   updatedAt?: number;
-  status: 'idle' | 'running' | 'completed' | 'error';
+  status: 'idle' | 'running' | 'completed' | 'cancelled' | 'error';
   steps: DebateStep[];
   finalOutput?: string;
   evidenceGraph?: EvidenceGraph;
