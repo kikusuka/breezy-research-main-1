@@ -79,27 +79,24 @@ export function getCorsHeaders(req: Request, env: BackendEnv = {}): Record<strin
   const requestOrigin = req.headers.get('Origin');
   const allowedOriginsConfig = env.ALLOWED_ORIGINS?.trim();
 
-  let resolvedOrigin = '*';
+  // Fail closed by default. A wildcard is only allowed when explicitly configured.
+  let resolvedOrigin = 'null';
 
-  if (allowedOriginsConfig) {
-    if (allowedOriginsConfig === '*') {
-      resolvedOrigin = '*';
-    } else {
-      const allowedList = allowedOriginsConfig.split(',').map((o) => o.trim().toLowerCase());
-      if (requestOrigin) {
-        const lowerOrigin = requestOrigin.toLowerCase();
-        if (allowedList.includes(lowerOrigin) || allowedList.includes('*')) {
-          resolvedOrigin = requestOrigin;
-        } else {
-          // Fail-closed: do not reflect untrusted origins
-          resolvedOrigin = 'null';
-        }
-      } else {
-        resolvedOrigin = allowedList[0] || 'null';
+  if (allowedOriginsConfig === '*') {
+    resolvedOrigin = '*';
+  } else if (allowedOriginsConfig) {
+    const allowedList = allowedOriginsConfig.split(',').map((o) => o.trim().toLowerCase()).filter(Boolean);
+    if (requestOrigin) {
+      const lowerOrigin = requestOrigin.toLowerCase();
+      if (allowedList.includes(lowerOrigin) || allowedList.includes('*')) {
+        resolvedOrigin = requestOrigin;
       }
+    } else {
+      resolvedOrigin = allowedList[0] || 'null';
     }
   } else if (requestOrigin) {
     try {
+      // With no explicit CORS configuration, only same-origin requests are reflected.
       resolvedOrigin = new URL(req.url).origin === requestOrigin ? requestOrigin : 'null';
     } catch {
       resolvedOrigin = 'null';
