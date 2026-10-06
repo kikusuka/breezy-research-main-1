@@ -355,27 +355,15 @@ export async function handleBackendRequest(
       const startTime = Date.now();
 
       if (provider === 'gemini') {
-        try {
-          await callAgentWithStream({
-            provider: 'gemini',
-            model: 'gemini-2.5-flash',
-            apiKey: trimmedKey,
-            systemInstruction: 'Respond with OK in one word.',
-            userPrompt: 'Ping',
-            onChunk: () => {},
-            env,
-          });
-        } catch {
-          await callAgentWithStream({
-            provider: 'gemini',
-            model: 'gemini-2.5-flash-lite',
-            apiKey: trimmedKey,
-            systemInstruction: 'Respond with OK in one word.',
-            userPrompt: 'Ping',
-            onChunk: () => {},
-            env,
-          });
-        }
+        await callAgentWithStream({
+          provider: 'gemini',
+          model: 'gemini-2.5-flash',
+          apiKey: trimmedKey,
+          systemInstruction: 'Respond with OK in one word.',
+          userPrompt: 'Ping',
+          onChunk: () => {},
+          env,
+        });
         return createJsonResponse({
           valid: true,
           provider,
